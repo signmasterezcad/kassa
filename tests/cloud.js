@@ -37,8 +37,8 @@ const srv = http.createServer((req, res) => {
         return send(200, { commitTime: t });
       }
       if (u.pathname.endsWith(':runQuery')) {
-        const q = JSON.parse(body).structuredQuery, from = tsNum(q.where.fieldFilter.value.timestampValue);
-        const list = [...docs.entries()].filter(([, d]) => tsNum(d.fields.t.timestampValue) >= from).sort((a, b) => tsNum(a[1].fields.t.timestampValue) - tsNum(b[1].fields.t.timestampValue)).slice(0, q.limit);
+        const q = JSON.parse(body).structuredQuery, from = tsNum(q.where.fieldFilter.value.timestampValue), parent = decodeURIComponent(u.pathname.slice(4).replace(/:runQuery$/, '')) + '/u/';
+        const list = [...docs.entries()].filter(([n, d]) => n.startsWith(parent) && tsNum(d.fields.t.timestampValue) >= from).sort((a, b) => tsNum(a[1].fields.t.timestampValue) - tsNum(b[1].fields.t.timestampValue)).slice(0, q.limit);
         return send(200, list.length ? list.map(([name, d]) => ({ document: { name, fields: d.fields, updateTime: d.updateTime }, readTime: now() })) : [{ readTime: now() }]);
       }
     }
@@ -216,6 +216,28 @@ const srv = http.createServer((req, res) => {
     await P2.waitForFunction(() => !S.cats.some(c => c.id === 'qarisiq'), null, { timeout: 15000 }); await sleep(500);
     ok(await P2.evaluate(() => S.sales.length === 5 && !S.sales.some(x => x.id === 'zz') && S.users.length > 1), 'götür: bu kompüterin qarışıq məlumatı buluddakı ilə əvəz olundu (5 satış, kassirlər qayıtdı)');
     ok(await PC.evaluate(() => !S.cats.some(c => c.id === 'qarisiq')) && ![...docs.keys()].some(k => k.includes('qarisiq')), 'artıq bölmə buluda getmədi');
+
+    // ---------- 8) 🏢 Şöbələr: Hövsan (main) və Mida 1 ayrıdır, düymələr eynidir ----------
+    ok(await PC.evaluate(() => S.branches.map(b => b.name).join('|')) === 'Hövsan|Mida' && await PC.isVisible('#btnShop') && (await PC.textContent('#shopTxt')) === 'Hövsan', 'başlıqda şöbə: 🏢 Hövsan');
+    await PC.click('#btnShop'); ok(await PC.locator('#ovShop .shopbtn').count() === 2, 'şöbə pəncərəsi: 2 şöbə, ✓ cari');
+    await PC.click('#ovShop [data-sh=go][data-id=mida1]');
+    await PC.waitForFunction(() => CLOUD_SHOP === 'mida1' && !shopSwitching, null, { timeout: 20000 });
+    const m1 = await PC.evaluate(() => ({ s: S.sales.length, m: S.materials.length, u: S.users.map(u => u.role).join(), it: S.items.length, sup: S.suppliers.length, t: document.getElementById('shopTxt').textContent }));
+    ok(m1.s === 0 && m1.m === 0 && m1.u === 'admin' && m1.it === pcItems && m1.sup > 0 && m1.t === 'Mida', `Mida 1 açıldı: satış 0, anbar boş, yalnız Admin, düymələr (${m1.it}) və tədarükçülər köçdü`);
+    await sell(PC, 'fincan sade');
+    await PC.evaluate(() => { S.items.find(i => i.id === 'fc_termo').tiers[0][1] = 12; save(); });
+    await PC.evaluate(() => cloudTick()); await sleep(1500); await Ph.evaluate(() => cloudTick()); await sleep(1500);
+    ok(await Ph.evaluate(() => S.sales.length) === 5 && await Ph.evaluate(() => S.items.find(i => i.id === 'fc_termo').tiers[0][1]) === 12,
+      'Mida 1-dəki satış Hövsana qarışmadı (telefonda 5), amma Mida 1-də dəyişən qiymət Hövsanda da dəyişdi (12)');
+    ok(JSON.parse(pcFiles.data).shopId === 'mida1' && JSON.parse(pcFiles.data).sales.length === 1 && pcFiles.kv.shop === 'mida1', 'kompüterin faylında Mida 1 (1 satış)');
+    // telefon da Mida 1-ə keçir və satışı görür, sonra geri
+    await Ph.evaluate(() => switchShop('mida1')); await Ph.waitForFunction(() => CLOUD_SHOP === 'mida1' && !shopSwitching, null, { timeout: 20000 });
+    ok(await Ph.evaluate(() => S.sales.length) === 1, 'telefon Mida 1-ə keçdi: oranın 1 satışı');
+    await Ph.evaluate(() => switchShop('main')); await Ph.waitForFunction(() => CLOUD_SHOP === 'main' && !shopSwitching, null, { timeout: 20000 });
+    ok(await Ph.evaluate(() => S.sales.length) === 5, 'telefon Hövsana qayıtdı: 5 satış');
+    await PC.evaluate(() => switchShop('main')); await PC.waitForFunction(() => CLOUD_SHOP === 'main' && !shopSwitching, null, { timeout: 20000 });
+    ok(await PC.evaluate(() => S.sales.length === 5 && S.users.length > 1 && S.materials.some(m => m.id === 'mx')), 'kompüter Hövsana qayıtdı: 5 satış, kassirlər, anbar yerindədir');
+    ok(JSON.parse(pcFiles.data).shopId === 'main', 'kompüterin faylı yenə Hövsanındır');
   } finally {
     ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
     await b.close(); srv.close();

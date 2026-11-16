@@ -262,6 +262,13 @@ td input.wide{width:200px;text-align:left}
 .updbtn.arm{background:var(--accent);color:#fff;border-color:var(--accent)}
 .updbtn:disabled{opacity:.6;cursor:wait}
 .themebtn{font-size:15px;padding:1px 9px;line-height:1.4}
+.shopchip{font:inherit;font-size:14px;font-weight:800;padding:4px 12px;border-radius:999px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;vertical-align:middle;margin-left:6px}
+.shopchip .car{font-size:11px;opacity:.85}.shopchip.ro{cursor:default}.shopchip.ro .car{display:none}
+.shoplist{display:grid;gap:8px;margin-bottom:12px}.shoprow{display:flex;gap:8px;align-items:center}
+.shoprow input,#sh_new{flex:1;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--fg)}
+.shopbtn{flex:1;display:flex;align-items:center;gap:10px;text-align:left;font:inherit;font-size:17px;font-weight:700;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);cursor:pointer}
+.shopbtn .ck{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-size:14px;flex:none}
+.shopbtn.on{border-color:var(--ok)}.shopbtn.on .ck{background:var(--ok);border-color:var(--ok);color:#fff}
 .tab.sm{padding:6px 12px;font-size:13px}
 td.arrows{white-space:nowrap}
 td.arrows .btn{padding:4px 8px;margin-right:2px}
@@ -402,7 +409,7 @@ h4{margin:6px 0 0;font-size:14px}
 <body>
 
 <header class="wrap">
-  <h1><img src="kassa.svg" class="logo" alt="" width="28" height="28">KASSA <span style="font-weight:600;color:var(--muted);font-size:14px">· Satış ekranı</span> <span class="ver" id="ver"></span> <button class="updbtn" id="btnUpd" type="button" hidden title="Proqramı yenilə">🔄 Yenilə</button> <button class="updbtn themebtn" id="btnTheme" type="button" title="Ağ / qara rejim">☀️</button></h1>
+  <h1><img src="kassa.svg" class="logo" alt="" width="28" height="28">KASSA <span style="font-weight:600;color:var(--muted);font-size:14px">· Satış ekranı</span> <span class="ver" id="ver"></span> <button class="updbtn" id="btnUpd" type="button" hidden title="Proqramı yenilə">🔄 Yenilə</button> <button class="updbtn themebtn" id="btnTheme" type="button" title="Ağ / qara rejim">☀️</button> <button class="shopchip" id="btnShop" type="button" hidden>🏢 <span id="shopTxt"></span> <span class="car">▾</span></button></h1>
   <nav class="side" id="sideNav" aria-label="Menyu">
   <button class="hbtn user" id="btnUser" title="Çıxış: başqa işçi ilə gir"><span class="ic">👤</span><span class="lb"><span class="un" id="userName"></span><small>Çıxış</small></span></button>
   <button class="hbtn" id="btnZay"><span class="ic">🗑️</span><span class="lb">Zay</span></button>
@@ -487,6 +494,12 @@ h4{margin:6px 0 0;font-size:14px}
   </div>
 </div>
 
+<div class="ov" id="ovShop" hidden>
+  <div class="modal" role="dialog" aria-labelledby="sht" style="max-width:520px">
+    <div class="mh"><h3 id="sht">🏢 Şöbə seçin</h3><button class="hbtn" data-close>Bağla</button></div>
+    <div class="mb" id="shopBody"></div>
+  </div>
+</div>
 <div class="ov" id="ovReset" hidden>
   <div class="modal" role="dialog" aria-labelledby="rst">
     <div class="mh"><h3 id="rst">🧹 Sistemi Sıfırla</h3><button class="hbtn" data-rsx>Ləğv</button></div>
@@ -665,7 +678,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.75.0";
+const APP_VERSION="0.76.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -939,7 +952,9 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   // Mal hələ alınmayıbsa bayraq qoyulmur — alış yazılandan sonrakı açılışda qoşulur.
   if(!S.mig.a4Recipe){const A=(S.materials||[]).filter(m=>/a4/i.test(m.name||"")&&/(^|\D)80(\D|$)/.test(m.name||"")).pop();
     if(A){S.mig.a4Recipe=1;["a4s_bw","a4s_30","a4s_40","a4s_60","a4s_100","a4s_2t","a4s_2tr","a4s_elan","ks_a4bw","ks_tel"].forEach(id=>{const it=S.items.find(x=>x.id===id);
-      if(!it)return;it.recipe=(it.recipe||[]).filter(([m])=>{const M=S.materials.find(x=>x.id===m);return M&&(m===A.id||!/a4/i.test(M.name||""))});if(!it.recipe.some(([m])=>m===A.id))it.recipe.push([A.id,1])})}}
+      if(!it)return;it.recipe=(it.recipe||[]).filter(([m])=>{const M=S.materials.find(x=>x.id===m);return !M||m===A.id||!/a4/i.test(M.name||"")});if(!it.recipe.some(([m])=>m===A.id))it.recipe.push([A.id,1])})}}
+  if(!S.shopId)S.shopId=CLOUD_SHOP;
+  if(!S.mig.branches){S.mig.branches=1;if(!S.branches?.length)S.branches=[{id:"main",name:"Hövsan"},{id:"mida1",name:"Mida"}]}
   if(!S.mig.discPerm&&S.users){S.mig.discPerm=1;S.users.forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};if(u.perms.disc===undefined)u.perms.disc=1}})}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
     if(sf)S.items.filter(i=>i.parent==="g_foto"&&!i.group).forEach(i=>{const m=(i.name.match(/(\d+)\s*[x×]\s*(\d+)/)||[])[0];if(!m)return;
@@ -980,6 +995,9 @@ async function loadData(){
   }
   if(!S&&PHONE_CLOUD)S=await cloudFirstLoad(); // telefon: məlumat buluddan gəlir, nümunə məlumat yaradılmır
   if(!S){S=structuredClone(SEED);firstRun=true;if(NATIVE&&!REMOTE&&!window.KASSA_SAMPLE)cleanStart()}
+  // 🏢 məlumat faylı hansı şöbənindirsə, bulud da o şöbə ilə işləsin (dəyişmə yarımçıq qalıbsa qarışmasın)
+  if(S.shopId&&S.shopId!==CLOUD_SHOP){CLOUD_SHOP=S.shopId;KV.set("shop",CLOUD_SHOP).catch(()=>{})}
+  if(CL.syncShop&&CL.syncShop!==CLOUD_SHOP){CL.base={};CL.cursor=0;CL.seen={}}
   if(NATIVE&&!firstRun&&!S.mig?.anbarSifir&&S.materials?.length)
     try{await window.erpBackup(backupText(),"el")}catch(e){}   // anbar silinməzdən əvvəl
   const migBefore=JSON.stringify(S.mig||{});
@@ -1098,10 +1116,14 @@ function merge3(b,l,r,k){
 // dəyişiklik mübadiləsi edir. Məlumat "vahidlərə" bölünür: hər satış, xərc, düymə, material… ayrıca sənəddir.
 // Göndər: son ortaq vəziyyətdən (base) fərqlənən vahidlər. Al: bulud sənədləri "t" (server vaxtı) üzrə, kursordan sonrakılar.
 // Toqquşmada merge3; anbar qalığı (stock) buluda artım/azalma kimi yazılır, ona görə iki yerdə satış toplanır.
-const CLOUD_SHOP="main",PAGES_URL="https://signmasterezcad.github.io/kassa/app/";
+let CLOUD_SHOP="main";const PAGES_URL="https://signmasterezcad.github.io/kassa/app/";
 const KEYED=["items","cats","users","materials","suppliers","customers","recurring","sales","expenses","purchases","waste","custPays","suppPays"];
 const ORDERED=new Set(["items","cats","users","materials","suppliers","customers","recurring"]);
 const PERSUB=new Set(["cash"]), LOCALONLY=new Set(["lastAuto","lastBackup"]);
+// v0.76.0 🏢 Şöbələr: hər şöbə ayrı yerdədir (shops/<id>): satış, anbar, xərc, müştəri, kassir ayrıdır.
+// Düymələr, bölmələr və şöbə siyahısı hamı üçün eynidir — onlar bütün şöbələrə yazılır.
+const isSharedUnit=id=>id.startsWith("items~")||id.startsWith("cats~")||id==="@ord~items"||id==="@ord~cats"||id==="@branches";
+const PERSHOP_LISTS=["sales","purchases","expenses","waste","custPays","suppPays","customers","materials","recurring"];
 // Yaddaş: kompüterdə exe faylları (bulud-*.json), telefonda IndexedDB
 const KV=(()=>{
   if(typeof window.erpKVGet==="function")return{get:n=>window.erpKVGet(n),set:(n,v)=>window.erpKVSet(n,v)};
@@ -1173,7 +1195,12 @@ const fromDoc=f=>{if(f.del?.booleanValue)return undefined;let v;try{v=JSON.parse
 // Göndər: dəyişən vahidlər bir neçə sorğu ilə (hər birində ən çox 400 yazı)
 async function cloudPushNow(){
   const U=unitsOf(S),writes=[],done=[];
-  const W=(id,v,js)=>{const name=`${shopPath()}/u/${encodeURIComponent(id)}`,tr=[{fieldPath:"t",setToServerValue:"REQUEST_TIME"}];
+  const others=(S.branches||[]).map(b=>b.id).filter(x=>x&&x!==CLOUD_SHOP);
+  const W=(id,v,js)=>{const n0=writes.length;W1(id,v,js);
+    if(isSharedUnit(id))others.forEach(sh=>{const w=structuredClone(writes[n0]);w.update.name=`${docRoot()}/shops/${sh}/u/${encodeURIComponent(id)}`;writes.push(w)});
+    grp.push(writes.length-n0)};
+  const grp=[];
+  const W1=(id,v,js)=>{const name=`${shopPath()}/u/${encodeURIComponent(id)}`,tr=[{fieldPath:"t",setToServerValue:"REQUEST_TIME"}];
     if(v===undefined){writes.push({update:{name,fields:{del:{booleanValue:true},d:{stringValue:""},dev:{stringValue:CL.dev}}},updateMask:{fieldPaths:["del","d","dev"]},updateTransforms:tr});return}
     const fields={del:{booleanValue:false},dev:{stringValue:CL.dev}},mask=["del","d","dev"];
     if(isObj(v)&&typeof v.stock==="number"){const{stock,...rest}=v;fields.d={stringValue:JSON.stringify(rest)};
@@ -1184,13 +1211,14 @@ async function cloudPushNow(){
     writes.push({update:{name,fields},updateMask:{fieldPaths:mask},updateTransforms:tr})};
   for(const [id,v] of U){const js=JSON.stringify(v);if(CL.base[id]===js)continue;W(id,v,js);done.push([id,js])}
   for(const id of Object.keys(CL.base))if(!U.has(id)){W(id,undefined);done.push([id,undefined])}
-  CL.pend=writes.length;
-  for(let i=0;i<writes.length;i+=400){
-    await fsCall(`${docRoot()}:commit`,{writes:writes.slice(i,i+400)});
-    done.slice(i,i+400).forEach(([id,js])=>{if(js===undefined)delete CL.base[id];else CL.base[id]=js});
-    CL.pend=Math.max(0,writes.length-i-400);saveCloudState();
+  CL.pend=done.length;
+  for(let u=0,w=0;u<done.length;){ // hər sorğuda ≤400 yazı, bir vahidin bütün şöbələrə yazısı eyni sorğuda
+    let u2=u,w2=w;while(u2<done.length&&(w2-w+grp[u2]<=400||u2===u)){w2+=grp[u2];u2++}
+    await fsCall(`${docRoot()}:commit`,{writes:writes.slice(w,w2)});
+    done.slice(u,u2).forEach(([id,js])=>{if(js===undefined)delete CL.base[id];else CL.base[id]=js});
+    u=u2;w=w2;CL.pend=done.length-u;saveCloudState();
   }
-  return writes.length;
+  return done.length;
 }
 // Al: kursordan sonra dəyişən sənədlər (2 saniyə üst-üstə düşmə + təkrarı süzmək)
 async function cloudPullNow(){
@@ -1267,7 +1295,8 @@ function localSaveOnly(){const txt=JSON.stringify(S);
   window.erpSave(txt).catch(()=>{});opBackupSoon();
 }
 let csT=null;
-function saveCloudState(){clearTimeout(csT);csT=setTimeout(()=>{KV.set("sync",JSON.stringify({base:CL.base,cursor:CL.cursor,seen:CL.seen})).catch(()=>{})},1500)}
+const cloudStateTxt=()=>JSON.stringify({shop:CLOUD_SHOP,base:CL.base,cursor:CL.cursor,seen:CL.seen});
+function saveCloudState(){clearTimeout(csT);csT=setTimeout(()=>{KV.set("sync",cloudStateTxt()).catch(()=>{})},1500)}
 async function cloudTick(){
   if(!CL.on||!CL.cfg)return;
   if(CL.busy){CL.again=true;return}
@@ -1286,7 +1315,8 @@ function cloudStop(){CL.on=false;clearInterval(CL.timer);renderCloudBadge()}
 async function cloudInit(){
   try{CL.cfg=JSON.parse(await KV.get("cfg")||"null")}catch(e){CL.cfg=null}
   CL.dev=await KV.get("dev");if(!CL.dev){CL.dev=newId("d");KV.set("dev",CL.dev)}
-  try{const st=JSON.parse(await KV.get("sync")||"null");if(st){CL.base=st.base||{};CL.cursor=st.cursor||0;CL.seen=st.seen||{}}}catch(e){}
+  CLOUD_SHOP=(await KV.get("shop"))||"main";
+  try{const st=JSON.parse(await KV.get("sync")||"null");if(st){CL.base=st.base||{};CL.cursor=st.cursor||0;CL.seen=st.seen||{};CL.syncShop=st.shop||"main"}}catch(e){}
   window.addEventListener("online",()=>cloudSoon());
 }
 // Telefon ilk dəfə: məlumatı buluddan yığ
@@ -1300,6 +1330,80 @@ async function cloudFirstLoad(){
     catch(e){showCloudMsg("Buluda qoşulmaq olmadı: "+(e.message||e)+". İnterneti yoxlayın. 5 saniyəyə yenidən cəhd ediləcək.",true);await new Promise(r=>setTimeout(r,5000))}
   }
 }
+// ---------- 🏢 Şöbə dəyişmə (v0.76.0) ----------
+const shopName=id=>(S.branches||[]).find(b=>b.id===id)?.name||id;
+function newShopData(prev,pulled){
+  const D=structuredClone(prev);
+  PERSHOP_LISTS.forEach(k=>D[k]=[]);D.cash={};
+  D.users=D.users.filter(u=>u.role==="admin");D.workers=D.users.map(u=>u.name);
+  delete D.resetAt;delete D.lastAuto;delete D.lastBackup;D.mig={...prev.mig};delete D.mig.a4Recipe;
+  if(pulled?.items?.length){D.items=pulled.items;D.cats=pulled.cats}
+  if(pulled?.branches?.length)D.branches=pulled.branches;
+  D.shopId=CLOUD_SHOP;return D;
+}
+async function persistNow(){const txt=JSON.stringify(S);
+  if(PHONE_CLOUD){await KV.set("data",txt);return}
+  if(!NATIVE){try{localStorage.setItem(KEY,txt)}catch(e){}return}
+  if(SYNC){schedulePush();return}
+  await window.erpSave(txt);
+}
+let shopSwitching=false;
+async function switchShop(id){
+  if(id===CLOUD_SHOP||shopSwitching)return;
+  if(!CL.cfg||!CL.on){toast("Şöbə dəyişmək üçün əvvəl ☁️ buluda qoşulun");return}
+  if(order.length){toast("Əvvəl cari sifarişi bitirin və ya ləğv edin");return}
+  shopSwitching=true;$("ovShop").hidden=true;
+  const prev=S,prevShop=CLOUD_SHOP,prevCL={base:CL.base,cursor:CL.cursor,seen:CL.seen};
+  try{
+    while(CL.busy)await new Promise(r=>setTimeout(r,150));
+    CL.busy=true;showCloudMsg(`🏢 “${shopName(id)}” açılır…`);
+    await cloudPullNow();await cloudPushNow(); // bu şöbədə nə varsa, buluda getsin
+    await KV.set("cache-"+prevShop,JSON.stringify({S,base:CL.base,cursor:CL.cursor,seen:CL.seen}));
+    let c=null;try{c=JSON.parse(await KV.get("cache-"+id)||"null")}catch(e){}
+    CLOUD_SHOP=id;
+    if(c?.S){S=c.S;CL.base=c.base||{};CL.cursor=c.cursor||0;CL.seen=c.seen||{}}else{S=compose(new Map());CL.base={};CL.cursor=0;CL.seen={}}
+    CL.loading=true;try{await cloudPullNow()}finally{CL.loading=false}
+    if(!S.users?.length)S=newShopData(prev,S);   // yeni şöbə: düymələr, tədarükçülər, admin köçür; satış/anbar/xərc boş
+    S.shopId=id;
+    upgrade();
+    await KV.set("sync",cloudStateTxt());await persistNow();await KV.set("shop",id);
+  }catch(e){
+    CLOUD_SHOP=prevShop;S=prev;Object.assign(CL,prevCL);
+    toast("Şöbə dəyişmədi: "+(e.message||e)+". İnterneti yoxlayın.");
+  }finally{CL.busy=false;shopSwitching=false;$("ovCloud").hidden=true}
+  order=[];ordDisc=null;draft=null;backups=null;
+  if(me){me=S.users.find(u=>u.id===me.id)||null}
+  if(!me){logout();startSession()}else{renderAll();renderDebtBadge();applyPerms()}
+  renderShop();cloudSoon();
+  if(CLOUD_SHOP===id)toast(`🏢 ${shopName(id)} açıldı`);
+}
+function renderShop(){const b=$("btnShop");if(!b)return;
+  const many=(S.branches||[]).length>1;b.hidden=!many;if(!many)return;
+  $("shopTxt").textContent=shopName(CLOUD_SHOP);
+  const can2=isAdmin()&&!!CL.cfg&&!REMOTE;b.disabled=!can2;b.classList.toggle("ro",!can2);
+  b.title=can2?"Şöbəni dəyiş":"Şöbə: "+shopName(CLOUD_SHOP);
+}
+let shopEd=null;
+function openShop(){if(!isAdmin()||!CL.cfg)return;shopEd=null;drawShop();$("ovShop").hidden=false}
+function drawShop(){
+  $("shopBody").innerHTML=`<div class="shoplist">${(S.branches||[]).map(b=>`<div class="shoprow">
+      <button class="shopbtn ${b.id===CLOUD_SHOP?"on":""}" data-sh="go" data-id="${b.id}"><span class="ck">${b.id===CLOUD_SHOP?"✓":""}</span>🏢 ${esc(b.name)}</button>
+      ${shopEd===b.id?`<input id="sh_nm" value="${esc(b.name)}" maxlength="40"><button class="btn sm" data-sh="ren" data-id="${b.id}">Yadda saxla</button>`
+        :`<button class="btn ghost sm" data-sh="ed" data-id="${b.id}">✏️ Adı</button>`}</div>`).join("")}</div>
+    <div class="frow"><input id="sh_new" placeholder="Yeni şöbənin adı" maxlength="40"><button class="btn ghost" data-sh="add">+ Yeni şöbə</button></div>
+    <p class="sub">Hər şöbənin satışı, anbarı, xərcləri, müştəriləri və kassirləri ayrıdır. Düymələr və qiymətlər bütün şöbələrdə eynidir.
+      Yeni şöbəyə ilk dəfə keçəndə düymələr, tədarükçülər və Admin oraya köçürülür.</p>`;
+}
+document.addEventListener("click",e=>{const t=e.target.closest("#btnShop,[data-sh]");if(!t)return;
+  if(t.id==="btnShop"){openShop();return}
+  const a=t.dataset.sh,id=t.dataset.id;
+  if(a==="go"){if(id===CLOUD_SHOP){$("ovShop").hidden=true;return}switchShop(id);return}
+  if(a==="ed"){shopEd=id;drawShop();$("sh_nm")?.focus();return}
+  if(a==="ren"){const n=$("sh_nm").value.trim();if(!n)return;const b=S.branches.find(x=>x.id===id);if(b){b.name=n;save();renderShop()}shopEd=null;drawShop();return}
+  if(a==="add"){const n=$("sh_new").value.trim();if(!n){$("sh_new").focus();return}
+    if(S.branches.some(b=>b.name.toLocaleLowerCase("az")===n.toLocaleLowerCase("az"))){toast("Bu adda şöbə var");return}
+    S.branches.push({id:"s"+Date.now().toString(36),name:n});save();renderShop();drawShop();toast(`🏢 ${n} əlavə olundu. Keçmək üçün adına basın`);return}
+});
 function showCloudMsg(t,bad){$("cloudLoginBody").innerHTML=`<p style="${bad?"color:var(--bad)":""}">${esc(t)}</p>`;$("ovCloud").hidden=false}
 // Telefon: link (#bulud=…) ilə gəlib, parolu soruş
 function cloudLinkCfg(txt){const m=String(txt??location.hash).match(/bulud=([A-Za-z0-9_-]+)/);if(!m)return null;
@@ -1534,7 +1638,7 @@ document.addEventListener("keydown",e=>{
   else if(e.key==="Escape"){loginSel=null;pinBuf="";pinErr="";showLogin()}
 },true);
 
-function renderHeader(){
+function renderHeader(){renderShop();
   if(me)$("userName").textContent=curName()+(isAdmin()?" (admin)":"");
   renderSuppBadge();renderCustBadge();renderCloudBadge();
   const ts=S.sales.filter(s=>isToday(s.ts));
@@ -1787,7 +1891,7 @@ function disarmPay(){keyArm=0;clearTimeout(keyArmT);const b=$("btnDone");b.class
 const ordTotal=()=>{const sub=order.reduce((a,o)=>a+lineUnit(o)*o.q,0);return sub-discAmt(sub)};
 const doneTxt=()=>order.length&&ordTotal()<-0.004?`↩️ Pulu qaytar: ${m2(-ordTotal())} ₼ ✓`:pay==="borc"?"Nisyəyə yaz ✓":DONE_TXT;
 const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isContentEditable);
-const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden&&$("ovCloud").hidden&&$("ovIcon").hidden&&$("ovDisc").hidden&&$("ovRet").hidden&&$("ovReset").hidden;
+const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden&&$("ovCloud").hidden&&$("ovIcon").hidden&&$("ovShop").hidden&&$("ovDisc").hidden&&$("ovRet").hidden&&$("ovReset").hidden;
 function finishSale(){
   disarmPay();
   if(pay==="borc"&&order.some(o=>o.ret)){toast("Qaytarma olan sifarişdə Nisyə olmaz — Nağd və ya Kart seçin");return}
@@ -2731,7 +2835,7 @@ function renderAdmin(){
   <div class="tw"><table><tr><th></th><th>Düymə</th><th>Bölmə</th><th>Resept</th><th>Qiymət pillələri</th><th class="n">Maya / əd</th><th class="n">Mənfəət (1 əd)</th><th></th></tr>
   ${list.map(it=>{const sb=sib(it),i=sb.indexOf(it),G=isGroup(it);return `<tr class="${it.parent?"child":""}"><td class="arrows">${setCat!=="all"?`<button class="btn ghost sm" data-act="up" data-id="${it.id}" ${i===0?"disabled":""} aria-label="yuxarı">↑</button><button class="btn ghost sm" data-act="down" data-id="${it.id}" ${i===sb.length-1?"disabled":""} aria-label="aşağı">↓</button>`:""}</td>
     <td>${it.parent?'<span class="sub">↳</span> ':""}<span class="mini" style="background:${esc(it.color)}">${esc(it.icon)} ${esc(it.name)}</span>${it.fav?" ⭐":""}</td><td>${esc(CATS.find(c=>c[0]===it.cat)?.[1]||"—")}${it.parent?` <span class="sub">› ${esc(item(it.parent)?.name||"")}</span>`:""}</td>
-    ${G?`<td colspan="4" class="sub">📂 qrup · içində ${kids(it.id).length} düymə</td>`:`<td>${it.recipe.map(([m,q])=>`${q}× ${esc(matName(m))}`).join(", ")||"material yoxdur"}${it.ink?` + mürəkkəb ${m2(it.ink)}`:""}</td>
+    ${G?`<td colspan="4" class="sub">📂 qrup · içində ${kids(it.id).length} düymə</td>`:`<td>${it.recipe.filter(([m])=>mat(m)).map(([m,q])=>`${q}× ${esc(matName(m))}`).join(", ")||"material yoxdur"}${it.ink?` + mürəkkəb ${m2(it.ink)}`:""}</td>
     <td>${it.tiers.map(([t,v])=>`${t}+ → ${m2(v)}`).join(" · ")}</td><td class="n">${m2(unitCost(it))}</td>
     <td class="n">${m2(it.tiers[0][1]-unitCost(it))}</td>`}<td class="arrows"><button class="btn ghost sm" data-act="edit" data-id="${it.id}">Redaktə</button> <button class="btn ghost sm del" data-act="ldel" data-id="${it.id}">${delLabel(it,"Əminsiniz? Sil","Sil")}</button></td></tr>`}).join("")||`<tr><td colspan="8" class="sub">Bu bölmədə hələ düymə yoxdur.</td></tr>`}
   </table></div>
@@ -2760,7 +2864,7 @@ function renderAdmin(){
       ${S.suppliers.some(x=>x.items?.length)?`<div class="frow"><label class="f grow">Tədarükçüdən hazır da alınır? (satışda “Özümüz / Tədarükçü” soruşulur)<select id="e_src">
         <option value="">— yox, yalnız özümüz —</option>${S.suppliers.filter(x=>x.items?.length).map(x=>x.items.map(y=>`<option value="${x.id}|${y.id}" ${d.src?.supp===x.id&&d.src?.item===y.id?"selected":""}>🚚 ${esc(x.name)} → ${esc(y.name)} (${m2(y.price)} ₼)</option>`).join("")).join("")}</select></label></div>`:""}
       <h4>Resept: 1 ədəd satışda anbardan nə silinir</h4>
-      ${d.recipe.map(([m,q],i)=>`<div class="frow">
+      ${d.recipe.map(([m,q],i)=>m&&!mat(m)?"":`<div class="frow">
         <select id="r_m_${i}" aria-label="material">${S.materials.map(M=>`<option value="${M.id}" ${M.id===m?"selected":""}>${esc(M.name)}</option>`).join("")}</select>
         <input id="r_q_${i}" type="number" step="any" min="0" value="${q}" aria-label="miqdar" class="num"> <span class="sub">vərəq / ədəd</span>
         <button class="btn ghost sm" data-act="rdel" data-i="${i}">Sil</button></div>`).join("")||`<p class="sub">Material getmir (məs. skan, dizayn xidməti).</p>`}
@@ -2790,7 +2894,7 @@ function syncDraft(){
   if($("e_area")){if($("e_area").checked)draft.area=1;else delete draft.area}
   if($("e_free")){if($("e_free").checked&&!draft.area)draft.free=1;else delete draft.free}
   if($("e_src")){const v=$("e_src").value;if(v){const [supp,it]=v.split("|");draft.src={supp,item:it};if(draft.area)draft.src.only=1}else delete draft.src}
-  if($("r_m_0"))draft.recipe=draft.recipe.map((r,i)=>[$("r_m_"+i).value,parseFloat($("r_q_"+i).value)||0]);
+  draft.recipe=draft.recipe.map((r,i)=>$("r_m_"+i)?[$("r_m_"+i).value,parseFloat($("r_q_"+i).value)||0]:r); // başqa şöbənin materialı (görünmür) qalır
   if($("t_p_0"))draft.tiers=draft.tiers.map((t,i)=>[i===0?1:(parseInt($("t_min_"+i).value)||1),parseFloat($("t_p_"+i).value)||0]);
 }
 
@@ -3041,6 +3145,8 @@ document.addEventListener("click",e=>{
   else if(a==="bcopy"){navigator.clipboard?.writeText(backupText()).then(()=>{S.lastBackup=Date.now();save();renderRep();toast("Kopyalandı, Notepad-a yapışdırıb saxlayın")},()=>toast("Kopyalamaq alınmadı, faylı istifadə edin"));return}
   else if(a==="bimp"){
     const next=pendingImport;pendingImport=null;
+    if(next.shopId&&next.shopId!==CLOUD_SHOP){toast(`Bu nüsxə “${shopName(next.shopId)}” şöbəsinindir. Əvvəl yuxarıdan o şöbəyə keçin.`);renderRep();return}
+    next.shopId=CLOUD_SHOP;
     (NATIVE?window.erpBackup(backupText(),"el").catch(()=>{}):Promise.resolve()).then(()=>{
       S=next;upgrade();save();order=[];backups=null;renderAll();renderRep();toast("Məlumat ehtiyat nüsxədən bərpa olundu")});return}
   else if(a==="bimpx"){pendingImport=null}

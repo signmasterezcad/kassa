@@ -612,7 +612,7 @@ const path = require('path');
   await p.click('#btnZay'); await p.click('#ovZay [data-max]');
   ok((await p.evaluate(() => document.querySelector('#ovZay .modal').getBoundingClientRect().width)) === 1366, 'kiçik Zay pəncərəsi də böyüyür');
   await p.click('#ovZay [data-max]'); await p.click('#ovZay [data-close]');
-  ok(await p.locator('.ov [data-max]').count() === 7, 'bütün 7 pəncərədə böyüt düyməsi var');
+  ok(await p.locator('.ov [data-max]').count() === 8, 'bütün 8 pəncərədə böyüt düyməsi var');
 
   // v0.75.0: A4 80 qram A4 düymələrinə qoşulur
   ok(await p.evaluate(() => { S.materials.push({ id: 'mA4x', name: 'A4 Sadə 80 qram', unit: 'vərəq', stock: 100, cost: 0.011 }); delete S.mig.a4Recipe; upgrade();

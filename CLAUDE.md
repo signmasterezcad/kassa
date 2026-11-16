@@ -134,6 +134,14 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **💰 Mənfəət** (v0.74.0, sahibinin istəyi "bu ay nə qədər qazanmışam"): Hesabatda Aylıq-dan sonra tab `pnl` (icazə `cost`), `renderProfit()` —
   ay seçimi (`mSel`, `monthStats()`), 3 KPI (satışdan gələn pul / 📋 bütün xərclərim = maya + zay + S.expenses / 🟢 qazancım = `net`),
   xərclər cədvəli (maya, zay, hər növ), ödənilməyən aylıq təkrarlananlar xəbərdarlığı, mal alışı qeydi (xərc sayılmır), "Xərclər bir-bir".
+- **🏢 Şöbələr** (v0.76.0, sahibinin istəyi: iki atelye — **Hövsan** (`main`, indiki məlumat) və **Mida** (`mida1`); hər birində 2 kompüter, 2 kassir):
+  `S.branches=[{id,name}]` (`S.mig.branches`), `S.shopId`; buludda `shops/<id>`; `let CLOUD_SHOP` (KV "shop", amma məlumat faylındakı `S.shopId` üstündür; "sync"-də `shop`).
+  Ayrı: satış, alış, xərc, zay, ödənişlər, kassa, müştəri, **materiallar (anbar)**, təkrarlanan xərclər, kassirlər (`PERSHOP_LISTS`). **Eyni** (sahibinin seçimi "həmişə eyni"):
+  düymələr, bölmələr, şöbə siyahısı — `isSharedUnit()` vahidləri `cloudPushNow` bütün şöbələrin yoluna da yazır. Reseptdə başqa şöbənin materialı görünmür,
+  silinmir (redaktor gizli saxlayır, satışda `mat()` tapmadığını keçir). Başlıqda `#btnShop` (yalnız admin + bulud, telefonda da) → `#ovShop` (✓ seçim, ad dəyiş, + yeni şöbə).
+  `switchShop(id)`: sifariş boş olmalı, internet lazımdır; göndər → `cache-<şöbə>` KV-yə → hədəf keşdən + pull; `users` yoxdursa `newShopData()` (düymələr, tədarükçülər,
+  xərc növləri, mig, yalnız admin; satış/anbar boş). Ehtiyat nüsxədə `shopId` — başqa şöbənin nüsxəsi bərpa olunmur. Ümumi (iki şöbə birlikdə) hesabat istənmədi.
+  Sınaq: `tests/cloud.js` 8-ci hissə (sınaq serveri artıq yol üzrə süzür).
 - **🧹 Sistemi Sıfırla** (v0.71.0, sahibinin istəyi — sınaq bitəndə ciddi işə başlamaq üçün): Hesabat pəncərəsinin başlığında `#btnReset`
   (yalnız admin, yalnız `mode==="rep"`, telefonda yox) → `#ovReset`: sayları göstərir, **SIFIRLA** yazmaq məcburidir, əvvəl `erpBackup(...,"el")`.
   Silir: sales, purchases, expenses, waste, custPays, suppPays, cash; seçimlə (standart açıq) materials[].stock=0. Qalır: items, cats, users, suppliers,
