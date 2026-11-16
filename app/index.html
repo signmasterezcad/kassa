@@ -665,7 +665,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.74.0";
+const APP_VERSION="0.75.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -935,6 +935,11 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   // v0.70.0: Laser Çərçivələr → "Bürclü 10x15" (qiyməti hələ deyilməyib — 0)
   if(!S.mig.laserBurc){S.mig.laserBurc=1;const g=S.items.find(i=>i.id==="g_cer_laser");
     if(g&&!S.items.some(i=>i.id==="lc_burc_1015"))S.items.push({id:"lc_burc_1015",name:"Bürclü 10x15",cat:g.cat,parent:g.id,icon:"♈",color:g.color||"#b91c1c",fav:0,ink:0,recipe:[],tiers:[[1,0]]})}
+  // v0.75.0 (sahibinin istəyi): sadə A4 kağızı (alışda "A4 … 80 qram") A4 düymələrinə qoşulur — 1 satış = 1 vərəq (iki tərəfli də 1 vərəq).
+  // Mal hələ alınmayıbsa bayraq qoyulmur — alış yazılandan sonrakı açılışda qoşulur.
+  if(!S.mig.a4Recipe){const A=(S.materials||[]).filter(m=>/a4/i.test(m.name||"")&&/(^|\D)80(\D|$)/.test(m.name||"")).pop();
+    if(A){S.mig.a4Recipe=1;["a4s_bw","a4s_30","a4s_40","a4s_60","a4s_100","a4s_2t","a4s_2tr","a4s_elan","ks_a4bw","ks_tel"].forEach(id=>{const it=S.items.find(x=>x.id===id);
+      if(!it)return;it.recipe=(it.recipe||[]).filter(([m])=>{const M=S.materials.find(x=>x.id===m);return M&&(m===A.id||!/a4/i.test(M.name||""))});if(!it.recipe.some(([m])=>m===A.id))it.recipe.push([A.id,1])})}}
   if(!S.mig.discPerm&&S.users){S.mig.discPerm=1;S.users.forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};if(u.perms.disc===undefined)u.perms.disc=1}})}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
     if(sf)S.items.filter(i=>i.parent==="g_foto"&&!i.group).forEach(i=>{const m=(i.name.match(/(\d+)\s*[x×]\s*(\d+)/)||[])[0];if(!m)return;

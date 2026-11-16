@@ -34,6 +34,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
     60% rəngli çap 0.40 (`a4s_60`), 100% rəngli çap 0.50 (`a4s_100`; `S.mig.a4Sade2`). "Qismən" sözü çıxarılıb (`S.mig.qismenYox`).
     İki tərəfli çap 0.15 (`a4s_2t`), Elan hazırlanması 0.50 (`a4s_elan`; `S.mig.a4Sade3`).
     İki tərəfli rəngli çap 0.25 (`a4s_2tr`; `S.mig.a4Sade4`).
+    v0.75.0 `S.mig.a4Recipe`: sahibi "A4 Sadə 80 qram" aldı (20 paçka × 500, 110 ₼) — adında A4 və 80 olan material A4 Sadə düymələrinə + `ks_a4bw`, `ks_tel` reseptinə [mat,1] (iki tərəfli də 1 vərəq); material yoxdursa bayraq qoyulmur.
+    Sertifikat Kağızı-na sahibi özü "Sertifikat Kağızı 250 qram" (150 vərəq, 22 ₼) materialını "Olduğu kimi satıram" ilə qoşub.
   - Sənəd Surəti (`S.mig.kserIci`): A4 ağ-qara surət 0.20 / 51+ 0.15 (`ks_a4bw`, 1 vərəq A4), A3 ağ-qara surət 0.50 (`ks_a3bw`),
     A3 ağ-qara surət (2 üzlü) 1.00 (`ks_a3bw2`) — A3 materialı hələ yoxdur, resept boşdur;
     Telefondan sənəd surəti 0.30 (`ks_tel`, 1 vərəq A4; `S.mig.telQiymet`).

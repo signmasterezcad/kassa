@@ -614,6 +614,10 @@ const path = require('path');
   await p.click('#ovZay [data-max]'); await p.click('#ovZay [data-close]');
   ok(await p.locator('.ov [data-max]').count() === 7, 'bütün 7 pəncərədə böyüt düyməsi var');
 
+  // v0.75.0: A4 80 qram A4 düymələrinə qoşulur
+  ok(await p.evaluate(() => { S.materials.push({ id: 'mA4x', name: 'A4 Sadə 80 qram', unit: 'vərəq', stock: 100, cost: 0.011 }); delete S.mig.a4Recipe; upgrade();
+    return ['a4s_bw', 'a4s_2t', 'ks_tel'].every(id => JSON.stringify(item(id).recipe) === '[["mA4x",1]]') && !item('fk_a4_120').recipe.length; }), 'A4 Sadə 80 qram → A4 düymələrinin reseptinə 1 vərəq');
+
   // v0.74.0: 💰 Mənfəət tabı
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   await p.click('#btnRep'); await p.click('[data-rt=pnl]');
