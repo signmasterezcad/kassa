@@ -678,7 +678,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.83.0";
+const APP_VERSION="0.83.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -3005,12 +3005,12 @@ function renderMatAdmin(){
   <div class="tw"><table><tr><th>Material</th><th class="n">Maya ₼</th><th class="n">Min. qalıq</th><th class="n">Qalıq</th><th></th></tr>
   ${S.materials.map(m=>`<tr><td><input id="m_n_${m.id}" value="${esc(m.name)}" class="wide"></td>
     <td class="n"><input id="m_c_${m.id}" type="number" step="0.001" value="${m.cost}"></td>
-    <td class="n"><input id="m_min_${m.id}" type="number" value="${m.min}"></td><td class="n">${m.stock}</td>
+    <td class="n"><input id="m_min_${m.id}" type="number" step="any" min="0" value="${m.min}"></td><td class="n">${m.stock}</td>
     <td><button class="btn ghost sm" data-act="mdel" data-id="${m.id}">${delArm===m.id?"Əminsiniz?":"Sil"}</button></td></tr>`).join("")}
   <tr><td><input id="nm_name" placeholder="Yeni material, məs. A3 80 qr" class="wide"></td>
     <td class="n"><input id="nm_cost" type="number" step="0.001" placeholder="0.00"></td>
-    <td class="n"><input id="nm_min" type="number" placeholder="0"></td>
-    <td class="n"><input id="nm_stock" type="number" placeholder="qalıq"></td>
+    <td class="n"><input id="nm_min" type="number" step="any" min="0" placeholder="0"></td>
+    <td class="n"><input id="nm_stock" type="number" step="any" min="0" placeholder="qalıq"></td>
     <td><button class="btn sm" data-act="madd">+ Əlavə et</button></td></tr></table></div>
   <div><button class="btn" data-act="msave">Dəyişiklikləri yadda saxla</button></div>`;
 }
@@ -3174,12 +3174,12 @@ document.addEventListener("click",e=>{
   }
   else if(a==="msave"){
     S.materials.forEach(m=>{const n=$("m_n_"+m.id).value.trim();if(n)m.name=n;
-      const c=parseFloat($("m_c_"+m.id).value);if(!isNaN(c))m.cost=c;const mn=parseInt($("m_min_"+m.id).value);if(!isNaN(mn))m.min=mn});
+      const c=parseFloat($("m_c_"+m.id).value);if(!isNaN(c))m.cost=c;const mn=parseFloat(String($("m_min_"+m.id).value).replace(",","."));if(!isNaN(mn))m.min=mn});
     save();renderHeader();toast("Materiallar yadda saxlandı");
   }
   else if(a==="madd"){
     const n=$("nm_name").value.trim();if(!n){toast("Materialın adını yazın");return}
-    S.materials.push({id:newId("m"),name:n,cost:parseFloat($("nm_cost").value)||0,stock:parseInt($("nm_stock").value)||0,min:parseInt($("nm_min").value)||0});
+    S.materials.push({id:newId("m"),name:n,cost:parseFloat($("nm_cost").value)||0,stock:parseFloat($("nm_stock").value)||0,min:parseFloat($("nm_min").value)||0});
     save();renderHeader();toast(`"${n}" əlavə olundu`);
   }
   else if(a==="mdel"){
