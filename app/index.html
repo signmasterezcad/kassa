@@ -678,7 +678,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.77.0";
+const APP_VERSION="0.78.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -953,6 +953,11 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   if(!S.mig.a4Recipe){const A=(S.materials||[]).filter(m=>/a4/i.test(m.name||"")&&/(^|\D)80(\D|$)/.test(m.name||"")).pop();
     if(A){S.mig.a4Recipe=1;["a4s_bw","a4s_30","a4s_40","a4s_60","a4s_100","a4s_2t","a4s_2tr","a4s_elan","ks_a4bw","ks_tel"].forEach(id=>{const it=S.items.find(x=>x.id===id);
       if(!it)return;it.recipe=(it.recipe||[]).filter(([m])=>{const M=S.materials.find(x=>x.id===m);return !M||m===A.id||!/a4/i.test(M.name||"")});if(!it.recipe.some(([m])=>m===A.id))it.recipe.push([A.id,1])})}}
+  // v0.78.0 (sahibinin istəyi): A4 Sadə qrupundakı BÜTÜN düymələr (sonradan əlavə olunanlar da) + A4 surət düymələri 1 vərəq A4 80 qram silsin.
+  // Hər açılışda yoxlanır, hər şöbədə öz A4 80 qram materialı (başqa şöbənin materialı reseptdə qalır, görünmür).
+  {const A=(S.materials||[]).filter(m=>/a4/i.test(m.name||"")&&/(^|\D)80(\D|$)/.test(m.name||"")).pop();
+    if(A)S.items.filter(i=>!i.group&&(i.parent==="g_a4"||["ks_a4bw","ks_tel"].includes(i.id))).forEach(it=>{it.recipe=it.recipe||[];
+      if(!it.recipe.some(([m])=>{const M=mat(m);return M&&/a4/i.test(M.name||"")}))it.recipe.push([A.id,1])})}
   // v0.77.0: Foto Kağızlar → 📸 Polaroid şəkil 0.50 (1 vərəq foto kağız 10x15 = 1 polaroid)
   if(!S.mig.polaroid){S.mig.polaroid=1;
     const g=S.items.find(i=>i.id==="g_foto")||S.items.find(i=>i.group&&norm(i.name)==="foto kagizlar");

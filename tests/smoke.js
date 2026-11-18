@@ -614,6 +614,11 @@ const path = require('path');
   await p.click('#ovZay [data-max]'); await p.click('#ovZay [data-close]');
   ok(await p.locator('.ov [data-max]').count() === 8, 'bütün 8 pəncərədə böyüt düyməsi var');
 
+  // v0.78.0: A4 Sadə-yə sonradan əlavə olunan düymə də A4 80 qram silir
+  ok(await p.evaluate(() => { S.items.push({ id: 'a4s_yeni', name: 'Yeni A4', cat: 'cap', parent: 'g_a4', recipe: [], tiers: [[1, 0.3]] }); item('a4s_40').recipe = []; upgrade();
+    const A = S.materials.filter(m => /a4/i.test(m.name) && /(^|\D)80(\D|$)/.test(m.name)).pop();
+    const kids = S.items.filter(i => i.parent === 'g_a4' && !i.group); const r = kids.every(i => i.recipe.some(([m]) => m === A.id)) && item('a4s_40').recipe.length === 1;
+    S.items = S.items.filter(i => i.id !== 'a4s_yeni'); return r; }), 'A4 Sadə: bütün düymələr (yeni əlavə olunan da) 1 vərəq A4 80 qram silir');
   // v0.77.0: Polaroid şəkil
   ok(await p.evaluate(() => { const P = item('fk_polaroid'); S.materials.push({ id: 'mF10', name: 'Foto kağız 10x15', unit: 'vərəq', stock: 50, cost: 0.3 }); P.recipe = []; item('fk_1015').recipe = []; upgrade();
     return P.parent === 'g_foto' && P.tiers[0][1] === 0.5 && JSON.stringify(P.recipe) === '[["mF10",1]]'; }), 'Foto Kağızlar → Polaroid şəkil 0.50, resept 1 vərəq 10x15');
