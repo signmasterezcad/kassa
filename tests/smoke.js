@@ -657,6 +657,13 @@ const path = require('path');
   const cash0 = await p.evaluate(() => cashDay(dayKey(Date.now())).sales);
   await p.click('#btnDone'); await p.waitForTimeout(200);
   ok(await p.evaluate(c0 => { const s = S.sales.at(-1); return s.pay === 'qarış' && s.split.nağd === 50 && s.split.kart === 5 && s.total === 55 && Math.abs(cashDay(dayKey(Date.now())).sales - c0 - 50) < 1e-9 && pay === 'nağd'; }, cash0), 'satış 55: kassaya yalnız 50 nağd düşdü, 5 kart; sonra yenə Nağd seçilir');
+  // v0.87.0: Vizit Kart → sertifikat kağızı, 10 vizit = 1 vərəq
+  await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); order = []; renderAll(); tapItem('pq_vizit'); });
+  ok(await p.isVisible('#ovSrc') && await p.locator('#srcBody [data-pk]').count() === 2, 'Vizit Kart: basanda 250 / 300 qram soruşulur');
+  await p.keyboard.press('1'); await p.evaluate(() => { order[0].q = 20; renderAll(); });
+  const s250 = await p.evaluate(() => mat('ms250').stock);
+  await p.click('#btnDone'); await p.waitForTimeout(200);
+  ok(await p.evaluate(b => Math.abs(mat('ms250').stock - (b - 2)) < 1e-9, s250), '20 vizit kart satıldı → 250 qramdan 2 vərəq silindi');
   // v0.77.0: Polaroid şəkil
   ok(await p.evaluate(() => { const P = item('fk_polaroid'); S.materials.push({ id: 'mF10', name: 'Foto kağız 10x15', unit: 'vərəq', stock: 50, cost: 0.3 }); P.recipe = []; item('fk_1015').recipe = []; upgrade();
     return P.cat === 'poli' && !P.parent && P.tiers[0][1] === 0.5 && JSON.stringify(P.recipe) === '[["mF10",1]]'; }), 'Poliqrafiya → Polaroid şəkil 0.50, resept 1 vərəq 10x15');

@@ -682,7 +682,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.86.0";
+const APP_VERSION="0.87.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -991,6 +991,8 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   if(!S.mig.polPoli){S.mig.polPoli=1;const P=S.items.find(i=>i.id==="fk_polaroid"),pc=S.cats.find(c=>c.id==="poli")||S.cats.find(c=>norm(c.name)==="poliqrafiya xidmetleri");
     if(P&&pc){P.cat=pc.id;delete P.parent;P.color="#0e7490";S.items=S.items.filter(i=>i!==P);S.items.push(P)}}
   // v0.82.0 (sahibinin istəyi): Sertifikat Kağızı — satanda "250 qram / 300 qram" soruşulur, seçilən anbardan silinir
+  // v0.87.0 (sahibinin istəyi): Vizit Kart da sertifikat kağızına çap olunur — satanda 250 / 300 qram soruşulur, 1 A4 vərəqə 10 vizit (1 vizit = 0.1 vərəq)
+  if(!S.mig.vizitPick){S.mig.vizitPick=1;const it=S.items.find(i=>i.id==="pq_vizit");if(it){it.pick="sertifikat";it.pickQ=0.1}}
   if(!S.mig.sertPick){S.mig.sertPick=1;const it=S.items.find(i=>i.id==="g_sert")||S.items.find(i=>!i.group&&norm(i.name)==="sertifikat kagizi");if(it)it.pick="sertifikat"}
   // v0.82.1: ÇAP → Foto Kağızlar → 10x15 ("🖨 Özümüz" satışı) da bu şöbənin 10x15 foto kağızından 1 vərəq silsin
   // v0.85.0: ümumi qayda — Foto Kağızlar-dakı HƏR ölçü düyməsi (13x18, 15x21, 20x25…) adında eyni ölçü olan foto kağıza qoşulur (1 vərəq)

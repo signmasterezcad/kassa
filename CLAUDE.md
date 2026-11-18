@@ -60,6 +60,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   - Laminasiya A4 (1.00, 1 Laminasiya A4 plyonka) və A3 (2.00, material yoxdur) qrup deyil, birbaşa satış düyməsidir (id-ləri `g_` ilə qalıb).
   - v0.64.0 (`S.mig.vizitKonfet`): Vizit Kart 0.10 (`pq_vizit`) + 🍬 Konfet Kartı qrupu `g_konfet`: 0.50 / 0.40 / 0.80 (`kk_050`, `kk_040`, `kk_080`;
     adlar "Konfet Kartı 0.50"… — sahibi növlərini deməyib, dəqiqləşdirə bilər).
+  - v0.87.0 (`S.mig.vizitPick`, sahibinin istəyi): Vizit Kart `pick="sertifikat"`, `pickQ=0.1` — satanda 250/300 qram soruşulur, 1 A4 vərəqə 10 vizit.
   - v0.79.0 (`S.mig.kelagayi`): birbaşa düymələr 🧣 Kəlağayı 10 ₼ / 15 ₼ (`pq_kel10`, `pq_kel15`), 🎗️ Əklil lenti 10 ₼ / 15 ₼ (`pq_ekl10`, `pq_ekl15`); material yoxdur.
   - v0.80.0 (`S.mig.koynekFleks`): 👕 Köynəyə tək ad (müştərinin köynəyi) 10 (`pq_kf10`), Köynəyə ad + nömrə 15 (`pq_kf15`).
     **Fleks** (sahibi 10 metr 7 ₼-dan aldı, qiyməti dəyişir — orta maya alışda özü hesablanır; rulon eni 50 sm, orta sifariş 50×50 sm):
