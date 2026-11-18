@@ -638,6 +638,8 @@ const path = require('path');
   await p.click('#btnDone'); await p.waitForTimeout(200);
   ok(await p.evaluate(() => mat('ms300').stock === 49 && mat('ms250').stock === 100 && S.sales.at(-1).lines[0].name.includes('300') && Math.abs(S.sales.at(-1).lines[0].cost - 0.18) < 1e-9), 'satış: 300 qramdan 1 silindi, 250 qrama toxunulmadı, maya 0.18');
   await p.fill('#q', '');
+  ok(await p.evaluate(() => { item('fk_1015').recipe = []; S.materials.push({ id: 'm1015x', name: '10x15 Foto Kağız (Özümüz)', unit: 'vərəq', stock: 387, cost: 0.065 }); upgrade();
+    return JSON.stringify(item('fk_1015').recipe) === '[["m1015x",1]]'; }), 'Foto Kağızlar → 10x15 (Özümüz) 1 vərəq 10x15 foto kağızı silir');
   // v0.77.0: Polaroid şəkil
   ok(await p.evaluate(() => { const P = item('fk_polaroid'); S.materials.push({ id: 'mF10', name: 'Foto kağız 10x15', unit: 'vərəq', stock: 50, cost: 0.3 }); P.recipe = []; item('fk_1015').recipe = []; upgrade();
     return P.cat === 'poli' && !P.parent && P.tiers[0][1] === 0.5 && JSON.stringify(P.recipe) === '[["mF10",1]]'; }), 'Poliqrafiya → Polaroid şəkil 0.50, resept 1 vərəq 10x15');

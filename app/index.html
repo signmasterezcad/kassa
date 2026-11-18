@@ -678,7 +678,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.82.0";
+const APP_VERSION="0.82.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -984,6 +984,9 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
     if(P&&pc){P.cat=pc.id;delete P.parent;P.color="#0e7490";S.items=S.items.filter(i=>i!==P);S.items.push(P)}}
   // v0.82.0 (sahibinin istəyi): Sertifikat Kağızı — satanda "250 qram / 300 qram" soruşulur, seçilən anbardan silinir
   if(!S.mig.sertPick){S.mig.sertPick=1;const it=S.items.find(i=>i.id==="g_sert")||S.items.find(i=>!i.group&&norm(i.name)==="sertifikat kagizi");if(it)it.pick="sertifikat"}
+  // v0.82.1: ÇAP → Foto Kağızlar → 10x15 ("🖨 Özümüz" satışı) da bu şöbənin 10x15 foto kağızından 1 vərəq silsin
+  {const M=(S.materials||[]).filter(m=>/10\s*[xх×]\s*15/i.test(m.name||"")&&!/çərçivə|cerceve|plaket/i.test(m.name||"")).pop(),f=S.items.find(i=>i.id==="fk_1015");
+    if(M&&f&&!(f.recipe||[]).some(([m])=>mat(m))){f.recipe=f.recipe||[];f.recipe.push([M.id,1])}}
   // reseptə bu şöbənin 10x15 foto kağızı (hər şöbədə öz materialı; tapılmayıbsa sonrakı açılışda yenə axtarılır)
   {const P=S.items.find(i=>i.id==="fk_polaroid");
     if(P&&!P.recipe.some(([m])=>mat(m))){const f=S.items.find(i=>i.id==="fk_1015"),own=(f?.recipe||[]).find(([m])=>mat(m));
