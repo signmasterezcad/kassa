@@ -29,3 +29,16 @@ func TestExtract(t *testing.T) {
 		t.Fatalf("təkrar quraşdırma: %d %v", n2, err)
 	}
 }
+
+func TestIsKassaDir(t *testing.T) {
+	d := t.TempDir()
+	if isKassaDir(d) {
+		t.Fatal("boş qovluq KASSA qovluğu sayılmamalıdır")
+	}
+	os.WriteFile(filepath.Join(d, "KASSA.exe"), []byte("x"), 0o644)
+	os.MkdirAll(filepath.Join(d, "app"), 0o755)
+	os.WriteFile(filepath.Join(d, "app", "index.html"), []byte("x"), 0o644)
+	if !isKassaDir(d) {
+		t.Fatal("KASSA qovluğu tanınmadı")
+	}
+}

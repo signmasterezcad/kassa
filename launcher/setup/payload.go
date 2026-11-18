@@ -67,3 +67,15 @@ func payloadSize() int {
 	})
 	return total / 1024
 }
+
+// kassaFiles silinərkən toxunulan adlar (ehtiyat\ və uninstall.exe-dən başqa) — yalnız bunlar silinir.
+var kassaFiles = []string{"app", "app.evvelki", "KASSA.exe", "KASSA.exe.evvelki", "KASSA.exe.yeni", "YENILE.bat", "yenile.ps1", "KASSA.lnk"}
+
+// isKassaDir qovluğun həqiqətən KASSA qovluğu olduğunu yoxlayır (KASSA.exe və app\index.html var).
+func isKassaDir(dir string) bool {
+	if _, err := os.Stat(filepath.Join(dir, "KASSA.exe")); err != nil {
+		return false
+	}
+	_, err := os.Stat(filepath.Join(dir, "app", "index.html"))
+	return err == nil
+}

@@ -682,7 +682,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.88.0";
+const APP_VERSION="0.88.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -3118,9 +3118,10 @@ function renderBackup(){
   <h4>Başqa fayldan bərpa et</h4>
   <p class="sub">Diqqət: bərpa indiki bütün məlumatı seçilmiş nüsxə ilə əvəz edir.${NATIVE?" Əvəz etməzdən əvvəl indiki vəziyyətin nüsxəsi avtomatik saxlanılır.":""}</p>
   <div class="frow"><input type="file" id="bfile" accept=".json,application/json">
-  ${pendingImport?`<button class="btn red" data-act="bimp">Bəli, ${pendingImport.sales.length} satışlı nüsxə ilə əvəz et</button> <button class="btn ghost" data-act="bimpx">Ləğv et</button>`:""}</div>
+  ${pendingImport?`<button class="btn red" data-act="bimp">Bəli, ${pendingImport.sales.length} satışlı nüsxə ilə əvəz et</button> <button class="btn ghost" data-act="bimpx">Ləğv et</button>
+    ${CL.cfg?`<p class="sub" style="color:var(--bad)">⚠ Bulud qoşuludur: bərpadan sonra bu şöbənin <b>bütün cihazlarında</b> (o biri kompüter, telefon) məlumat bu nüsxədəki kimi olacaq — nüsxədən sonra edilən satışlar hər yerdən silinəcək (${S.sales.length-pendingImport.sales.length>0?`indi ${S.sales.length-pendingImport.sales.length} satış artıqdır`:"satış sayı azalmır"}).</p>`:""}`:""}</div>
   <h4>Sıfırlamaq</h4>
-  <div><button class="btn ghost" data-act="reset">${delArm==="reset"?"Əminsiniz? Bütün məlumat silinəcək":"Nümunə məlumata qaytar"}</button></div>`;
+  ${!NATIVE&&!CL.cfg&&!PHONE_CLOUD?`<div><button class="btn ghost" data-act="reset">${delArm==="reset"?"Əminsiniz? Bütün məlumat silinəcək":"Nümunə məlumata qaytar"}</button></div>`:""}`; // v0.88.1: proqramda (exe/bulud) yoxdur — Sistemi Sıfırla var
 }
 let bKind="all";
 const bkindOf=n=>n.includes("-emel")?"emel":n.includes("-avto")?"avto":"el";
@@ -3265,7 +3266,7 @@ document.addEventListener("click",e=>{
   else if(a==="bopen"){window.erpOpenFolder().catch(e=>toast("Qovluq açılmadı: "+e));return}
   else if(a==="brest"){window.erpBackupRead(t.dataset.n).then(txt=>{const d=parseData(txt);if(!d)throw "fayl düzgün deyil";
     pendingImport=d;renderRep();toast(`${t.dataset.n}: ${d.sales.length} satış. Təsdiq üçün qırmızı düyməni basın`)}).catch(e=>toast("Nüsxə oxunmadı: "+e));return}
-  else if(a==="reset"){if(delArm!=="reset"){delArm="reset"}else{delArm=null;
+  else if(a==="reset"){if(NATIVE||CL.cfg||PHONE_CLOUD)return;if(delArm!=="reset"){delArm="reset"}else{delArm=null;
     (NATIVE?window.erpBackup(backupText(),"el").catch(()=>{}):Promise.resolve()).then(()=>{
       S=structuredClone(SEED);upgrade();order=[];backups=null;save();renderAll();renderRep();toast("Nümunə məlumat bərpa olundu"+(NATIVE?" (əvvəlki vəziyyətin nüsxəsi saxlandı)":""))});return}}
   renderRep();

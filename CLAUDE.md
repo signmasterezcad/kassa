@@ -301,6 +301,15 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   (xərc və alışda indi `worker` yazılır); (4) mal adları / satış sətri adları (kassirin qeydi) bəzi yerlərdə `esc`-siz innerHTML-ə gedirdi (chips, düymə şəbəkəsi,
   zay siyahısı, məhsul hesabatı, sayım) → `esc`; (5) kəsr qalıqlar (0.1 vərəq, 0.5 metr) `roundStock()` ilə 6 rəqəmə yuvarlanır, ekranda `fmtN`.
 
+- **🔍 Audit 2-ci mərhələ (v0.88.1)**: (1) telefon serveri (`server.go`) — 6 rəqəmli kodu təxminlə tapmağa limit yox idi → IP üzrə 10 dəq-də 10 səhv → 429,
+  10 dəq blok (`blocked/addFail`, test `TestPhoneBruteForceLimit`); (2) `yenile.ps1` — faylları yazmaq yarıda kəsilsə yarımçıq versiya qalırdı → geri qaytarma
+  (`app.evvelki` + `KASSA.exe.evvelki`) və KASSA yenidən açılır; files.txt-də `..`/`:` yolları qadağan (PowerShell bu mühitdə işə salına bilmədi — sintaksis əl ilə yoxlanıb);
+  (3) Setup `/uninstall` olduğu qovluğun HƏR ŞEYİNİ silirdi → yalnız `isKassaDir()` olanda və yalnız `kassaFiles` siyahısı; (4) "Nümunə məlumata qaytar" (bütün məlumatı SEED-lə əvəz,
+  bulud ilə bütün cihazlara yayılırdı) exe/bulud/telefonda gizlədildi (yalnız brauzer nümayişində); (5) ehtiyat nüsxədən bərpada bulud qoşuludursa xəbərdarlıq.
+  Yoxlanıb, problem yoxdur: `writeAtomic`, ehtiyat adları/silinməsi, `erpFetch` yalnız *.googleapis.com, KV adları, `read()` yol qoruması, WebView-də xarici link yoxdur,
+  APK yalnız öz host-u, sw.js. Qeyd (düzəldilməyib): PIN izi FNV-dir (zəif, ciddi qoruma deyil); APK-da fayl seçmə/yükləmə (ehtiyat faylı) işləmir — APK yenidən yığılmalıdır
+  (imza açarı yoxdur → yenidən quraşdırma); depo açıqdır (sirr yoxdur, amma satışdan əvvəl Private); Firebase Rules-da e-poçt şərtinin olduğunu sahibi yoxlamalıdır.
+
 ## İstifadəçinin məlumatını dəyişmək
 Düymələr istifadəçinin kompüterindəki faylda saxlanır, `SEED`-i dəyişmək ona təsir etmir.
 Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köçürmə yaz və `S.mig.<ad>` bayrağı qoy

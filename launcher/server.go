@@ -92,11 +92,34 @@ type phoneServer struct {
 	srv     *http.Server
 	seenMu  sync.Mutex
 	seen    map[string]time.Time
+	fails   map[string][]time.Time // səhv kod cəhdləri (IP üzrə) — 6 rəqəmli kodu təxminlə tapmaq olmasın
 	lastErr string
 }
 
+// Səhv kod limiti: 10 dəqiqədə 10 səhv cəhddən sonra həmin ünvan 10 dəqiqə bloklanır.
+const failLimit, failWindow = 10, 10 * time.Minute
+
+func (p *phoneServer) blocked(ip string, now time.Time) bool {
+	p.seenMu.Lock()
+	defer p.seenMu.Unlock()
+	l := p.fails[ip][:0]
+	for _, t := range p.fails[ip] {
+		if now.Sub(t) < failWindow {
+			l = append(l, t)
+		}
+	}
+	p.fails[ip] = l
+	return len(l) >= failLimit
+}
+
+func (p *phoneServer) addFail(ip string, now time.Time) {
+	p.seenMu.Lock()
+	p.fails[ip] = append(p.fails[ip], now)
+	p.seenMu.Unlock()
+}
+
 func newPhoneServer(ss *syncStore, appDir, dataRoot string) *phoneServer {
-	return &phoneServer{ss: ss, appDir: appDir, keyFile: filepath.Join(dataRoot, "telefon-kodu"), seen: map[string]time.Time{}}
+	return &phoneServer{ss: ss, appDir: appDir, keyFile: filepath.Join(dataRoot, "telefon-kodu"), seen: map[string]time.Time{}, fails: map[string][]time.Time{}}
 }
 
 func randomCode() string {
@@ -199,10 +222,15 @@ func (p *phoneServer) info() map[string]any {
 func (p *phoneServer) authed(r *http.Request) bool {
 	k := r.Header.Get("X-Kassa-Key")
 	c := p.code()
-	if subtle.ConstantTimeCompare([]byte(k), []byte(c)) != 1 {
+	host, _, _ := net.SplitHostPort(r.RemoteAddr)
+	now := time.Now()
+	if p.blocked(host, now) {
 		return false
 	}
-	host, _, _ := net.SplitHostPort(r.RemoteAddr)
+	if subtle.ConstantTimeCompare([]byte(k), []byte(c)) != 1 {
+		p.addFail(host, now)
+		return false
+	}
 	p.seenMu.Lock()
 	p.seen[host] = time.Now()
 	p.seenMu.Unlock()
@@ -226,6 +254,11 @@ func (p *phoneServer) handler() http.Handler {
 	api := func(path string, fn func(w http.ResponseWriter, r *http.Request) error) {
 		mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 			if !p.authed(r) {
+				host, _, _ := net.SplitHostPort(r.RemoteAddr)
+				if p.blocked(host, time.Now()) {
+					httpErr(w, http.StatusTooManyRequests, "çox səhv kod yazıldı, 10 dəqiqə gözləyin")
+					return
+				}
 				httpErr(w, http.StatusUnauthorized, "telefon kodu səhvdir")
 				return
 			}

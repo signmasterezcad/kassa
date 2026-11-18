@@ -142,15 +142,16 @@ func uninstall() {
 		}
 		time.Sleep(time.Second)
 	}
+	// Təhlükəsizlik (audit v0.88.1): yalnız KASSA qovluğudursa və yalnız KASSA-nın öz faylları silinir
+	// (əvvəl qovluqdakı HƏR ŞEY silinirdi — "Yükləmələr"-dən işə düşsəydi, oradakı faylları da silərdi).
+	if !isKassaDir(dir) {
+		box("Bu qovluq KASSA qovluğu deyil, heç nə silinmədi:\n"+dir, mbOK|mbIconErr)
+		return
+	}
 	shortcuts(dir, true)
 	registry.DeleteKey(registry.CURRENT_USER, uninstKey)
-	entries, _ := os.ReadDir(dir)
-	for _, e := range entries {
-		n := strings.ToLower(e.Name())
-		if n == "ehtiyat" || n == "uninstall.exe" {
-			continue
-		}
-		os.RemoveAll(filepath.Join(dir, e.Name()))
+	for _, n := range kassaFiles {
+		os.RemoveAll(filepath.Join(dir, n))
 	}
 	// özünü sil (işləyən fayl dərhal silinmir — bir neçə saniyə sonra)
 	hidden("cmd.exe", "/c", "ping -n 3 127.0.0.1 >nul & del /f /q \""+filepath.Join(dir, "uninstall.exe")+"\"").Start()

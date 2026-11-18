@@ -101,3 +101,34 @@ func TestPhoneHandler(t *testing.T) {
 	}
 	_ = http.StatusOK
 }
+
+// Səhv kodla təxmin etmək: 10 səhvdən sonra həmin ünvan bloklanır (düz kodla da), başqa ünvan işləyir.
+func TestPhoneBruteForceLimit(t *testing.T) {
+	dir := t.TempDir()
+	st := &store{dataFile: filepath.Join(dir, "d", "kassa-data.json"), backupDir: filepath.Join(dir, "e")}
+	ps := newPhoneServer(newSyncStore(st), dir, dir)
+	code := ps.code()
+	h := ps.handler()
+	do := func(ip, key string) int {
+		r := httptest.NewRequest("GET", "/api/ver", nil)
+		r.RemoteAddr = ip + ":5555"
+		r.Header.Set("X-Kassa-Key", key)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		return w.Code
+	}
+	for i := 0; i < failLimit-1; i++ {
+		if c := do("10.0.0.9", "000000"); c != http.StatusUnauthorized {
+			t.Fatalf("səhv kod %d: %d", i, c)
+		}
+	}
+	if c := do("10.0.0.9", "000000"); c != http.StatusTooManyRequests { // 10-cu səhv
+		t.Fatalf("10-cu səhvdə bloklanmalı idi: %d", c)
+	}
+	if c := do("10.0.0.9", code); c != http.StatusTooManyRequests {
+		t.Fatalf("bloklanmalı idi: %d", c)
+	}
+	if c := do("10.0.0.8", code); c != http.StatusOK {
+		t.Fatalf("başqa telefon işləməli idi: %d", c)
+	}
+}

@@ -38,6 +38,8 @@ try {
   New-Item -ItemType Directory -Path $tmp | Out-Null
   Get-File "app/files.txt" (Join-Path $tmp "files.txt")
   $list = Get-Content (Join-Path $tmp "files.txt") | Where-Object { $_.Trim() -ne "" }
+  # təhlükəsizlik: siyahıda yalnız proqram qovluğuna aid yollar ola bilər
+  foreach ($f in $list) { $g = $f.Trim(); if ($g.StartsWith("../")) { $g = $g.Substring(3) }; if ($g.Contains("..") -or $g.Contains(":") -or $g.StartsWith("/") -or $g.StartsWith("\")) { throw "files.txt-də icazəsiz yol: $f" } }
   foreach ($f in $list) {
     $f = $f.Trim(); Write-Host "  yüklənir: $f"
     $rel = if ($f.StartsWith("../")) { $f.Substring(3) } else { "app/" + $f }
@@ -67,14 +69,27 @@ if ($newVer -and $newVer -eq $oldVer) {
   Start-Sleep -Seconds 1
   if (Test-Path $oldDir) { Remove-Item $oldDir -Recurse -Force }
   Copy-Item $appDir $oldDir -Recurse -Force
-  foreach ($f in $list) {
-    $f = $f.Trim(); $dest = Dest-Path $f; $dir = Split-Path -Parent $dest
-    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
-    if ($f.EndsWith(".exe") -and (Test-Path $dest)) { Copy-Item $dest ($dest + ".evvelki") -Force }
-    for ($i = 1; $i -le 5; $i++) {
-      try { Copy-Item (Tmp-Path $f) $dest -Force; break }
-      catch { if ($i -eq 5) { throw }; Start-Sleep -Seconds 2 }
+  try {
+    foreach ($f in $list) {
+      $f = $f.Trim(); $dest = Dest-Path $f; $dir = Split-Path -Parent $dest
+      if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+      if ($f.EndsWith(".exe") -and (Test-Path $dest)) { Copy-Item $dest ($dest + ".evvelki") -Force }
+      for ($i = 1; $i -le 5; $i++) {
+        try { Copy-Item (Tmp-Path $f) $dest -Force; break }
+        catch { if ($i -eq 5) { throw }; Start-Sleep -Seconds 2 }
+      }
     }
+  } catch {
+    # yarımçıq yeniləmə qalmasın: köhnə versiyanı geri qaytar
+    Write-Host "Faylları yazmaq alınmadı: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Köhnə versiya geri qaytarılır..." -ForegroundColor Yellow
+    try {
+      Copy-Item (Join-Path $oldDir "*") $appDir -Recurse -Force
+      foreach ($f in $list) { $f = $f.Trim(); if ($f.EndsWith(".exe")) { $d = Dest-Path $f; if (Test-Path ($d + ".evvelki")) { Copy-Item ($d + ".evvelki") $d -Force } } }
+      Write-Host "Köhnə versiya (v$oldVer) yerindədir. Məlumatınız toxunulmayıb. Bir az sonra yenidən cəhd edin." -ForegroundColor Yellow
+    } catch { Write-Host "Geri qaytarmaq da alınmadı: köhnə fayllar $oldDir qovluğundadır." -ForegroundColor Red }
+    if (Test-Path $exe) { Start-Process $exe }
+    exit 1
   }
   Copy-Item (Join-Path $tmp "_YENILE.bat") (Join-Path $root "YENILE.bat") -Force
   Copy-Item (Join-Path $tmp "_yenile.ps1") (Join-Path $root "yenile.ps1") -Force
