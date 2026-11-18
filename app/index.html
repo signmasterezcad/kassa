@@ -678,7 +678,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.80.1";
+const APP_VERSION="0.81.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -979,6 +979,9 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
     if(g&&!S.items.some(i=>i.id==="fk_polaroid")){const at=S.items.findIndex(i=>i.id==="fk_1015");
       const it={id:"fk_polaroid",name:"Polaroid şəkil",cat:g.cat,parent:g.id,icon:"📸",color:g.color||"#16a34a",fav:0,ink:0,recipe:[],tiers:[[1,0.5]]};
       if(at>=0)S.items.splice(at+1,0,it);else S.items.push(it)}}
+  // v0.81.0 (sahibinin istəyi): Polaroid şəkil Foto Kağızlar-dan Poliqrafiya Xidmətləri-nə (qrupsuz, birbaşa düymə)
+  if(!S.mig.polPoli){S.mig.polPoli=1;const P=S.items.find(i=>i.id==="fk_polaroid"),pc=S.cats.find(c=>c.id==="poli")||S.cats.find(c=>norm(c.name)==="poliqrafiya xidmetleri");
+    if(P&&pc){P.cat=pc.id;delete P.parent;P.color="#0e7490";S.items=S.items.filter(i=>i!==P);S.items.push(P)}}
   // reseptə bu şöbənin 10x15 foto kağızı (hər şöbədə öz materialı; tapılmayıbsa sonrakı açılışda yenə axtarılır)
   {const P=S.items.find(i=>i.id==="fk_polaroid");
     if(P&&!P.recipe.some(([m])=>mat(m))){const f=S.items.find(i=>i.id==="fk_1015"),own=(f?.recipe||[]).find(([m])=>mat(m));

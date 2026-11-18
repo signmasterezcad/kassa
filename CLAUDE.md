@@ -47,6 +47,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
     v0.66.0 (`S.mig.fotoA4`): + A4 120 qram 2 (`fk_a4_120`), A4 Sticker 3 (`fk_a4_stk`).
     v0.77.0 (`S.mig.polaroid`): 📸 Polaroid şəkil 0.50 (`fk_polaroid`, 10x15-dən sonra; 1 vərəq 10x15 = 1 polaroid). Resept hər açılışda yoxlanır: bu şöbənin
     10x15 materialı (fk_1015-in reseptindən və ya adında 10x15 olan) yoxdursa əlavə olunur — Mida və Hövsanın materialı ayrıdır, ikisi də reseptə düşür.
+    v0.81.0 (`S.mig.polPoli`, sahibinin istəyi): Polaroid **Poliqrafiya Xidmətləri**-nə köçdü (qrupsuz, `parent` yoxdur), resept qaydası eyni.
 - **Poliqrafiya Xidmətləri** (id `poli`, ÇAP-ın yanında; `S.mig.poliBolme`): 4 qrup — Skan Etmə (`g_skan`), Spiral Cildləmə (`g_spiral`),
   Laminasiya A4 (`g_lamA4`), Laminasiya A3 (`g_lamA3`). İçi (`S.mig.poliIci`):
   - Skan Etmə: A4 skan 0.50 (`sk_a4`), A3 skan 0.50 (`sk_a3`). Spiral: 50/100/200/300 vərəqə qədər — 3/5/7/10 (`sp_50`…`sp_300`).
