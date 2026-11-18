@@ -682,7 +682,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.88.1";
+const APP_VERSION="0.88.2";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1355,14 +1355,14 @@ async function cloudTick(){
   if(!CL.on||!CL.cfg)return;
   if(CL.busy){CL.again=true;return}
   CL.busy=true;
-  try{await cloudPullNow();await cloudPushNow();await cloudPullNow();CL.online=true;CL.err="";CL.last=Date.now();saveCloudState()}
+  try{await cloudPullNow();if(await cloudPushNow())await cloudPullNow();CL.online=true;CL.err="";CL.last=Date.now();saveCloudState()}
   catch(e){CL.online=false;CL.err=String(e.message||e);if(e.auth){CL.on=false;CL.err+=" — ☁️ Bulud bölməsindən yenidən daxil olun"}}
   finally{CL.busy=false;renderCloudBadge();if(CL.again){CL.again=false;cloudSoon()}}
 }
 function cloudSoon(){if(!CL.on)return;clearTimeout(CL.soonT);CL.soonT=setTimeout(cloudTick,1500)}
 function cloudStart(){
   CL.on=true;clearInterval(CL.timer);
-  CL.timer=setInterval(()=>{if(PHONE_CLOUD&&document.hidden)return;cloudTick()},PHONE_CLOUD?5000:10000);
+  CL.timer=setInterval(()=>{if(PHONE_CLOUD&&document.hidden)return;cloudTick()},PHONE_CLOUD?15000:30000); // v0.88.2: pulsuz Firebase (Spark) gündə 50 000 oxuma — 4 kompüter + telefonlar limiti keçməsin
   cloudTick();renderCloudBadge();
 }
 function cloudStop(){CL.on=false;clearInterval(CL.timer);renderCloudBadge()}

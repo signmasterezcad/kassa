@@ -307,7 +307,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   (3) Setup `/uninstall` olduğu qovluğun HƏR ŞEYİNİ silirdi → yalnız `isKassaDir()` olanda və yalnız `kassaFiles` siyahısı; (4) "Nümunə məlumata qaytar" (bütün məlumatı SEED-lə əvəz,
   bulud ilə bütün cihazlara yayılırdı) exe/bulud/telefonda gizlədildi (yalnız brauzer nümayişində); (5) ehtiyat nüsxədən bərpada bulud qoşuludursa xəbərdarlıq.
   Yoxlanıb, problem yoxdur: `writeAtomic`, ehtiyat adları/silinməsi, `erpFetch` yalnız *.googleapis.com, KV adları, `read()` yol qoruması, WebView-də xarici link yoxdur,
-  APK yalnız öz host-u, sw.js. Qeyd (düzəldilməyib): PIN izi FNV-dir (zəif, ciddi qoruma deyil); APK-da fayl seçmə/yükləmə (ehtiyat faylı) işləmir — APK yenidən yığılmalıdır
+  APK yalnız öz host-u, sw.js.
+  v0.88.2: Firebase Spark limiti (gündə 50K oxuma; sahibinin konsolunda 21K/gün, +475%) — `cloudTick` ikinci pull yalnız push yazanda, interval kompüter 30 san, telefon 15 san
+  (dəyişiklik olanda `cloudSoon` 1.5 san-da göndərir). Sahibinə Google hesabında 2 addımlı yoxlama (MFA) 24.11.2026-dək açmaq deyildi. Qeyd (düzəldilməyib): PIN izi FNV-dir (zəif, ciddi qoruma deyil); APK-da fayl seçmə/yükləmə (ehtiyat faylı) işləmir — APK yenidən yığılmalıdır
   (imza açarı yoxdur → yenidən quraşdırma); depo açıqdır (sirr yoxdur, amma satışdan əvvəl Private); Firebase Rules-da e-poçt şərtinin olduğunu sahibi yoxlamalıdır.
 
 ## İstifadəçinin məlumatını dəyişmək
