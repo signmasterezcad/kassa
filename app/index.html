@@ -14,6 +14,8 @@
 #rtabs.g4{display:grid;grid-template-columns:repeat(4,1fr)}#rtabs.g4 .tab{justify-content:center;text-align:center}
 @media(max-width:640px){#rtabs.g4{grid-template-columns:repeat(2,1fr)}}
 .kzinfo{display:flex;flex-direction:column;gap:6px;background:var(--soft,rgba(127,127,127,.08));border-radius:12px;padding:12px 14px;margin-bottom:8px}.kzbig{font-size:18px}
+.kzlockbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fef3c7;color:#78350f;border:2px solid #d97706;border-radius:12px;padding:12px 14px;margin:0 0 10px;font-weight:700}.kzlockbar[hidden]{display:none}
+.kzlock{background:#fef3c7;color:#78350f;border-radius:10px;padding:8px 12px;font-weight:700}
 </style>
 <script>/* v0.73.0: ☀️/🌙 mövzu — açılmamışdan qabaq tətbiq olunur ki, ekran yanıb-sönməsin */try{const t=localStorage.getItem("kassa.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
 <style>
@@ -440,6 +442,7 @@ h4{margin:6px 0 0;font-size:14px}
     <div class="searchbar" id="searchbar"><input id="q" type="search" placeholder="🔍 Düymə axtar: məs. surət, fincan, 10x15…" autocomplete="off" aria-label="Düymə axtar"><button class="btn ghost sm" id="qClear" hidden>Təmizlə</button></div>
     <div class="tabs" id="tabs"></div>
     <div class="crumb" id="crumb" hidden></div>
+    <div class="kzlockbar" id="kzLockBar" hidden>🔒 Kassa açılmayıb — satış etmək üçün əvvəl kassanı sayıb açın. <button class="btn sm" id="btnKassa2">💰 Kassanı aç</button></div>
     <div class="grid" id="grid"></div>
   </section>
 
@@ -692,7 +695,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.90.3";
+const APP_VERSION="0.91.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1819,7 +1822,7 @@ const lineCost=o=>{const it=item(o.id);return lineRecipe(o).reduce((a,[m,q])=>a+
 const lineUnit=o=>o.cp!=null?o.cp:unitPrice(item(o.id),o.q);
 const fmtN=n=>String(+(+n).toFixed(3)).replace(".",",");
 const areaTxt=o=>o.w&&o.h?`${fmtN(o.w)} × ${fmtN(o.h)} m (${fmtN(o.area)} m²)`:`${fmtN(o.area)} m²`;
-function addItem(key,d=1){
+function addItem(key,d=1){if(d>0&&!editMode&&kzLocked()){kzLockMsg();return}
   const ex=order.find(x=>okey(x)===key);
   if(ex&&ex.uid){ex.q=Math.max(0,ex.q+d);if(!ex.q)order=order.filter(x=>x!==ex);renderGrid();renderOrder();return}
   const [kf,mt]=String(key).split("#"),[id,from]=kf.split("@"),it=item(id);
@@ -1954,7 +1957,7 @@ document.addEventListener("keydown",e=>{if($("ovM2").hidden)return;
   if(e.key==="Enter"||e.key==="NumpadEnter"){e.preventDefault();e.stopImmediatePropagation();addM2()}
   else if(e.key==="Escape"){e.stopImmediatePropagation();m2For=null;$("ovM2").hidden=true}},true);
 let pickFor=null;
-function tapItem(id){const it=item(id);if((it?.area||it?.free)&&!editMode){openM2(id);return}
+function tapItem(id){if(!editMode&&kzLocked()){kzLockMsg();return}const it=item(id);if((it?.area||it?.free)&&!editMode){openM2(id);return}
   if(it?.pick&&!editMode&&it.tiers.some(t=>+t[1])){const ms=pickMats(it);
     if(ms.length===1){addItem(id+"#"+ms[0].id,1);return}
     if(ms.length>1){pickFor=id;$("srt").textContent=`${it.name}: hansı?`;
@@ -1988,6 +1991,7 @@ const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isCon
 const noModal=()=>$("ovRep").hidden&&$("ovKassa").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden&&$("ovCloud").hidden&&$("ovIcon").hidden&&$("ovShop").hidden&&$("ovDisc").hidden&&$("ovRet").hidden&&$("ovReset").hidden;
 function finishSale(){
   disarmPay();
+  if(kzLocked()){kzLockMsg();return}
   if(pay==="qarış"){const t=ordTotal(),c=Math.round((+ordSplit||0)*100)/100;
     if(order.some(o=>o.ret)||t<=0){toast("Qaytarmada Nağd + Kart olmaz — Nağd və ya Kart seçin");return}
     if(!(c>0&&c<t-0.004)){toast(`Nağd hissəni yazın: 0 ilə ${m2(t)} ₼ arasında (qalanı kartla)`);$("sp_cash")?.focus();return}}
@@ -2140,7 +2144,11 @@ function cashDay(day){
 // Açılış: kassanı sayıb təhvil alır (gözlənilən = son təhvilin "qalır"). Bağlanış/təhvil: sayır, sahibə verilən çıxılır, qalan növbəti işçiyə.
 const kzLog=()=>Object.entries(S.cash||{}).flatMap(([d,c])=>(c.log||[]).map(x=>({...x,day:d}))).sort((a,b)=>a.ts-b.ts);
 const kzLast=()=>kzLog().at(-1)||null;
-const kzOpen=()=>kzLast()?.t==="open";
+// Kassa "açıq" sayılır: son qeyd açılışdır və BU GÜN edilib (dünən bağlanmayıbsa, bu gün yenidən sayılmalıdır)
+const kzOpen=()=>{const L=kzLast();return L?.t==="open"&&dayKey(L.ts)===dayKey(Date.now())};
+// v0.91.0 (sahibinin istəyi): kassir kassanı açmadan satış edə bilməz (admin üçün yoxdur)
+const kzLocked=()=>!!me&&!isAdmin()&&!PHONE_CLOUD&&!kzOpen();
+function kzLockMsg(){toast("🔒 Əvvəl kassanı sayıb açın — sonra satış edə bilərsiniz");openKassa()}
 let kzDraft={cnt:"",take:"",to:"",note:"",warn:false},kzSkip="",kzDel=null;
 // Admin səhv qeydi silir: günün açılış (c.open) və son sayım (c.counted) qalan qeydlərə görə yenidən hesablanır
 function kzRemove(id){
@@ -2153,12 +2161,15 @@ function kzRemove(id){
 }
 function openKassa(){kzDraft={cnt:"",take:"",to:"",note:"",warn:false};drawKassa();$("ovKassa").hidden=false;setTimeout(()=>$("kz_cnt")?.focus(),30)}
 function drawKassa(){
-  const L=kzLast(),open=L?.t==="open",today=dayKey(Date.now()),K=cashDay(today),D=kzDraft,seeExp=can("reports");
+  const L=kzLast(),open=kzOpen(),today=dayKey(Date.now()),K=cashDay(today),D=kzDraft,seeExp=can("reports");
   let h="";
   if(!open){
-    const exp=L?L.left:null;
+    const exp=L?.t==="close"?L.left:null;
     $("kzt").textContent="☀️ Kassa açılışı — təhvil alıram";
-    h+=L?`<div class="kzinfo"><span>Son təhvil: <b>${esc(L.by||"—")}</b>, ${fmtDate(L.ts)} ${fmtTime(L.ts)}${L.to?` → <b>${esc(L.to)}</b>`:" (gün sonu)"}</span>
+    if(kzLocked())h+=`<p class="kzlock">🔒 Satış etmək üçün əvvəl kassanı sayıb açın.</p>`;
+    h+=L&&L.t==="open"?`<div class="kzinfo"><span>⚠ Kassa ${fmtDate(L.ts)} tarixində <b>${esc(L.by||"—")}</b> tərəfindən açılıb, amma <b>bağlanmayıb</b> (təhvil verilməyib).</span></div>
+        <p class="sub">Kassadakı pulu sayın və yazın. Admin fərqi hesabatda görəcək.</p>`
+      :L?`<div class="kzinfo"><span>Son təhvil: <b>${esc(L.by||"—")}</b>, ${fmtDate(L.ts)} ${fmtTime(L.ts)}${L.to?` → <b>${esc(L.to)}</b>`:" (gün sonu)"}</span>
         <span class="kzbig">Kassada qalıb: <b>${m2(exp)} ₼</b></span></div>
         <p class="sub">Kassadakı pulu sayın və yazın. Fərq olsa, proqram göstərəcək.</p>`
       :`<p class="sub">Kassa ilk dəfə açılır. Kassadakı pulu sayıb yazın.</p>`;
@@ -2185,7 +2196,7 @@ function drawKassa(){
 }
 function kzLive(){
   const L=kzLast(),D=kzDraft,cnt=D.cnt===""?null:+D.cnt,take=D.take===""?0:+D.take||0;if(cnt==null||!isFinite(cnt))return"";
-  if(L?.t!=="open"){if(!L)return"";const df=cnt-L.left;return Math.abs(df)<0.005?`<span class="pill ok">✓ Düzdür — ${m2(L.left)} ₼ təhvil alınır</span>`
+  if(!kzOpen()){if(L?.t!=="close")return"";const df=cnt-L.left;return Math.abs(df)<0.005?`<span class="pill ok">✓ Düzdür — ${m2(L.left)} ₼ təhvil alınır</span>`
     :`<span class="pill ${df<0?"bad":"warn"}">${df<0?"Çatışmır":"Artıqdır"}: ${m2(Math.abs(df))} ₼</span>`}
   let h=`<div class="kline ksum"><span>Kassada qalır (növbəti işçiyə)</span><b>${m2(cnt-take)} ₼</b></div>`;
   if(D.warn){const df=cnt-cashDay(dayKey(Date.now())).should;h+=`<span class="pill ${df<0?"bad":"warn"}">${df<0?"Çatışmır":"Artıqdır"}: ${m2(Math.abs(df))} ₼</span><p class="sub">Yenidən sayın. Düzdürsə, səbəbini aşağıda yazın.</p>`}
@@ -2205,7 +2216,7 @@ function kzSave(kind){
   const today=dayKey(Date.now()),c=S.cash[today]||(S.cash[today]={}),L=kzLast(),ts=Date.now();
   c.log=c.log||[];
   if(kind==="open"){
-    const exp=L?L.left:null,diff=exp==null?null:cnt-exp;
+    const exp=L?.t==="close"?L.left:null,diff=exp==null?null:cnt-exp;
     if(diff!=null&&Math.abs(diff)>=0.005&&!D.note.trim()){toast("Fərq var — səbəbini qeyddə yazın");$("kz_note")?.focus();return}
     c.log.push({id:newId("kz"),t:"open",ts,by:curName(),from:L?.by||"",expected:exp,counted:cnt,taken:0,left:cnt,diff,note:D.note.trim()});
     if(c.open==null)c.open=cnt;
@@ -2221,18 +2232,19 @@ function kzSave(kind){
   }
 }
 // Girişdən sonra: kassa təhvil verilib, hələ açılmayıbsa — açılış pəncərəsi özü çıxır ("Sonra" ilə keçmək olar)
-function kzAuto(){if(!me||PHONE_CLOUD)return;const L=kzLast();if(!L||L.t!=="close")return;const k=dayKey(Date.now())+"|"+curName();if(kzSkip===k)return;openKassa()}
+function kzAuto(){if(!me||PHONE_CLOUD||kzOpen())return;const L=kzLast();if(!L&&!kzLocked())return;const k=dayKey(Date.now())+"|"+curName();if(kzSkip===k)return;openKassa()}
 let kzSeen;
 // Başqa kompüterdən (bulud) təhvil gələndə: bu kompüterdə girmiş işçiyə açılış pəncərəsi özü çıxır
 function kzWatch(){const L=kzLast(),id=L?.id||"";if(id===kzSeen)return;const first=kzSeen===undefined;kzSeen=id;
   if(first||!L||L.t!=="close"||L.by===curName()||!me||PHONE_CLOUD||editMode||!noModal())return;
   setTimeout(()=>{if(noModal()&&!kzOpen())openKassa()},0)}
-function renderKzBtn(){kzWatch();const b=$("btnKassa");if(!b)return;b.hidden=!me||PHONE_CLOUD;$("kzState").textContent=kzOpen()?"açıqdır · "+(kzLast().by||""):"bağlıdır"}
+function renderKzBtn(){kzWatch();const lk=$("kzLockBar");if(lk)lk.hidden=!kzLocked();const b=$("btnKassa");if(!b)return;b.hidden=!me||PHONE_CLOUD;$("kzState").textContent=kzOpen()?"açıqdır · "+(kzLast().by||""):"bağlıdır"}
 document.addEventListener("input",e=>{if($("ovKassa").hidden)return;const id=e.target.id,D=kzDraft;
   if(id==="kz_cnt"){D.cnt=e.target.value;D.warn=false}else if(id==="kz_take")D.take=e.target.value;else if(id==="kz_note"){D.note=e.target.value;return}else if(id==="kz_to"){D.to=e.target.value;return}else return;
   const lv=$("kzLive");if(lv)lv.innerHTML=kzLive()});
 document.addEventListener("change",e=>{if(e.target.id==="kz_to")kzDraft.to=e.target.value});
-document.addEventListener("click",e=>{const t=e.target.closest("#btnKassa,[data-kz],[data-kzd]");if(!t)return;
+document.addEventListener("click",e=>{const t=e.target.closest("#btnKassa,#btnKassa2,[data-kz],[data-kzd]");if(!t)return;
+  if(t.id==="btnKassa2"){openKassa();return}
   if(t.dataset.kzd){if(!isAdmin())return;const id=t.dataset.kzd;if(kzDel!==id){kzDel=id}else{kzDel=null;kzRemove(id);renderAll()}
     if(!$("ovKassa").hidden)drawKassa();if(!$("ovRep").hidden)renderRep();return}
   if(t.id==="btnKassa"){openKassa();return}

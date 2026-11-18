@@ -72,6 +72,15 @@ let n = 0;
   ok((await p.textContent('.pinerr')).includes('səhvdir') && await p.isVisible('#ovLogin'), 'səhv PIN: girmir');
   await p.click('[data-pin="2"]'); await p.click('[data-pin="2"]'); await p.keyboard.type('22'); await p.click('[data-pin=go]');
   ok(await p.isHidden('#ovLogin') && (await p.textContent('#userName')).trim() === 'Leyla', 'düz PIN (ekran + klaviatura): Leyla girdi');
+  // v0.91.0: kassir kassanı açmadan satış edə bilməz
+  await p.waitForTimeout(500);
+  ok(await p.isVisible('#ovKassa') && (await p.textContent('#kzBody')).includes('əvvəl kassanı'), 'Leyla girən kimi kassa açılışı özü çıxır (kassa bağlıdır)');
+  await p.click('#ovKassa [data-close]');
+  ok(await p.isVisible('#kzLockBar'), 'kassa açılmayıb: satış ekranında 🔒 xəbərdarlıq');
+  await p.fill('#q', 'fincan termo'); await p.press('#q', 'Enter');
+  ok(await p.isVisible('#ovKassa') && await p.evaluate(() => !order.length), 'kassa açılmadan məhsul əlavə olunmur — kassa pəncərəsi açılır');
+  await p.fill('#kz_cnt', '50'); await p.click('[data-kz=open]');
+  ok(await p.isHidden('#kzLockBar') && await p.evaluate(() => kzOpen()), 'Leyla kassanı açdı (50 ₼) — satış açıldı');
 
   // 5) Kassir: yalnız icazəli düymələr
   ok(await p.isVisible('#btnZay') && await p.isVisible('#btnHist'), 'Leyla: Zay və Tarixçə görünür');
