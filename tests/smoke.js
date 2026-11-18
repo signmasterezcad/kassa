@@ -650,6 +650,13 @@ const path = require('path');
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   ok(await p.evaluate(() => { const f = S.items.find(i => i.parent === 'g_foto' && /13x18/.test(i.name)); f.recipe = []; S.materials.push({ id: 'm1318', name: '13x18 Foto Kağız (Özümüz)', unit: 'vərəq', stock: 50, cost: 0.12 }, { id: 'mc1318', name: 'Çərçivə 13x18', stock: 5, cost: 2 }); upgrade();
     return JSON.stringify(f.recipe) === '[["m1318",1]]'; }), 'Foto Kağızlar → 13x18 öz ölçülü foto kağıza qoşulur (çərçivəyə yox)');
+  // v0.86.0: qarışıq ödəniş — 55 ₼ = 50 nağd + 5 kart
+  await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); order = [{ id: 'sa_2', q: 1 }]; renderAll(); });
+  await p.click('#paySplit'); await p.fill('#sp_cash', '50');
+  ok((await p.textContent('#sp_card')) === '5.00', 'Nağd + Kart: nağd 50 yazanda kart 5.00 özü hesablanır');
+  const cash0 = await p.evaluate(() => cashDay(dayKey(Date.now())).sales);
+  await p.click('#btnDone'); await p.waitForTimeout(200);
+  ok(await p.evaluate(c0 => { const s = S.sales.at(-1); return s.pay === 'qarış' && s.split.nağd === 50 && s.split.kart === 5 && s.total === 55 && Math.abs(cashDay(dayKey(Date.now())).sales - c0 - 50) < 1e-9 && pay === 'nağd'; }, cash0), 'satış 55: kassaya yalnız 50 nağd düşdü, 5 kart; sonra yenə Nağd seçilir');
   // v0.77.0: Polaroid şəkil
   ok(await p.evaluate(() => { const P = item('fk_polaroid'); S.materials.push({ id: 'mF10', name: 'Foto kağız 10x15', unit: 'vərəq', stock: 50, cost: 0.3 }); P.recipe = []; item('fk_1015').recipe = []; upgrade();
     return P.cat === 'poli' && !P.parent && P.tiers[0][1] === 0.5 && JSON.stringify(P.recipe) === '[["mF10",1]]'; }), 'Poliqrafiya → Polaroid şəkil 0.50, resept 1 vərəq 10x15');

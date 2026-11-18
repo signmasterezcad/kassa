@@ -179,6 +179,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   `can(p)` (admin hər şey), tablar `TAB_PERM` ilə süzülür (`repTabs()/setTabs()`), "👥 Kassirlər" tabı yalnız admin.
   Yeni kassir: `KASSIR_DEFAULT` = zay + hist (+ supp, custSale, disc, exp). Satış/zay/sayım `worker: curName()`.
   v0.61.0 (`S.mig.expPerm`, sahibinin istəyi): bütün kassirlərə `exp` (💸 Xərclər) verildi; admin Kassirlər bölməsində bağlaya bilər.
+- **💵+💳 Nağd + Kart** (v0.86.0, sahibinin istəyi: Mida-da 55 ₼ = 50 nağd + 5 kart): `#paySplit` → `pay="qarış"`, `#splitSel` (nağd `#sp_cash`, kart = qalan, `ordSplit`);
+  satışda `split={nağd,kart}`; bütün cəmlər `payPart(s,p)` ilə (kassa `cashDay` yalnız nağd hissə, tarixçə süzgəci hər iki növdə göstərir, Gün/Dövr, telefonun Nağd/Kart).
+  Qaytarmada və 0-dan az cəmdə olmur; qarışıq satışda "Karta/Nağda dəyiş" yoxdur.
 - **🏷️ Endirim** (v0.52.0): "Cari sifariş" başlığının yerində `#btnDisc` (icazə `disc`; kassirlərə standart, `S.mig.discPerm`). `#ovDisc`: ₼ məbləğ / % faiz,
   səbəb məcburi (`#d_r`, hazır səbəblər `DISC_REASONS`). Sifariş vəziyyəti `ordDisc={mode,v,reason}`, `discAmt(sub)` (cəmdən çox olmur), `#discRow` (✕ silir).
   Satış: `total` = sub − disc, `sub`, `disc`, `discReason`, `discPct`. Satış tarixçəsində sətir, Gün/Dövr hesabatında "🏷️ Endirimlər" KPI.

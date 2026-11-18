@@ -176,6 +176,8 @@ td.acts{white-space:nowrap}
 .dchips{display:flex;flex-wrap:wrap;gap:6px}
 .paydebt{padding:12px;border-radius:12px;border:2px solid var(--line);background:var(--panel2);font-weight:800}
 .paydebt.on{border-color:var(--warn);color:var(--warn)}
+#paySplit.on{border-color:var(--accent);color:var(--accent)}
+#splitSel input{width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);font-weight:800}
 .custsel{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;background:color-mix(in srgb,var(--warn) 12%,var(--panel2));border:1px solid var(--warn);border-radius:10px;padding:8px 10px;font-size:13px}
 .ctile{background:#b45309}
 .blines{display:grid;gap:8px}
@@ -447,6 +449,8 @@ h4{margin:6px 0 0;font-size:14px}
         <button id="payCash" class="on">💵 Nağd</button>
         <button id="payCard">💳 Kart</button>
       </div>
+      <button class="paydebt" id="paySplit">💵+💳 Nağd + Kart</button>
+      <div class="custsel" id="splitSel" hidden></div>
       <button class="paydebt" id="payDebt">📝 Nisyə</button>
       <div class="custsel" id="custSel" hidden></div>
       <button class="done" id="btnDone" disabled>Ödənildi ✓</button>
@@ -678,7 +682,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.85.0";
+const APP_VERSION="0.86.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1581,7 +1585,7 @@ const isToday=ts=>new Date(ts).toDateString()===new Date().toDateString();
 function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,1800)}
 
 // ---------- Vəziyyət ----------
-let editMode=false, grp=null, q="", cat="search", order=[], pay="nağd", zReason=REASONS[0], rtab="gun", mode="rep", setCat="all";
+let editMode=false, grp=null, q="", cat="search", order=[], pay="nağd", ordSplit="", zReason=REASONS[0], rtab="gun", mode="rep", setCat="all";
 
 // ---------- 👥 İstifadəçilər: Admin və kassirlər, PIN ilə giriş, icazələr ----------
 const PERMS=[
@@ -1747,7 +1751,7 @@ function renderGrid(){
 function renderOrder(){
   if(!order.length){
     // Yalnız telefonda: bu günün nağd və kart cəmi; basanda Satış Tarixçəsi həmin ödəniş növü ilə açılır (kompüterdə yoxdur)
-    if(me&&can("reports")&&(PHONE_CLOUD||REMOTE)){const ts=S.sales.filter(s=>isToday(s.ts)),sum=k=>ts.filter(s=>s.pay===k).reduce((a,s)=>a+s.total,0);
+    if(me&&can("reports")&&(PHONE_CLOUD||REMOTE)){const ts=S.sales.filter(s=>isToday(s.ts)),sum=k=>ts.reduce((a,s)=>a+payPart(s,k),0);
       $("lines").innerHTML=`<div class="epay"><button class="c" data-epay="nağd" title="Bu günün nağd satışları">💵 Nağd<b>${m2(sum("nağd"))} ₼</b></button><button class="k" data-epay="kart" title="Bu günün kart satışları">💳 Kart<b>${m2(sum("kart"))} ₼</b></button></div>`}
     else $("lines").innerHTML=`<div class="empty">Xidmət düyməsinə toxunun</div>`}
   else $("lines").innerHTML=order.map(o=>{const it=item(o.id)||{name:o.ret?.name||"?"},p=lineUnit(o),k=okey(o);
@@ -1768,6 +1772,11 @@ function renderOrder(){
   $("btnDone").disabled=!order.length;$("btnClear").classList.toggle("off",!order.length);
   $("payCash").classList.toggle("on",pay==="nağd");$("payCard").classList.toggle("on",pay==="kart");
   $("payDebt").hidden=!can("custSale");$("payDebt").classList.toggle("on",pay==="borc");
+  if(!order.length&&pay==="qarış"){pay="nağd";ordSplit=""}
+  $("paySplit").classList.toggle("on",pay==="qarış");$("splitSel").hidden=pay!=="qarış";
+  if(pay==="qarış"){const c=Math.min(Math.max(0,+ordSplit||0),t);const cur=$("sp_cash");
+    if(!cur)$("splitSel").innerHTML=`💵 Nağd <input id="sp_cash" type="number" step="0.01" min="0" value="${ordSplit}" placeholder="0.00"> ₼ · 💳 Kart <b id="sp_card">${m2(t-c)}</b> ₼`;
+    else $("sp_card").textContent=m2(t-c)}
   const oc=pay==="borc"&&custById(ordCust);$("custSel").hidden=!oc;
   if(oc){const o=custOwed(oc.id);$("custSel").innerHTML=`🏢 <b>${esc(oc.name)}</b>${o>0.004?` <span class="sub">· indiki borc ${m2(o)} ₼</span>`:""} <button class="link" data-cs="change">dəyiş</button>`}
   if(!keyArm)$("btnDone").textContent=doneTxt();
@@ -1775,6 +1784,10 @@ function renderOrder(){
 function renderAll(){renderHeader();renderTabs();renderGrid();renderOrder()}
 
 // Sifariş sətri: {id, q, from} — from = tədarükçü id (hazır alınıb) və ya boş (özümüz). Açar: "id@from".
+// v0.86.0: qarışıq ödəniş (nağd + kart): satışda pay="qarış", split={nağd,kart}
+document.addEventListener("input",e=>{if(e.target.id!=="sp_cash")return;ordSplit=e.target.value;const t=ordTotal(),c=Math.min(Math.max(0,+ordSplit||0),t);$("sp_card").textContent=m2(t-c)});
+document.addEventListener("keydown",e=>{if(e.target.id==="sp_cash"&&(e.key==="Enter"||e.key==="NumpadEnter")){e.preventDefault();e.stopImmediatePropagation();ordSplit=e.target.value;finishSale()}},true);
+const payPart=(s,p)=>s.split?(+s.split[p]||0):(s.pay===p?s.total:0);
 const okey=o=>o.uid||(o.id+(o.from?"@"+o.from:"")+(o.mat?"#"+o.mat:""));
 // v0.82.0: satanda material seçimi (it.pick = açar söz, məs. "sertifikat"): bu şöbənin adında o söz olan materialları
 const pickMats=it=>it?.pick?(S.materials||[]).filter(m=>norm(m.name).includes(norm(it.pick))):[];
@@ -1950,11 +1963,14 @@ let keyArm=0,keyArmT=null;
 const DONE_TXT="Ödənildi ✓";
 function disarmPay(){keyArm=0;clearTimeout(keyArmT);const b=$("btnDone");b.classList.remove("armed");b.textContent=doneTxt()}
 const ordTotal=()=>{const sub=order.reduce((a,o)=>a+lineUnit(o)*o.q,0);return sub-discAmt(sub)};
-const doneTxt=()=>order.length&&ordTotal()<-0.004?`↩️ Pulu qaytar: ${m2(-ordTotal())} ₼ ✓`:pay==="borc"?"Nisyəyə yaz ✓":DONE_TXT;
+const doneTxt=()=>pay==="qarış"?"Ödənildi (nağd + kart) ✓":order.length&&ordTotal()<-0.004?`↩️ Pulu qaytar: ${m2(-ordTotal())} ₼ ✓`:pay==="borc"?"Nisyəyə yaz ✓":DONE_TXT;
 const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isContentEditable);
 const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden&&$("ovCloud").hidden&&$("ovIcon").hidden&&$("ovShop").hidden&&$("ovDisc").hidden&&$("ovRet").hidden&&$("ovReset").hidden;
 function finishSale(){
   disarmPay();
+  if(pay==="qarış"){const t=ordTotal(),c=Math.round((+ordSplit||0)*100)/100;
+    if(order.some(o=>o.ret)||t<=0){toast("Qaytarmada Nağd + Kart olmaz — Nağd və ya Kart seçin");return}
+    if(!(c>0&&c<t-0.004)){toast(`Nağd hissəni yazın: 0 ilə ${m2(t)} ₼ arasında (qalanı kartla)`);$("sp_cash")?.focus();return}}
   if(pay==="borc"&&order.some(o=>o.ret)){toast("Qaytarma olan sifarişdə Nisyə olmaz — Nağd və ya Kart seçin");return}
   if(pay==="borc"){if(!can("custSale"))pay="nağd";else if(!custById(ordCust)){openCustPick();return}}
   // Tədarükçüdən hazır alınan sətir: anbardan material silinmir, maya 0 (alış artıq xərclərdədir); scost = alış qiyməti (hesabat üçün)
@@ -1973,8 +1989,9 @@ function finishSale(){
   const sale={id:newId("s"),ts:Date.now(),worker:curName(),pay,lines,total:sub-dsc,used};
   if(dsc){sale.sub=sub;sale.disc=dsc;sale.discReason=ordDisc.reason;if(ordDisc.mode==="pct")sale.discPct=ordDisc.v}
   const oc=pay==="borc"?custById(ordCust):null;if(oc){sale.cust=oc.id;sale.custName=oc.name}
+  if(pay==="qarış"){const c=Math.round((+ordSplit||0)*100)/100;sale.split={nağd:c,kart:Math.round((sale.total-c)*100)/100}}
   S.sales.push(sale);
-  pay="nağd";ordCust=null;ordDisc=null;
+  pay="nağd";ordCust=null;ordDisc=null;ordSplit="";
   save();order=[];renderAll();autoBackup();
   if(sale.lines.some(l=>l.ret))toast(sale.total<-0.004?`↩️ Qaytarma yazıldı: müştəriyə ${m2(-sale.total)} ₼ qaytarın (${payName(sale.pay)})`:sale.total>0.004?`🔁 Əvəzləmə yazıldı: müştəri fərqi ödədi ${m2(sale.total)} ₼`:"🔁 Əvəzləmə yazıldı (fərq yoxdur)");
   else toast((oc?`${oc.name} borcuna yazıldı: ${m2(sale.total)} ₼ · borc indi ${m2(custOwed(oc.id))} ₼`:"Satış yazıldı ✓")+(short.length?`. Diqqət: ${short.join(", ")} mənfiyə düşdü`:""));
@@ -2088,7 +2105,7 @@ document.addEventListener("change",e=>{if(e.target.id==="m_sel"){mSel=e.target.v
 // ---------- Kassa hesabı (gün üzrə, yalnız nağd) ----------
 function cashDay(day){
   const on=ts=>ts&&dayKey(ts)===day;
-  const sales=S.sales.filter(s=>on(s.ts)&&s.pay==="nağd").reduce((a,s)=>a+s.total,0);
+  const sales=S.sales.filter(s=>on(s.ts)).reduce((a,s)=>a+payPart(s,"nağd"),0);
   const purch=S.purchases.filter(p=>on(p.ts)&&p.pay==="nağd").reduce((a,p)=>a+p.total,0)
     +S.purchases.filter(p=>p.paid&&p.paidBy==="nağd"&&on(p.paidTs)).reduce((a,p)=>a+p.total,0)
     +(S.suppPays||[]).filter(y=>y.by==="nağd"&&on(y.ts)).reduce((a,y)=>a+y.amount,0);
@@ -2112,18 +2129,18 @@ function renderHist(){
   $("hFrom").value=hFrom;$("hTo").value=hTo;
   document.querySelectorAll("[data-hp]").forEach(b=>b.classList.toggle("on",b.dataset.hp===hPay));
   const inRange=ts=>{const k=dayKey(ts);return(!hFrom||k>=hFrom)&&(!hTo||k<=hTo)};
-  const list=S.sales.filter(s=>inRange(s.ts)&&(hPay==="all"||s.pay===hPay)).sort((a,b)=>b.ts-a.ts);
+  const list=S.sales.filter(s=>inRange(s.ts)&&(hPay==="all"||s.pay===hPay||(s.split&&+s.split[hPay]>0))).sort((a,b)=>b.ts-a.ts);
   const sum=f=>list.filter(f).reduce((a,s)=>a+s.total,0);
   const fd=k=>fmtDate(new Date(k+"T12:00").getTime());
   const title=!hFrom&&!hTo?"Bütün günlər":hFrom===hTo?fd(hFrom):`${hFrom?fd(hFrom):"əvvəldən"} – ${hTo?fd(hTo):"bu günədək"}`;
   // bir neçə gün seçiləndə: günlər üzrə cəmlər
-  const days={};list.forEach(s=>{const k=dayKey(s.ts),d=days[k]||(days[k]={n:0,c:0,k:0,b:0,t:0});d.n++;d.t+=s.total;if(s.pay==="nağd")d.c+=s.total;else if(s.pay==="kart")d.k+=s.total;else d.b+=s.total});
+  const days={};list.forEach(s=>{const k=dayKey(s.ts),d=days[k]||(days[k]={n:0,c:0,k:0,b:0,t:0});d.n++;d.t+=s.total;d.c+=payPart(s,"nağd");d.k+=payPart(s,"kart");d.b+=payPart(s,"borc")});
   const dk=Object.keys(days).sort().reverse();
   $("hBody").innerHTML=`<div class="kpis">
       <div class="kpi"><span>${esc(title)} · satış sayı</span><b>${list.length}</b></div>
       <div class="kpi"><span>Cəmi</span><b>${m2(sum(()=>1))} ₼</b></div>
-      <div class="kpi"><span>💵 Nağd</span><b style="color:var(--ok)">${m2(sum(s=>s.pay==="nağd"))} ₼</b></div>
-      <div class="kpi"><span>💳 Kart</span><b style="color:var(--accent)">${m2(sum(s=>s.pay==="kart"))} ₼</b></div>
+      <div class="kpi"><span>💵 Nağd</span><b style="color:var(--ok)">${m2(list.reduce((a,s)=>a+payPart(s,"nağd"),0))} ₼</b></div>
+      <div class="kpi"><span>💳 Kart</span><b style="color:var(--accent)">${m2(list.reduce((a,s)=>a+payPart(s,"kart"),0))} ₼</b></div>
       <div class="kpi"><span>📝 Nisyə</span><b style="color:var(--warn)">${m2(sum(s=>s.pay==="borc"))} ₼</b></div></div>
     ${dk.length>1?`<details open><summary><b>📅 Günlər üzrə (${dk.length} gün)</b></summary><div class="tw"><table><tr><th>Gün</th><th class="n">Satış</th><th class="n">💵 Nağd</th><th class="n">💳 Kart</th><th class="n">📝 Nisyə</th><th class="n">Cəmi</th></tr>
       ${dk.map(k=>{const d=days[k];return `<tr><td><button class="link" data-hd="${k}">${fd(k)}</button></td><td class="n">${d.n}</td><td class="n">${m2(d.c)}</td><td class="n">${m2(d.k)}</td><td class="n">${m2(d.b)}</td><td class="n"><b>${m2(d.t)} ₼</b></td></tr>`}).join("")}</table></div></details>`:""}
@@ -2134,7 +2151,7 @@ function renderHist(){
       <td class="wrap">${s.lines.map(l=>`${esc(l.name)} <span class="sub">×${l.q}</span>`).join(", ")||'<span class="sub">—</span>'}${s.disc?`<div class="sub">🏷️ Endirim −${m2(s.disc)} ₼${s.discPct?` (${fmtN(s.discPct)}%)`:""}: ${esc(s.discReason||"")}</div>`:""}${Object.keys(s.returned||{}).length?`<div class="sub">↩️ Qaytarılıb: ${Object.entries(s.returned).map(([i,n])=>`${esc(s.lines[i]?.name||"")} ×${n}`).join(", ")}</div>`:""}${(s.payEdits||[]).map(x=>`<div class="sub">✏️ Ödəniş dəyişdirilib: ${payName(x.from)} → ${payName(x.to)} (${esc(x.by||"")}, ${fmtDate(x.ts)} ${fmtTime(x.ts)})</div>`).join("")}</td>
       <td>${esc(s.worker||"")}</td><td class="n"><b>${m2(s.total)} ₼</b></td>
       <td class="acts">${!can("delSale")?(canRet(s)?`<button class="btn ghost sm" data-h="ret" data-k="${k}">↩️ Qaytar / Əvəzlə</button>`:""):hPayEd===k?`<button class="btn sm" data-h="payok" data-k="${k}">Bəli, ${s.pay==="nağd"?"💳 Kart":"💵 Nağd"} et</button> <button class="btn ghost sm" data-h="delx">Ləğv</button>`:hDel===k?`<button class="btn red sm" data-h="del" data-k="${k}">Bəli, sil</button> <button class="btn ghost sm" data-h="delx">Ləğv</button>`
-        :`${canRet(s)?`<button class="btn ghost sm" data-h="ret" data-k="${k}" title="Müştəri malı qaytarır və ya başqası ilə dəyişir">↩️ Qaytar / Əvəzlə</button> `:""}${s.pay!=="borc"?`<button class="btn ghost sm" data-h="payask" data-k="${k}" title="Kassir səhv ödəniş növü seçibsə">✏️ ${s.pay==="nağd"?"Karta":"Nağda"} dəyiş</button> `:""}<button class="btn ghost sm del" data-h="ask" data-k="${k}">Sil</button>`}</td></tr>`}).join("")}</table></div>
+        :`${canRet(s)?`<button class="btn ghost sm" data-h="ret" data-k="${k}" title="Müştəri malı qaytarır və ya başqası ilə dəyişir">↩️ Qaytar / Əvəzlə</button> `:""}${s.pay!=="borc"&&!s.split?`<button class="btn ghost sm" data-h="payask" data-k="${k}" title="Kassir səhv ödəniş növü seçibsə">✏️ ${s.pay==="nağd"?"Karta":"Nağda"} dəyiş</button> `:""}<button class="btn ghost sm del" data-h="ask" data-k="${k}">Sil</button>`}</td></tr>`}).join("")}</table></div>
     ${list.length>500?`<p class="sub">Son 500 satış göstərilir (cəmlər hamısı üzrədir). Tarix aralığını daraldın.</p>`:""}`
     :`<p class="sub empty-grp">${title}: satış yoxdur${hPay!=="all"?" (seçilmiş ödəniş növü ilə)":""}.</p>`}`;
 }
@@ -2206,11 +2223,11 @@ document.addEventListener("input",e=>{if(!$("ovRet").hidden&&e.target.matches("[
 document.addEventListener("keydown",e=>{if($("ovRet").hidden)return;
   if(e.key==="Escape"){e.stopImmediatePropagation();retFor=null;$("ovRet").hidden=true}
   else if(e.key==="Enter"&&e.target.matches("[data-rq]")){e.preventDefault();e.stopImmediatePropagation();addRet()}},true);
-const payName=p=>p==="nağd"?"💵 Nağd":p==="kart"?"💳 Kart":"📝 Nisyə";
-function changeSalePay(k){if(!can("delSale"))return;const s=S.sales.find(x=>saleKey(x)===k);hPayEd=null;if(!s||s.pay==="borc"){renderHist();return}
+const payName=p=>p==="nağd"?"💵 Nağd":p==="kart"?"💳 Kart":p==="qarış"?"💵+💳 Nağd + Kart":"📝 Nisyə";
+function changeSalePay(k){if(!can("delSale"))return;const s=S.sales.find(x=>saleKey(x)===k);hPayEd=null;if(!s||s.pay==="borc"||s.split){renderHist();return}
   const to=s.pay==="nağd"?"kart":"nağd";(s.payEdits=s.payEdits||[]).push({from:s.pay,to,ts:Date.now(),by:curName()});s.pay=to;
   save();renderHeader();renderHist();toast(`${fmtDate(s.ts)} ${fmtTime(s.ts)} — ${m2(s.total)} ₼ satış: ödəniş ${payName(to)} oldu ✓`)}
-const salePill=s=>s.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':s.pay==="borc"?`<span class="pill warn">📝 Nisyə: ${esc(s.custName||custById(s.cust)?.name||"")}</span>`:'<span class="pill card">💳 Kart</span>';
+const salePill=s=>s.split?`<span class="pill ok">💵 ${m2(s.split.nağd)}</span> <span class="pill card">💳 ${m2(s.split.kart)}</span>`:s.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':s.pay==="borc"?`<span class="pill warn">📝 Nisyə: ${esc(s.custName||custById(s.cust)?.name||"")}</span>`:'<span class="pill card">💳 Kart</span>';
 async function deleteSale(k){
   if(!can("delSale"))return;
   const i=S.sales.findIndex(s=>saleKey(s)===k);if(i<0)return;
@@ -2782,16 +2799,16 @@ function renderRep(){
       ${[["today","Bu gün"],["yday","Dünən"],["week","Bu həftə"],["month","Bu ay"],["pmonth","Keçən ay"],["all","Bütün dövr"]].map(([k,l])=>`<button class="btn ghost sm" data-rr="${k}">${l}</button>`).join("")}</div>
     <h4 style="margin:0">📆 ${esc(rTitle)}</h4>`:"";
   if(rtab==="gun"){
-    const tot=sales.reduce((a,s)=>a+s.total,0),cash=sales.filter(s=>s.pay==="nağd").reduce((a,s)=>a+s.total,0);
+    const tot=sales.reduce((a,s)=>a+s.total,0),cash=sales.reduce((a,s)=>a+payPart(s,"nağd"),0);
     const K=one?cashDay(rFrom):null;
-    const days={};sales.forEach(s=>{const k=dayKey(s.ts),d=days[k]||(days[k]={n:0,c:0,k:0,b:0,t:0,cost:0});d.n++;d.t+=s.total;d.cost+=s.lines.reduce((b,l)=>b+(l.cost||0),0);if(s.pay==="nağd")d.c+=s.total;else if(s.pay==="kart")d.k+=s.total;else d.b+=s.total});
+    const days={};sales.forEach(s=>{const k=dayKey(s.ts),d=days[k]||(days[k]={n:0,c:0,k:0,b:0,t:0,cost:0});d.n++;d.t+=s.total;d.cost+=s.lines.reduce((b,l)=>b+(l.cost||0),0);d.c+=payPart(s,"nağd");d.k+=payPart(s,"kart");d.b+=payPart(s,"borc")});
     const dk=Object.keys(days).sort().reverse();
     const cost=sales.reduce((a,s)=>a+s.lines.reduce((b,l)=>b+l.cost,0),0),wc=waste.reduce((a,w)=>a+w.cost,0);
     const byW={};sales.forEach(s=>byW[s.worker]=(byW[s.worker]||0)+s.total);
     h+=`<div class="kpis">
       <div class="kpi"><span>Satış (${sales.length})</span><b>${m2(tot)} ₼</b></div>
       ${sales.some(s=>s.disc)?`<div class="kpi"><span>🏷️ Endirimlər (${sales.filter(s=>s.disc).length})</span><b style="color:var(--warn)">${m2(sales.reduce((a,s)=>a+(s.disc||0),0))} ₼</b></div>`:""}
-      <div class="kpi"><span>Nağd / Kart / Nisyə</span><b>${m2(cash)} / ${m2(sales.filter(s=>s.pay==="kart").reduce((a,s)=>a+s.total,0))} / ${m2(sales.filter(s=>s.pay==="borc").reduce((a,s)=>a+s.total,0))}</b></div>
+      <div class="kpi"><span>Nağd / Kart / Nisyə</span><b>${m2(cash)} / ${m2(sales.reduce((a,s)=>a+payPart(s,"kart"),0))} / ${m2(sales.filter(s=>s.pay==="borc").reduce((a,s)=>a+s.total,0))}</b></div>
       ${can("cost")?`<div class="kpi"><span>Material + mürəkkəb mayası</span><b>${m2(cost)} ₼</b></div>
       <div class="kpi"><span>Zay itkisi</span><b style="color:var(--bad)">${m2(wc)} ₼</b></div>
       <div class="kpi"><span>Satışdan qazanc</span><b style="color:var(--ok)">${m2(tot-cost-wc)} ₼</b></div>`:""}</div>
@@ -3279,9 +3296,10 @@ document.addEventListener("click",e=>{
   else if(t.dataset.r){zReason=t.dataset.r;[...$("zReasons").children].forEach(b=>b.classList.toggle("on",b===t))}
   else if(t.dataset.rt){rtab=t.dataset.rt;renderRep()}
   else if(t.hasAttribute("data-close")){t.closest(".ov").hidden=true;draft=null;renderTabs();renderGrid()}
-  else if(t.id==="payCash"){pay="nağd";ordCust=null;renderOrder()}
-  else if(t.id==="payCard"){pay="kart";ordCust=null;renderOrder()}
+  else if(t.id==="payCash"){pay="nağd";ordCust=null;ordSplit="";renderOrder()}
+  else if(t.id==="payCard"){pay="kart";ordCust=null;ordSplit="";renderOrder()}
   else if(t.id==="payDebt"){openCustPick()}
+  else if(t.id==="paySplit"){if(!order.length){toast("Əvvəl sifarişə məhsul əlavə edin");return}pay="qarış";ordCust=null;renderOrder();setTimeout(()=>$("sp_cash")?.focus(),0)}
   else if(t.id==="btnCust"){openCDebt()}
   else if(t.id==="btnDone")finishSale();
   else if(t.id==="btnClear"){order=[];ordDisc=null;renderGrid();renderOrder()}
