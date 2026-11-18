@@ -6,7 +6,8 @@ const path = require('path');
   const errs = []; p.on('pageerror', e => errs.push(e.message));
   const external = []; p.on('request', r => { if (!r.url().startsWith('file:') && !r.url().startsWith('data:') && !r.url().startsWith('blob:')) external.push(r.url()); });
   await p.goto('file://' + path.resolve(process.argv[2] || 'app/index.html'));
-  const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process.exitCode = 1; };
+  const m2v = v => (Math.round(v * 100) / 100).toFixed(2);
+const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process.exitCode = 1; };
   const vis = id => p.isVisible('#' + id);
 
   ok(!(await vis('ovZay')) && !(await vis('ovRep')), 'açılışda pəncərələr gizlidir');
@@ -437,11 +438,14 @@ const path = require('path');
   await p.click('[data-rr=month]');
   const rb = await p.textContent('#rbody');
   const inMonth = await p.evaluate(() => new Date(Date.now() - 3 * 864e5).getMonth() === new Date().getMonth());
-  ok(!inMonth || (rb.includes('Günlər üzrə') && rb.includes('Kassa hesabı bir gün üçündür')), 'Bu ay: günlər üzrə cədvəl, kassa yalnız bir gündə');
-  await p.click('[data-rr=all]'); await p.click('[data-rt=mal]');
-  ok((await p.textContent('#rbody')).includes('Dövr satışı'), 'Məhsul + mənfəət: bütün dövrdə köhnə satış var');
+  ok(!inMonth || (rb.includes('Günü seçin') && rb.includes('Kassa hər gün ayrıca')), 'Bu ay: Kassadakı Pul — günlər siyahısı, kassa bir gün üçün');
+  ok(await p.locator('#rtabs .tab').evaluateAll(b => b.map(x => x.textContent).join('|')) === '💰 Kassadakı Pul|💵 Nağd Satış|💳 Kart Satış|📝 Nisyə Satış|🗑️ Zay olan pul|🧾 Xərclər|📦 Anbarda qalan pul|📈 Mənfəət', 'v0.89.0: Hesabatda 8 yeni tab');
+  await p.click('[data-rr=all]'); await p.click('[data-rt=kart]');
+  ok((await p.textContent('#rbody')).includes('Dövr satışı'), 'Kart Satış: bütün dövrdə köhnə satış var');
   await p.click('[data-rr=today]');
-  ok(!(await p.textContent('#rbody')).includes('Dövr satışı'), 'Məhsul + mənfəət: bu gün seçiləndə köhnə satış yoxdur');
+  ok(!(await p.textContent('#rbody')).includes('Dövr satışı'), 'Kart Satış: bu gün seçiləndə köhnə satış yoxdur');
+  await p.click('[data-rt=nagd]');
+  ok(!(await p.textContent('#rbody')).includes('Dövr satışı'), 'Nağd Satış: kart satışı görünmür');
   await p.click('#ovRep [data-close]');
   await p.evaluate(() => { S.sales = S.sales.filter(s => s.id !== 'rr1'); });
   await p.click('#btnHist');
@@ -562,7 +566,7 @@ const path = require('path');
   await p.selectOption('#x_cat', 'Çay-su'); await p.fill('#x_amt', '4.50'); await p.click('[data-x=xsave]');
   await p.click('#ovExp [data-close]');
   // 💰 Kassa
-  await p.click('#btnRep'); await p.click('[data-rt=gun]');
+  await p.click('#btnRep'); await p.click('[data-rt=kassa]');
   const K = await p.evaluate(() => cashDay(dayKey(Date.now())));
   const expSales = await p.evaluate(() => S.sales.filter(s => s.pay === 'nağd' && new Date(s.ts).toDateString() === new Date().toDateString()).reduce((a, s) => a + s.total, 0));
   ok(Math.abs(K.sales - expSales) < 1e-9 && Math.abs(K.exp - 304.5) < 1e-9 && Math.abs(K.purch - 52) < 1e-9, `kassa: nağd satış ${expSales.toFixed(2)}, nağd alış 52.00 (silinmiş 10 ₼ alış sayılmır), nağd xərc 304.50 (çay 4.50 + icarə 300)`);
@@ -582,18 +586,21 @@ const path = require('path');
     S.waste.push({ ts: prev, mat: 'a4', q: 5, reason: 'Test', worker: 'Admin', cost: 30 });
     S.expenses.push({ id: 'oldx', ts: prev, cat: 'İcarə', amount: 500, pay: 'kart', note: '', rec: null });
   });
-  await p.click('#btnRep'); await p.click('[data-rt=ay]');
+  await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.click('[data-rr=all]');
   const cur = await p.evaluate(() => monthStats()[0]), prv = await p.evaluate(() => monthStats()[1]);
   ok(Math.abs(prv.net - (1000 - 200 - 30 - 500)) < 1e-9, 'keçən ay: 1000 − 200 − 30 − 500 = 270 xalis');
   ok(Math.abs(cur.net - (cur.sales - cur.cost - cur.waste - cur.exp)) < 1e-9 && cur.exp > 0, `bu ay: ${cur.sales.toFixed(2)} − ${cur.cost.toFixed(2)} − ${cur.waste.toFixed(2)} − ${cur.exp.toFixed(2)} = ${cur.net.toFixed(2)}`);
   ok(await p.evaluate(() => monthStats()[0].sales === S.sales.filter(s => monKey(s.ts) === monKey(Date.now())).reduce((a, s) => a + s.total, 0)), 'bu ayın satışı satışların cəmi ilə üst-üstə düşür');
-  ok(await p.locator('.mchart rect.s1').count() === 2 && await p.locator('.legend').count() === 1, 'qrafik: 2 ay, satış sütunları, legend var');
-  ok((await p.textContent('#rbody')).includes('Müqayisə:'), 'əvvəlki ayla müqayisə yazısı');
-  await p.click(`button.link[data-mk="${prv.k}"]`);
-  ok((await p.inputValue('#m_sel')) === prv.k && (await p.textContent('.kpi.hero')).includes('270.00'), 'cədvəldə keçən aya basanda o ay seçilir (xalis 270.00)');
-  ok((await p.textContent('.cols2')).includes('İcarə') && (await p.textContent('.cols2')).includes('Köhnə satış'), 'ayın detalı: xərc növləri və ən çox satılanlar');
-  await p.selectOption('#m_sel', cur.k);
-  ok((await p.locator('tr.selrow').textContent()).includes(await p.evaluate(k => monName(k), cur.k)), 'ay seçimi: cədvəldə sətir işarələnir');
+  ok(await p.locator('.mchart rect.s1').count() === 2 && await p.locator('.legend').count() === 1, 'Mənfəət (bütün dövr): qrafik 2 ay, legend var');
+  const allNet = await p.evaluate(() => monthStats().reduce((a, m) => a + m.net, 0));
+  ok((await p.textContent('.kpi.hero')).includes(m2v(allNet)) && (await p.textContent('#rbody')).includes('270.00'), `Mənfəət: ümumi ${allNet.toFixed(2)}, keçən ay 270.00 cədvəldə`);
+  await p.click('[data-rt=xerc]');
+  ok((await p.textContent('#rbody')).includes('İcarə') && (await p.textContent('#rbody')).includes('500.00'), 'Xərclər tabı: növlər və xərclər bir-bir');
+  await p.click('[data-rt=anbarpul]');
+  const stockV = await p.evaluate(() => S.materials.reduce((a, m) => a + Math.max(0, m.stock) * (m.cost || 0), 0));
+  ok((await p.textContent('.kpi.hero')).includes(m2v(stockV)), `Anbarda qalan pul: ${stockV.toFixed(2)} ₼`);
+  await p.click('[data-rt=zay]');
+  ok((await p.textContent('#rbody')).includes('Zay olan pul') && (await p.textContent('#rbody')).includes('Test'), 'Zay olan pul tabı: səbəb üzrə');
   await p.click('#ovRep [data-close]');
 
   // Pəncərəni böyüt / kiçilt və loqo
@@ -681,8 +688,8 @@ const path = require('path');
 
   // v0.74.0: 💰 Mənfəət tabı
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
-  await p.click('#btnRep'); await p.click('[data-rt=pnl]');
-  ok(await p.evaluate(() => { const m = monthStats()[0]; return document.getElementById('rbody').textContent.includes('Qazancım') && document.getElementById('rbody').textContent.includes(m2(m.net)); }), 'Hesabatda "💰 Mənfəət" tabı: bütün xərclər və qazancım');
+  await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.click('[data-rr=month]');
+  ok(await p.evaluate(() => { const m = monthStats()[0]; return document.querySelector('#rbody .kpi.hero').textContent.includes(m2(m.net)); }), 'Mənfəət tabı (bu ay) = monthStats net');
   await p.click('#ovRep [data-close]');
 
   // v0.73.0: ☀️/🌙 mövzu

@@ -147,6 +147,11 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   3-cü mərhələ (v0.20.0): **📅 Aylıq** tab (Hesabat / Anbar; `monthStats()`, `renderMonthly()`): xalis = satış − satış sətirlərinin `cost`-u
   − zay `cost` − digər xərclər (mal alışı çıxılmır). Ay seçimi, əvvəlki ayla ▲/▼ % (xərclərdə azalma yaşıl), son 12 ayın SVG sütun
   qrafiki (Satış `--series-1`, Xalis `--series-2`, validator hər iki mövzuda keçib), 24 aylıq cədvəl, ayın xərc növləri və ən çox satılanlar.
+- **📊 Hesabat — 8 tab** (v0.89.0, sahibinin istəyi "çox qarışıqdır"; köhnə Gün / Dövr, Aylıq, Mənfəət, Məhsul + mənfəət, Zay, Borclar tabları silindi, məlumatları paylandı):
+  `RT_REP`: 💰 Kassadakı Pul `kassa` (kassa bloku bir gün — dövrdə `rTo`; `k_open/k_cnt` həmin günə yazılır; dövrdə "Günü seçin" siyahısı), 💵 Nağd `nagd` / 💳 Kart `kart` / 📝 Nisyə `nisye`
+  (`payTab(p)`: `payPart` ilə cəm, günlər, kassirlər, nə satılıb (qarışıqsız), satışlar; nisyədə + borclar baxışı), 🗑️ Zay olan pul `zay` (₼), 🧾 Xərclər `xerc` (növlər, bir-bir, mal alışları, `srcSection`),
+  📦 Anbarda qalan pul `anbarpul` (qalıq × maya, dövrsüz), 📈 Mənfəət `menfeet` (yalnız gəlir: satış − maya − zay − xərclər; günlər + cəmi; bir neçə ay olanda aylar + qrafik).
+  İcazə: ilk 5 `reports`, son 3 `cost`. Açılanda `kassa`, bu gün. Tablar 4+4 (`#rtabs.g4`, telefonda 2 sütun). `renderMonthly/renderProfit` kodda qalır (işlənmir).
 - **💰 Mənfəət** (v0.74.0, sahibinin istəyi "bu ay nə qədər qazanmışam"): Hesabatda Aylıq-dan sonra tab `pnl` (icazə `cost`), `renderProfit()` —
   ay seçimi (`mSel`, `monthStats()`), 3 KPI (satışdan gələn pul / 📋 bütün xərclərim = maya + zay + S.expenses / 🟢 qazancım = `net`),
   xərclər cədvəli (maya, zay, hər növ), ödənilməyən aylıq təkrarlananlar xəbərdarlığı, mal alışı qeydi (xərc sayılmır), "Xərclər bir-bir".
