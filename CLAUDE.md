@@ -40,7 +40,11 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   - Sənəd Surəti (`S.mig.kserIci`): A4 ağ-qara surət 0.20 / 51+ 0.15 (`ks_a4bw`, 1 vərəq A4), A3 ağ-qara surət 0.50 (`ks_a3bw`),
     A3 ağ-qara surət (2 üzlü) 1.00 (`ks_a3bw2`) — A3 materialı hələ yoxdur, resept boşdur;
     Telefondan sənəd surəti 0.30 (`ks_tel`, 1 vərəq A4; `S.mig.telQiymet`).
-  - Sertifikat Kağızı (1.00) birbaşa satış düyməsidir (`S.mig.a3Sert`). **A3 Sadə** v0.61.0-dan qrupdur (`S.mig.a3Qrup`, `g_a3`):
+  - Sertifikat Kağızı (1.00) birbaşa satış düyməsidir (`S.mig.a3Sert`).
+    v0.82.0 (`S.mig.sertPick`, sahibinin istəyi): `g_sert.pick="sertifikat"` — basanda `#ovSrc`-də (rejim `pickFor`, `data-pk`, klaviatura 1/2…) bu şöbənin adında
+    "sertifikat" olan materialları soruşur (Sertifikat Kağızı 250 qram / 300 qram (qalın)); seçilən silinir. Ümumi qayda: düymədə `pick` (redaktorda `#e_pick`),
+    `pickMats(it)`, sifariş sətri `{id,q,mat}` (`okey` … `#mat`), `lineRecipe(o)` / `lineCost(o)` (seçimdəki materiallar reseptdən çıxarılıb seçilən qoyulur, `pickQ||1`),
+    satış sətrində `mat` + ad "… — material adı"; qaytarmada `ret.mat`. Material 1 dənədirsə soruşmur. **A3 Sadə** v0.61.0-dan qrupdur (`S.mig.a3Qrup`, `g_a3`):
     A3 sadə 0.50 (`a3s_bw`), A3 50% rəngli 0.70 (`a3s_50`), A3 100% rəngli 1.00 (`a3s_100`); köhnə resept birinciyə keçir.
   - Foto Kağızlar (`S.mig.fotoIci`, id `fk_1015`…): 10x15 0.40 (1 foto kağız 10x15), 13x18 0.80, 15x21 1, 20x25 3, 21x30 3,
     25x38 8, 30x40 12, 30x42 12, 30x45 15 (10x15-dən başqalarının materialı yoxdur).

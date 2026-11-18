@@ -629,6 +629,15 @@ const path = require('path');
   await p.click('#rbody [data-act=savestock], #rbody button:has-text("Yadda saxla")'); await p.waitForTimeout(200);
   ok(await p.evaluate(() => mat('mFx').stock === 6.5 && S.waste.some(w => w.mat === 'mFx' && w.q === 3.5)), 'sayım: Faktiki 6.5 metr düz yazılır, fərq 3.5 metr itki');
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
+  // v0.82.0: Sertifikat Kağızı — satanda 250 / 300 qram soruşulur
+  await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); S.materials.push({ id: 'ms250', name: 'Sertifikat Kağızı 250 qram', unit: 'vərəq', stock: 100, cost: 0.15 }, { id: 'ms300', name: 'Sertifikat Kağızı 300 qram (qalın)', unit: 'vərəq', stock: 50, cost: 0.18 }); item('g_sert').recipe = [['ms250', 1]]; upgrade(); order = []; renderAll(); });
+  await p.fill('#q', 'sertifikat'); await p.waitForTimeout(150); await p.click('#grid [data-add=g_sert]');
+  ok(await p.isVisible('#ovSrc') && await p.locator('#srcBody [data-pk]').count() === 2, 'Sertifikat: basanda 250 / 300 qram soruşulur');
+  await p.keyboard.press('2'); await p.waitForTimeout(100);
+  ok(await p.evaluate(() => order.length === 1 && order[0].mat === 'ms300'), 'klaviatura 2 → 300 qram sifarişə düşdü');
+  await p.click('#btnDone'); await p.waitForTimeout(200);
+  ok(await p.evaluate(() => mat('ms300').stock === 49 && mat('ms250').stock === 100 && S.sales.at(-1).lines[0].name.includes('300') && Math.abs(S.sales.at(-1).lines[0].cost - 0.18) < 1e-9), 'satış: 300 qramdan 1 silindi, 250 qrama toxunulmadı, maya 0.18');
+  await p.fill('#q', '');
   // v0.77.0: Polaroid şəkil
   ok(await p.evaluate(() => { const P = item('fk_polaroid'); S.materials.push({ id: 'mF10', name: 'Foto kağız 10x15', unit: 'vərəq', stock: 50, cost: 0.3 }); P.recipe = []; item('fk_1015').recipe = []; upgrade();
     return P.cat === 'poli' && !P.parent && P.tiers[0][1] === 0.5 && JSON.stringify(P.recipe) === '[["mF10",1]]'; }), 'Poliqrafiya → Polaroid şəkil 0.50, resept 1 vərəq 10x15');

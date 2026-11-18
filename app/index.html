@@ -678,7 +678,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.81.0";
+const APP_VERSION="0.82.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -982,6 +982,8 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   // v0.81.0 (sahibinin istəyi): Polaroid şəkil Foto Kağızlar-dan Poliqrafiya Xidmətləri-nə (qrupsuz, birbaşa düymə)
   if(!S.mig.polPoli){S.mig.polPoli=1;const P=S.items.find(i=>i.id==="fk_polaroid"),pc=S.cats.find(c=>c.id==="poli")||S.cats.find(c=>norm(c.name)==="poliqrafiya xidmetleri");
     if(P&&pc){P.cat=pc.id;delete P.parent;P.color="#0e7490";S.items=S.items.filter(i=>i!==P);S.items.push(P)}}
+  // v0.82.0 (sahibinin istəyi): Sertifikat Kağızı — satanda "250 qram / 300 qram" soruşulur, seçilən anbardan silinir
+  if(!S.mig.sertPick){S.mig.sertPick=1;const it=S.items.find(i=>i.id==="g_sert")||S.items.find(i=>!i.group&&norm(i.name)==="sertifikat kagizi");if(it)it.pick="sertifikat"}
   // reseptə bu şöbənin 10x15 foto kağızı (hər şöbədə öz materialı; tapılmayıbsa sonrakı açılışda yenə axtarılır)
   {const P=S.items.find(i=>i.id==="fk_polaroid");
     if(P&&!P.recipe.some(([m])=>mat(m))){const f=S.items.find(i=>i.id==="fk_1015"),own=(f?.recipe||[]).find(([m])=>mat(m));
@@ -1743,7 +1745,7 @@ function renderOrder(){
     if(o.ret)return `<div class="line retline"><div><div class="t">↩️ Qaytarma: ${esc(o.ret.name)}</div><div class="s">${m2(-p)} ₼ × ${o.q} geri</div></div>
       <div class="qty"><button data-rx="${k}" aria-label="qaytarmanı sil" title="Qaytarmanı sifarişdən çıxar">✕</button></div>
       <div class="sum">${m2(p*o.q)} ₼</div></div>`;
-    return `<div class="line"><div><div class="t">${esc(it.name)}${o.area?` ${areaTxt(o)}`:""}${o.note?` — ${esc(o.note)}`:""}</div>${it.src?`<div class="src">${o.from?"🚚 "+esc(suppName(o.from)||"Tədarükçü"):"🖨 Özümüz"}</div>`:""}<div class="s">${m2(p)} ₼ × ${o.q}${o.area?` · 1 m² ${m2(o.cp/o.area)} ₼`:""}</div></div>
+    return `<div class="line"><div><div class="t">${esc(it.name)}${o.mat?` — ${esc(mat(o.mat)?.name||"")}`:""}${o.area?` ${areaTxt(o)}`:""}${o.note?` — ${esc(o.note)}`:""}</div>${it.src?`<div class="src">${o.from?"🚚 "+esc(suppName(o.from)||"Tədarükçü"):"🖨 Özümüz"}</div>`:""}<div class="s">${m2(p)} ₼ × ${o.q}${o.area?` · 1 m² ${m2(o.cp/o.area)} ₼`:""}</div></div>
       <div class="qty"><button data-dec="${k}" aria-label="azalt">−</button><input data-q="${k}" type="number" min="1" value="${o.q}" aria-label="say"><button data-inc="${k}" aria-label="artır">+</button></div>
       <div class="sum">${m2(p*o.q)} ₼</div></div>`}).join("");
   const sub=order.reduce((a,o)=>a+lineUnit(o)*o.q,0),d=discAmt(sub),t=sub-d;
@@ -1764,7 +1766,13 @@ function renderOrder(){
 function renderAll(){renderHeader();renderTabs();renderGrid();renderOrder()}
 
 // Sifariş sətri: {id, q, from} — from = tədarükçü id (hazır alınıb) və ya boş (özümüz). Açar: "id@from".
-const okey=o=>o.uid||(o.id+(o.from?"@"+o.from:""));
+const okey=o=>o.uid||(o.id+(o.from?"@"+o.from:"")+(o.mat?"#"+o.mat:""));
+// v0.82.0: satanda material seçimi (it.pick = açar söz, məs. "sertifikat"): bu şöbənin adında o söz olan materialları
+const pickMats=it=>it?.pick?(S.materials||[]).filter(m=>norm(m.name).includes(norm(it.pick))):[];
+// sətrin resepti: seçilən material + reseptin qalan (seçim olmayan) hissəsi
+function lineRecipe(o){const it=item(o.id);if(!it)return[];const mt=o.mat||o.ret?.mat;if(!mt)return it.recipe;
+  const pm=pickMats(it).map(m=>m.id);return [...it.recipe.filter(([m])=>!pm.includes(m)&&m!==mt),[mt,it.pickQ||1]]}
+const lineCost=o=>{const it=item(o.id);return lineRecipe(o).reduce((a,[m,q])=>a+(mat(m)?.cost||0)*q,0)+(it?.ink||0)};
 // m² ilə satılan sətir (banner, vinil): o.area = 1 ədədin m²-i, o.w×o.h, o.cp = 1 ədədin razılaşdırılmış qiyməti
 const lineUnit=o=>o.cp!=null?o.cp:unitPrice(item(o.id),o.q);
 const fmtN=n=>String(+(+n).toFixed(3)).replace(".",",");
@@ -1772,10 +1780,10 @@ const areaTxt=o=>o.w&&o.h?`${fmtN(o.w)} × ${fmtN(o.h)} m (${fmtN(o.area)} m²)`
 function addItem(key,d=1){
   const ex=order.find(x=>okey(x)===key);
   if(ex&&ex.uid){ex.q=Math.max(0,ex.q+d);if(!ex.q)order=order.filter(x=>x!==ex);renderGrid();renderOrder();return}
-  const [id,from]=String(key).split("@"),it=item(id);
+  const [kf,mt]=String(key).split("#"),[id,from]=kf.split("@"),it=item(id);
   if(d>0&&it&&!it.tiers.some(t=>+t[1])){toast(`"${it.name}" düyməsinin qiyməti yazılmayıb. ✏️ Düzəliş → ✏️ ilə qiyməti yazın`);return}
-  const o=order.find(x=>okey(x)===okey({id,from}));
-  if(o){o.q=Math.max(0,o.q+d);if(!o.q)order=order.filter(x=>x!==o)} else if(d>0) order.push(from?{id,q:d,from}:{id,q:d});
+  const o=order.find(x=>okey(x)===okey({id,from,mat:mt}));
+  if(o){o.q=Math.max(0,o.q+d);if(!o.q)order=order.filter(x=>x!==o)} else if(d>0){const n={id,q:d};if(from)n.from=from;if(mt)n.mat=mt;order.push(n)}
   renderGrid();renderOrder();
 }
 // Düymə tədarükçüyə qoşulubsa (it.src): basanda "Özümüz / Tədarükçü" seçimi
@@ -1903,7 +1911,14 @@ document.addEventListener("input",e=>{if($("ovM2").hidden||!/^m2_/.test(e.target
 document.addEventListener("keydown",e=>{if($("ovM2").hidden)return;
   if(e.key==="Enter"||e.key==="NumpadEnter"){e.preventDefault();e.stopImmediatePropagation();addM2()}
   else if(e.key==="Escape"){e.stopImmediatePropagation();m2For=null;$("ovM2").hidden=true}},true);
+let pickFor=null;
 function tapItem(id){const it=item(id);if((it?.area||it?.free)&&!editMode){openM2(id);return}
+  if(it?.pick&&!editMode&&it.tiers.some(t=>+t[1])){const ms=pickMats(it);
+    if(ms.length===1){addItem(id+"#"+ms[0].id,1);return}
+    if(ms.length>1){pickFor=id;$("srt").textContent=`${it.name}: hansı?`;
+      $("srcBody").innerHTML=`<div class="srcbtns">${ms.map((m,i)=>`<button class="${i?"sup":"own"}" data-pk="${m.id}">📜 ${esc(m.name)}<span class="sub">anbarda ${fmtN(m.stock)} ${esc(m.unit||"ədəd")}</span><span class="sub">klaviatura: ${i+1}</span></button>`).join("")}</div>
+        <p class="sub">Qiymət eynidir (${m2(it.tiers[0][1])} ₼). Seçdiyiniz anbardan silinir.</p>`;
+      $("ovSrc").hidden=false;return}}
   if(!srcSup(it)||editMode){addItem(id,1);return}
   if(!it.tiers.some(t=>+t[1])){addItem(id,1);return}
   srcFor=id;const sp=srcSup(it),si=srcItem(it);
@@ -1913,9 +1928,12 @@ function tapItem(id){const it=item(id);if((it?.area||it?.free)&&!editMode){openM
     <p class="sub">Satış qiyməti eynidir (${m2(it.tiers[0][1])} ₼). Seçim yalnız hesabatda ayırmaq üçündür.</p>`;
   $("ovSrc").hidden=false}
 function pickSrc(v){const id=srcFor;srcFor=null;$("ovSrc").hidden=true;if(!id)return;addItem(v==="own"?id:id+"@"+v,1)}
-document.addEventListener("click",e=>{const t=e.target.closest("[data-src],[data-srcx]");if(!t||$("ovSrc").hidden)return;
-  if(t.hasAttribute("data-srcx")){srcFor=null;$("ovSrc").hidden=true;return}pickSrc(t.dataset.src)});
+function pickMat(mid){const id=pickFor;pickFor=null;$("ovSrc").hidden=true;if(id&&mid)addItem(id+"#"+mid,1)}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-src],[data-srcx],[data-pk]");if(!t||$("ovSrc").hidden)return;
+  if(t.hasAttribute("data-srcx")){srcFor=null;pickFor=null;$("ovSrc").hidden=true;return}
+  if(t.dataset.pk){pickMat(t.dataset.pk);return}pickSrc(t.dataset.src)});
 document.addEventListener("keydown",e=>{if($("ovSrc").hidden)return;e.stopImmediatePropagation();
+  if(pickFor){const b=[...document.querySelectorAll("#srcBody [data-pk]")][+e.key-1];if(b){e.preventDefault();pickMat(b.dataset.pk)}else if(e.key==="Escape"){pickFor=null;$("ovSrc").hidden=true}return}
   if(e.key==="1"){e.preventDefault();pickSrc("own")}else if(e.key==="2"){e.preventDefault();const it=item(srcFor);if(srcSup(it))pickSrc(srcSup(it).id)}
   else if(e.key==="Escape"){srcFor=null;$("ovSrc").hidden=true}},true);
 // Klaviatura ilə nağd ödəniş: Space və ya Enter iki dəfə (1.5 saniyə ərzində)
@@ -1933,14 +1951,15 @@ function finishSale(){
   // Tədarükçüdən hazır alınan sətir: anbardan material silinmir, maya 0 (alış artıq xərclərdədir); scost = alış qiyməti (hesabat üçün)
   const lines=order.map(o=>{if(o.ret){const r=o.ret,L={id:o.id,name:"↩️ Qaytarma: "+r.name,plain:r.plain,q:-o.q,price:-o.cp,sum:o.cp*o.q,cost:-(r.cost1*o.q),ret:{sale:r.sale,li:r.li}};
       if(r.from){L.from=r.from;L.fromName=r.fromName||"";L.scost=-(r.scost1*o.q)}if(r.base){L.base=r.base;L.m2=-(r.m21*o.q)}return L}
-    const it=item(o.id),p=lineUnit(o),L={id:o.id,name:it.name+(o.area?" "+areaTxt(o):"")+(o.note?" — "+o.note:""),q:o.q,price:p,sum:p*o.q,cost:o.from?0:unitCost(it)*o.q};
+    const it=item(o.id),p=lineUnit(o),L={id:o.id,name:it.name+(o.mat?" — "+(mat(o.mat)?.name||""):"")+(o.area?" "+areaTxt(o):"")+(o.note?" — "+o.note:""),q:o.q,price:p,sum:p*o.q,cost:o.from?0:lineCost(o)*o.q};
+    if(o.mat)L.mat=o.mat;
     if(o.note){L.plain=it.name;L.note=o.note}
     if(o.area){L.base=it.name;L.m2=o.area*o.q;if(o.w){L.w=o.w;L.h=o.h}}
     if(o.from){L.from=o.from;L.fromName=suppName(o.from)||"";const si=it.src?.supp===o.from?srcItem(it):null;L.scost=(si?.price||0)*(o.area?o.area*o.q:o.q)}return L});
   const short=[],used={};
-  order.filter(o=>o.ret&&!o.ret.from&&item(o.id)).forEach(o=>item(o.id).recipe.forEach(([m,q])=>{const M=mat(m);if(!M)return;M.stock+=q*o.q;used[m]=(used[m]||0)-q*o.q}));
+  order.filter(o=>o.ret&&!o.ret.from&&item(o.id)).forEach(o=>lineRecipe(o).forEach(([m,q])=>{const M=mat(m);if(!M)return;M.stock+=q*o.q;used[m]=(used[m]||0)-q*o.q}));
   order.filter(o=>o.ret).forEach(o=>{const os=S.sales.find(x=>x.id===o.ret.sale);if(os){os.returned=os.returned||{};os.returned[o.ret.li]=(os.returned[o.ret.li]||0)+o.q}});
-  order.filter(o=>!o.from&&!o.ret).forEach(o=>item(o.id).recipe.forEach(([m,q])=>{const M=mat(m);if(!M)return;M.stock-=q*o.q;used[m]=(used[m]||0)+q*o.q;if(M.stock<0)short.push(M.name)}));
+  order.filter(o=>!o.from&&!o.ret).forEach(o=>lineRecipe(o).forEach(([m,q])=>{const M=mat(m);if(!M)return;M.stock-=q*o.q;used[m]=(used[m]||0)+q*o.q;if(M.stock<0)short.push(M.name)}));
   const sub=lines.reduce((a,l)=>a+l.sum,0),dsc=discAmt(sub);
   const sale={id:newId("s"),ts:Date.now(),worker:curName(),pay,lines,total:sub-dsc,used};
   if(dsc){sale.sub=sub;sale.disc=dsc;sale.discReason=ordDisc.reason;if(ordDisc.mode==="pct")sale.discPct=ordDisc.v}
@@ -2167,7 +2186,7 @@ function retSum(){const s=S.sales.find(x=>x.id===retFor);if(!s)return 0;let t=0;
   $("retSum").innerHTML=t?`Müştəriyə qaytarılacaq: <b>${m2(t)} ₼</b>`:`<span class="sub">Qaytarılan sayı yazın.</span>`;return t}
 function addRet(){const s=S.sales.find(x=>x.id===retFor);if(!s)return;let added=0;
   document.querySelectorAll("[data-rq]").forEach(inp=>{const i=+inp.dataset.rq,l=s.lines[i],n=Math.min(retAvail(s,i),Math.max(0,Math.round(num(inp.value))));if(!n)return;
-    const u=retUnit(s,l);order.push({uid:newId("o"),id:l.id,q:n,cp:-u,ret:{sale:s.id,li:i,name:l.name,plain:l.plain||l.base||l.name,cost1:(l.cost||0)/l.q,scost1:(l.scost||0)/l.q,m21:l.m2?l.m2/l.q:0,from:l.from,fromName:l.fromName,base:l.base}});added+=n});
+    const u=retUnit(s,l);order.push({uid:newId("o"),id:l.id,q:n,cp:-u,ret:{sale:s.id,li:i,name:l.name,plain:l.plain||l.base||l.name,cost1:(l.cost||0)/l.q,scost1:(l.scost||0)/l.q,m21:l.m2?l.m2/l.q:0,from:l.from,fromName:l.fromName,base:l.base,mat:l.mat}});added+=n});
   if(!added){toast("Qaytarılan sayı yazın");return}
   if(pay==="borc"){pay="nağd";ordCust=null}
   retFor=null;$("ovRet").hidden=true;$("ovHist").hidden=true;renderGrid();renderOrder();
@@ -2895,6 +2914,7 @@ function renderAdmin(){
       ${d.group?`<p class="sub">Qrupun qiyməti və resepti olmur. Satış qrupun içindəki düymələrdən olur. Yadda saxlayandan sonra satış ekranında qrupu açın və ✏️ Düzəliş → “+ Yeni düymə” ilə içinə düymə əlavə edin.</p>`:`
       <div class="frow"><label class="chk"><input type="checkbox" id="e_area" ${d.area?"checked":""}> 📐 Kvadrat metrlə satılır: qiymət hər sifarişdə yazılır (banner, vinil kimi)</label></div>
       <div class="frow"><label class="chk"><input type="checkbox" id="e_free" ${d.free?"checked":""}> 💬 Qiyməti razılaşma ilə: hər satışda yerində yazılır</label></div>
+      <div class="frow"><label class="f grow">❓ Satanda material soruşulsun (anbarda adında bu söz olan mallar, məs. "sertifikat"; boş = soruşulmur)<input id="e_pick" value="${esc(d.pick||"")}" maxlength="40" placeholder="məs. sertifikat"></label></div>
       ${S.suppliers.some(x=>x.items?.length)?`<div class="frow"><label class="f grow">Tədarükçüdən hazır da alınır? (satışda “Özümüz / Tədarükçü” soruşulur)<select id="e_src">
         <option value="">— yox, yalnız özümüz —</option>${S.suppliers.filter(x=>x.items?.length).map(x=>x.items.map(y=>`<option value="${x.id}|${y.id}" ${d.src?.supp===x.id&&d.src?.item===y.id?"selected":""}>🚚 ${esc(x.name)} → ${esc(y.name)} (${m2(y.price)} ₼)</option>`).join("")).join("")}</select></label></div>`:""}
       <h4>Resept: 1 ədəd satışda anbardan nə silinir</h4>
@@ -2927,6 +2947,7 @@ function syncDraft(){
   if($("e_ink"))draft.ink=parseFloat($("e_ink").value)||0;
   if($("e_area")){if($("e_area").checked)draft.area=1;else delete draft.area}
   if($("e_free")){if($("e_free").checked&&!draft.area)draft.free=1;else delete draft.free}
+  if($("e_pick")){const v=$("e_pick").value.trim();if(v)draft.pick=v;else delete draft.pick}
   if($("e_src")){const v=$("e_src").value;if(v){const [supp,it]=v.split("|");draft.src={supp,item:it};if(draft.area)draft.src.only=1}else delete draft.src}
   draft.recipe=draft.recipe.map((r,i)=>$("r_m_"+i)?[$("r_m_"+i).value,parseFloat($("r_q_"+i).value)||0]:r); // başqa şöbənin materialı (görünmür) qalır
   if($("t_p_0"))draft.tiers=draft.tiers.map((t,i)=>[i===0?1:(parseInt($("t_min_"+i).value)||1),parseFloat($("t_p_"+i).value)||0]);
