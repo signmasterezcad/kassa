@@ -623,6 +623,12 @@ const path = require('path');
   ok(await p.evaluate(() => { S.materials.push({ id: 'mFx', name: 'Fleks material', unit: 'metr', stock: 10, cost: 7 }); upgrade();
     return ['pq_kel10', 'pq_kel15', 'pq_ekl10', 'pq_ekl15', 'pq_kf10', 'pq_kf15'].every(id => JSON.stringify(item(id).recipe) === '[["mFx",0.5]]') && item('pq_kf15').tiers[0][1] === 15; }),
     'Fleks: Kəlağayı, Əklil lenti, köynəyə ad (10) / ad + nömrə (15) — hər biri 0.5 metr');
+  // v0.80.1: sayımda kəsr (fleks 6.5 metr)
+  await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
+  await p.click('#btnStock'); await p.waitForSelector('#f_mFx'); await p.fill('#f_mFx', '6.5');
+  await p.click('#rbody [data-act=savestock], #rbody button:has-text("Yadda saxla")'); await p.waitForTimeout(200);
+  ok(await p.evaluate(() => mat('mFx').stock === 6.5 && S.waste.some(w => w.mat === 'mFx' && w.q === 3.5)), 'sayım: Faktiki 6.5 metr düz yazılır, fərq 3.5 metr itki');
+  await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   // v0.77.0: Polaroid şəkil
   ok(await p.evaluate(() => { const P = item('fk_polaroid'); S.materials.push({ id: 'mF10', name: 'Foto kağız 10x15', unit: 'vərəq', stock: 50, cost: 0.3 }); P.recipe = []; item('fk_1015').recipe = []; upgrade();
     return P.parent === 'g_foto' && P.tiers[0][1] === 0.5 && JSON.stringify(P.recipe) === '[["mF10",1]]'; }), 'Foto Kağızlar → Polaroid şəkil 0.50, resept 1 vərəq 10x15');

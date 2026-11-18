@@ -678,7 +678,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.80.0";
+const APP_VERSION="0.80.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2832,7 +2832,7 @@ function renderRep(){
     h=`<p class="sub">Sayım: rəfdə saydığınız rəqəmi "Faktiki" xanasına yazın. Fərq qeydə alınmayan zay və ya itkidir. "Alış" xanasına yeni gələn kağızı yazın.</p>
     <div class="tw"><table><tr><th>Material</th><th class="n">Maya</th><th class="n">Sistemdə</th><th class="n">Faktiki</th><th class="n">Alış (+)</th><th>Vəziyyət</th></tr>
     ${S.materials.map(m=>`<tr><td>${m.name}</td><td class="n"><input id="c_${m.id}" type="number" step="0.01" value="${m.cost}"></td><td class="n">${m.stock}</td>
-      <td class="n"><input id="f_${m.id}" type="number" placeholder="${m.stock}"></td><td class="n"><input id="b_${m.id}" type="number" placeholder="0"></td>
+      <td class="n"><input id="f_${m.id}" type="number" step="any" min="0" placeholder="${m.stock}"></td><td class="n"><input id="b_${m.id}" type="number" step="any" min="0" placeholder="0"></td>
       <td>${m.stock<=m.min?`<span class="pill warn">Az qalıb (min ${m.min})</span>`:`<span class="pill ok">Normal</span>`}</td></tr>`).join("")}</table></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="stSave">Yadda saxla</button></div>`;
   }
@@ -3268,8 +3268,9 @@ document.addEventListener("click",e=>{
     let diff=[];
     S.materials.forEach(m=>{
       const c=parseFloat($("c_"+m.id).value);if(!isNaN(c))m.cost=c;
-      const b=parseInt($("b_"+m.id).value);if(b>0)m.stock+=b;
-      const f=$("f_"+m.id).value;if(f!==""){const d=m.stock-parseInt(f);if(d>0){S.waste.push({ts:Date.now(),mat:m.id,q:d,reason:"Sayım fərqi",worker:curName(),note:"qeydə alınmayan",cost:m.cost*d});diff.push(`${m.name}: −${d}`)}m.stock=parseInt(f)}
+      const r3=x=>Math.round(x*1000)/1000; // v0.80.1: kəsr say (fleks 6.5 metr) — əvvəl parseInt yuvarlayırdı
+      const b=parseFloat($("b_"+m.id).value);if(b>0)m.stock=r3(m.stock+b);
+      const f=String($("f_"+m.id).value).replace(",",".");if(f!==""&&!isNaN(parseFloat(f))){const F=r3(parseFloat(f)),d=r3(m.stock-F);if(d>0){S.waste.push({ts:Date.now(),mat:m.id,q:d,reason:"Sayım fərqi",worker:curName(),note:"qeydə alınmayan",cost:m.cost*d});diff.push(`${m.name}: −${d}`)}m.stock=F}
     });
     save();renderHeader();renderRep();toast(diff.length?"Sayım fərqi: "+diff.join(", "):"Anbar yeniləndi");
   }
