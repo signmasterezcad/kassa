@@ -707,6 +707,34 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   ok(await p.evaluate(() => S.sales.length > 0 && !S.expenses.length && !S.waste.length), 'işarəsi götürülən (Satışlar) qaldı, qalanları silindi');
   await p.click('#btnRep'); await p.click('#btnReset'); await p.fill('#rs_word', 'SIFIRLA'); await p.click('[data-rs=go]'); await p.waitForTimeout(200);
   ok(await p.evaluate(it0 => !S.sales.length && !S.expenses.length && !S.purchases.length && !S.waste.length && !Object.keys(S.cash).length && S.items.length === it0 && S.materials.every(m => m.stock === 0), it0), 'sıfırlandı: satış/xərc/alış/zay/kassa yox; düymələr qaldı, anbar sayı 0');
+  // v0.90.0: 💰 Kassa açılışı / təhvil-təslim
+  await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
+  ok(await p.isVisible('#btnKassa') && (await p.textContent('#kzState')).includes('bağlıdır'), 'menyuda 💰 Kassa düyməsi: bağlıdır');
+  await p.click('#btnKassa');
+  ok((await p.textContent('#kzt')).includes('açılışı'), 'kassa bağlıdır → açılış pəncərəsi');
+  await p.fill('#kz_cnt', '100'); await p.click('[data-kz=open]');
+  const td = await p.evaluate(() => dayKey(Date.now()));
+  ok(await p.evaluate(d => kzOpen() && kzLast().counted === 100 && S.cash[d].open != null, td) && (await p.textContent('#kzState')).includes('açıqdır'), 'kassa açıldı: 100 ₼, menyuda "açıqdır"');
+  await p.click('#btnKassa');
+  ok((await p.textContent('#kzt')).includes('təhvil ver'), 'açıq kassa → təhvil ver pəncərəsi');
+  const sh = await p.evaluate(() => cashDay(dayKey(Date.now())).should);
+  await p.fill('#kz_cnt', m2v(sh - 5)); await p.fill('#kz_take', '20'); await p.click('[data-kz=close]');
+  ok(await p.isVisible('#ovKassa') && (await p.textContent('#kzLive')).includes('Çatışmır: 5.00'), 'fərq var, qeyd yoxdur → yadda saxlamır, "Çatışmır: 5.00" göstərir');
+  await p.fill('#kz_note', 'xırda pul'); await p.click('[data-kz=close]');
+  const lc = await p.evaluate(() => kzLast());
+  ok(await p.isHidden('#ovKassa') && lc.t === 'close' && Math.abs(lc.diff + 5) < 1e-6 && lc.taken === 20 && Math.abs(lc.left - (sh - 25)) < 1e-6, `təhvil verildi: 20 ₼ sahibə, qalır ${m2v(sh - 25)}`);
+  ok(await p.evaluate(() => { const K = cashDay(dayKey(Date.now())); return K.taken === 20 && Math.abs(K.diff + 5) < 1e-6; }), 'kassa hesabı: sahibə verilən çıxılır, fərq −5');
+  await p.click('#btnUser'); await p.waitForTimeout(100);
+  if (await p.isVisible('#ovLogin')) { await p.click('[data-login]'); }
+  await p.waitForTimeout(500);
+  ok(await p.isVisible('#ovKassa') && (await p.textContent('#kzBody')).includes(m2v(sh - 25)), 'yenidən girəndə açılış özü çıxır: "Kassada qalıb ' + m2v(sh - 25) + '"');
+  await p.fill('#kz_cnt', m2v(sh - 25));
+  ok((await p.textContent('#kzLive')).includes('Düzdür'), 'eyni məbləğ sayılanda: ✓ Düzdür');
+  await p.click('[data-kz=open]');
+  await p.click('#btnRep'); await p.click('[data-rt=kassa]'); await p.click('[data-rr=today]');
+  const kb = await p.textContent('#rbody');
+  ok(kb.includes('Təhvil-təslim') && kb.includes('xırda pul') && kb.includes('Sahibə verilən'), 'Hesabat → Kassadakı Pul: təhvil-təslim jurnalı');
+  await p.click('#ovRep [data-close]');
   ok(errs.length === 0, 'JS xətası yoxdur ' + (errs.join('; ') || ''));
   await b.close();
 })();

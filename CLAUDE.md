@@ -152,6 +152,12 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   (`payTab(p)`: `payPart` ilə cəm, günlər, kassirlər, nə satılıb (qarışıqsız), satışlar; nisyədə + borclar baxışı), 🗑️ Zay olan pul `zay` (₼), 🧾 Xərclər `xerc` (növlər, bir-bir, mal alışları, `srcSection`),
   📦 Anbarda qalan pul `anbarpul` (qalıq × maya, dövrsüz), 📈 Mənfəət `menfeet` (yalnız gəlir: satış − maya − zay − xərclər; günlər + cəmi; bir neçə ay olanda aylar + qrafik).
   İcazə: ilk 5 `reports`, son 3 `cost`. Açılanda `kassa`, bu gün. Tablar 4+4 (`#rtabs.g4`, telefonda 2 sütun). `renderMonthly/renderProfit` kodda qalır (işlənmir).
+- **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
+  `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
+  Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
+  kimə (`to`: kassir və ya boş = gün sonu), `left = sayılan − taken` → `c.counted`; kassa hesabı ilə fərq varsa (`D.warn`) qeyd məcburi. `reports` icazəsi olmayan kassir
+  "olmalıdır" məbləğini görmür (kor sayım). `cashDay()` `taken`-i çıxır. Girişdən sonra son qeyd təhvildirsə açılış özü açılır (`kzAuto`, "Sonra" = `kzSkip`).
+  Hesabat → Kassadakı Pul: "📒 Təhvil-təslim" jurnalı (`kzTable`). Yazarkən yalnız `#kzLive` yenilənir.
 - **💰 Mənfəət** (v0.74.0, sahibinin istəyi "bu ay nə qədər qazanmışam"): Hesabatda Aylıq-dan sonra tab `pnl` (icazə `cost`), `renderProfit()` —
   ay seçimi (`mSel`, `monthStats()`), 3 KPI (satışdan gələn pul / 📋 bütün xərclərim = maya + zay + S.expenses / 🟢 qazancım = `net`),
   xərclər cədvəli (maya, zay, hər növ), ödənilməyən aylıq təkrarlananlar xəbərdarlığı, mal alışı qeydi (xərc sayılmır), "Xərclər bir-bir".
