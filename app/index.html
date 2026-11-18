@@ -692,7 +692,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.90.0";
+const APP_VERSION="0.90.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2141,7 +2141,16 @@ function cashDay(day){
 const kzLog=()=>Object.entries(S.cash||{}).flatMap(([d,c])=>(c.log||[]).map(x=>({...x,day:d}))).sort((a,b)=>a.ts-b.ts);
 const kzLast=()=>kzLog().at(-1)||null;
 const kzOpen=()=>kzLast()?.t==="open";
-let kzDraft={cnt:"",take:"",to:"",note:"",warn:false},kzSkip="";
+let kzDraft={cnt:"",take:"",to:"",note:"",warn:false},kzSkip="",kzDel=null;
+// Admin səhv qeydi silir: günün açılış (c.open) və son sayım (c.counted) qalan qeydlərə görə yenidən hesablanır
+function kzRemove(id){
+  for(const [d,c] of Object.entries(S.cash||{})){const i=(c.log||[]).findIndex(x=>x.id===id);if(i<0)continue;
+    const x=c.log[i];c.log.splice(i,1);
+    if(x.t==="open"){const f=c.log.filter(y=>y.t==="open").sort((a,b)=>a.ts-b.ts)[0];if(c.open===x.counted)c.open=f?f.counted:null}
+    else{const l=c.log.filter(y=>y.t==="close").sort((a,b)=>b.ts-a.ts)[0];c.counted=l?l.left:null}
+    save();toast("Qeyd silindi");return true}
+  return false;
+}
 function openKassa(){kzDraft={cnt:"",take:"",to:"",note:"",warn:false};drawKassa();$("ovKassa").hidden=false;setTimeout(()=>$("kz_cnt")?.focus(),30)}
 function drawKassa(){
   const L=kzLast(),open=L?.t==="open",today=dayKey(Date.now()),K=cashDay(today),D=kzDraft,seeExp=can("reports");
@@ -2183,11 +2192,11 @@ function kzLive(){
   return h;
 }
 function kzTable(list,seeExp){
-  return `<div class="tw"><table><tr><th>Saat</th><th>Kim</th><th>Nə</th>${seeExp?`<th class="n">Gözlənilən</th>`:""}<th class="n">Sayılan</th><th class="n">Fərq</th><th class="n">Sahibə verilən</th><th class="n">Qalır</th><th>Qeyd</th></tr>
+  return `<div class="tw"><table><tr><th>Saat</th><th>Kim</th><th>Nə</th>${seeExp?`<th class="n">Gözlənilən</th>`:""}<th class="n">Sayılan</th><th class="n">Fərq</th><th class="n">Sahibə verilən</th><th class="n">Qalır</th><th>Qeyd</th>${isAdmin()?"<th></th>":""}</tr>
     ${list.map(x=>`<tr><td>${fmtTime(x.ts)}</td><td>${esc(x.by||"")}</td><td>${x.t==="open"?"☀️ Açdı / təhvil aldı":x.to?"🔁 Təhvil verdi → "+esc(x.to):"🌙 Gün sonu bağladı"}</td>
       ${seeExp?`<td class="n">${x.expected==null?"—":m2(x.expected)}</td>`:""}<td class="n">${m2(x.counted)}</td>
       <td class="n">${x.diff==null||Math.abs(x.diff)<0.005?`<span class="pill ok">✓</span>`:`<span class="pill ${x.diff<0?"bad":"warn"}">${x.diff<0?"−":"+"}${m2(Math.abs(x.diff))}</span>`}</td>
-      <td class="n">${x.taken?m2(x.taken):"—"}</td><td class="n">${m2(x.left)}</td><td class="wrap">${esc(x.note||"")}</td></tr>`).join("")}</table></div>`;
+      <td class="n">${x.taken?m2(x.taken):"—"}</td><td class="n">${m2(x.left)}</td><td class="wrap">${esc(x.note||"")}</td>${isAdmin()?`<td><button class="btn ghost sm" data-kzd="${x.id}">${kzDel===x.id?"✓ Bəli, sil":"🗑️ Sil"}</button></td>`:""}</tr>`).join("")}</table></div>`;
 }
 function kzSave(kind){
   const D=kzDraft,cnt=D.cnt===""?NaN:+D.cnt,take=D.take===""?0:+D.take;
@@ -2218,7 +2227,9 @@ document.addEventListener("input",e=>{if($("ovKassa").hidden)return;const id=e.t
   if(id==="kz_cnt"){D.cnt=e.target.value;D.warn=false}else if(id==="kz_take")D.take=e.target.value;else if(id==="kz_note"){D.note=e.target.value;return}else if(id==="kz_to"){D.to=e.target.value;return}else return;
   const lv=$("kzLive");if(lv)lv.innerHTML=kzLive()});
 document.addEventListener("change",e=>{if(e.target.id==="kz_to")kzDraft.to=e.target.value});
-document.addEventListener("click",e=>{const t=e.target.closest("#btnKassa,[data-kz]");if(!t)return;
+document.addEventListener("click",e=>{const t=e.target.closest("#btnKassa,[data-kz],[data-kzd]");if(!t)return;
+  if(t.dataset.kzd){if(!isAdmin())return;const id=t.dataset.kzd;if(kzDel!==id){kzDel=id}else{kzDel=null;kzRemove(id);renderAll()}
+    if(!$("ovKassa").hidden)drawKassa();if(!$("ovRep").hidden)renderRep();return}
   if(t.id==="btnKassa"){openKassa();return}
   const a=t.dataset.kz;
   if(a==="x"){$("ovKassa").hidden=true;return}

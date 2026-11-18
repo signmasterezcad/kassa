@@ -734,6 +734,11 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.click('#btnRep'); await p.click('[data-rt=kassa]'); await p.click('[data-rr=today]');
   const kb = await p.textContent('#rbody');
   ok(kb.includes('Təhvil-təslim') && kb.includes('xırda pul') && kb.includes('Sahibə verilən'), 'Hesabat → Kassadakı Pul: təhvil-təslim jurnalı');
+  const kn0 = await p.evaluate(() => kzLog().length), kcid = await p.evaluate(() => kzLog().find(x => x.t === 'close').id);
+  await p.click(`#rbody [data-kzd="${kcid}"]`);
+  ok((await p.textContent(`#rbody [data-kzd="${kcid}"]`)).includes('Bəli'), 'admin: 🗑️ Sil → təsdiq soruşur');
+  await p.click(`#rbody [data-kzd="${kcid}"]`);
+  ok(await p.evaluate(n => kzLog().length === n - 1 && cashDay(dayKey(Date.now())).taken === 0, kn0), 'təhvil qeydi silindi, sahibə verilən 20 ₼ kassa hesabından da getdi');
   await p.click('#ovRep [data-close]');
   ok(errs.length === 0, 'JS xətası yoxdur ' + (errs.join('; ') || ''));
   await b.close();
