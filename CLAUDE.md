@@ -156,6 +156,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   `switchShop(id)`: sifariş boş olmalı, internet lazımdır; göndər → `cache-<şöbə>` KV-yə → hədəf keşdən + pull; `users` yoxdursa `newShopData()` (düymələr, tədarükçülər,
   xərc növləri, mig, yalnız admin; satış/anbar boş). Ehtiyat nüsxədə `shopId` — başqa şöbənin nüsxəsi bərpa olunmur. Ümumi (iki şöbə birlikdə) hesabat istənmədi.
   Sınaq: `tests/cloud.js` 8-ci hissə (sınaq serveri artıq yol üzrə süzür).
+  v0.84.0: avtomatik qoşmalar (A4, 10x15, fleks, əklil lenti) `upgrade()`-dədir və mal alışı / material əlavə / Materiallar yadda saxlananda da `upgrade()` çağırılır — Mida-da mal yazılan kimi işləyir.
 - **🧹 Sistemi Sıfırla** (v0.71.0, sahibinin istəyi — sınaq bitəndə ciddi işə başlamaq üçün): Hesabat pəncərəsinin başlığında `#btnReset`
   (yalnız admin, yalnız `mode==="rep"`, telefonda yox) → `#ovReset`: sayları göstərir, **SIFIRLA** yazmaq məcburidir, əvvəl `erpBackup(...,"el")`.
   Silir: sales, purchases, expenses, waste, custPays, suppPays, cash; seçimlə (standart açıq) materials[].stock=0. Qalır: items, cats, users, suppliers,

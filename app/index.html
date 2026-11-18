@@ -678,7 +678,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.83.1";
+const APP_VERSION="0.84.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2385,7 +2385,7 @@ async function savePurchase(){
     out.push({mat:M.id,name:M.name,unit:M.unit||"ədəd",packs:+l.packs,perPack:+l.perPack,qty:c.qty,total:c.tot,unitCost:c.tot/c.qty,prevCost,link:l.link||""});
   }
   const p={id:newId("pu"),ts,supplier:pd.supplier.trim(),pay:pd.pay,paid:false,note:pd.note.trim(),lines:out,total:out.reduce((a,l)=>a+l.total,0)};
-  S.purchases.push(p);pd=newPd();save();renderHeader();renderDebtBadge();renderExp();
+  S.purchases.push(p);pd=newPd();upgrade();save();renderHeader();renderDebtBadge();renderExp();
   toast(`Alış yazıldı ✓ ${m2(p.total)} ₼ · ${out.map(l=>l.name+" +"+l.qty).join(", ")}`);
 }
 function syncEd(){if(!ed||!$("x_day"))return;ed.day=$("x_day").value||ed.day;ed.cat=$("x_cat").value;ed.amount=$("x_amt").value;ed.note=$("x_note").value;ed.rec=$("x_rec").checked}
@@ -3175,12 +3175,12 @@ document.addEventListener("click",e=>{
   else if(a==="msave"){
     S.materials.forEach(m=>{const n=$("m_n_"+m.id).value.trim();if(n)m.name=n;
       const c=parseFloat($("m_c_"+m.id).value);if(!isNaN(c))m.cost=c;const mn=parseFloat(String($("m_min_"+m.id).value).replace(",","."));if(!isNaN(mn))m.min=mn});
-    save();renderHeader();toast("Materiallar yadda saxlandı");
+    upgrade();save();renderHeader();toast("Materiallar yadda saxlandı");
   }
   else if(a==="madd"){
     const n=$("nm_name").value.trim();if(!n){toast("Materialın adını yazın");return}
     S.materials.push({id:newId("m"),name:n,cost:parseFloat($("nm_cost").value)||0,stock:parseFloat($("nm_stock").value)||0,min:parseFloat($("nm_min").value)||0});
-    save();renderHeader();toast(`"${n}" əlavə olundu`);
+    upgrade();save();renderHeader();toast(`"${n}" əlavə olundu`);
   }
   else if(a==="mdel"){
     const id=t.dataset.id,used=S.items.filter(i=>i.recipe.some(r=>r[0]===id));
