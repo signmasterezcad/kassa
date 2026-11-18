@@ -648,6 +648,8 @@ const path = require('path');
   await p.click('#btnStock'); await p.click('[data-rt=mat]'); await p.fill('#nm_name', 'Qara Fleks'); await p.fill('#nm_stock', '5'); await p.click('[data-act=madd]'); await p.waitForTimeout(150);
   ok(await p.evaluate(() => { const F = S.materials.find(m => m.name === 'Qara Fleks'); return F && item('pq_kf10').recipe.some(([m, q]) => m === F.id && q === 0.5); }), 'yeni material (Qara Fleks) əlavə olunan kimi köynək düyməsinə qoşuldu');
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
+  ok(await p.evaluate(() => { const f = S.items.find(i => i.parent === 'g_foto' && /13x18/.test(i.name)); f.recipe = []; S.materials.push({ id: 'm1318', name: '13x18 Foto Kağız (Özümüz)', unit: 'vərəq', stock: 50, cost: 0.12 }, { id: 'mc1318', name: 'Çərçivə 13x18', stock: 5, cost: 2 }); upgrade();
+    return JSON.stringify(f.recipe) === '[["m1318",1]]'; }), 'Foto Kağızlar → 13x18 öz ölçülü foto kağıza qoşulur (çərçivəyə yox)');
   // v0.77.0: Polaroid şəkil
   ok(await p.evaluate(() => { const P = item('fk_polaroid'); S.materials.push({ id: 'mF10', name: 'Foto kağız 10x15', unit: 'vərəq', stock: 50, cost: 0.3 }); P.recipe = []; item('fk_1015').recipe = []; upgrade();
     return P.cat === 'poli' && !P.parent && P.tiers[0][1] === 0.5 && JSON.stringify(P.recipe) === '[["mF10",1]]'; }), 'Poliqrafiya → Polaroid şəkil 0.50, resept 1 vərəq 10x15');

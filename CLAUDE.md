@@ -52,6 +52,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
     v0.77.0 (`S.mig.polaroid`): 📸 Polaroid şəkil 0.50 (`fk_polaroid`, 10x15-dən sonra; 1 vərəq 10x15 = 1 polaroid). Resept hər açılışda yoxlanır: bu şöbənin
     10x15 materialı (fk_1015-in reseptindən və ya adında 10x15 olan) yoxdursa əlavə olunur — Mida və Hövsanın materialı ayrıdır, ikisi də reseptə düşür.
     v0.82.1: `fk_1015` də hər açılışda bu şöbənin 10x15 materialına qoşulur (reseptində öz materialı yoxdursa); tədarükçü (Samir Foto) seçiləndə silinmir.
+    v0.85.0: ümumi qayda — `g_foto`-dakı hər ölçü düyməsi (adında NxM) bu şöbənin adında **eyni ölçü** olan materialına (çərçivə/plaket yox) 1 vərəq qoşulur.
     v0.81.0 (`S.mig.polPoli`, sahibinin istəyi): Polaroid **Poliqrafiya Xidmətləri**-nə köçdü (qrupsuz, `parent` yoxdur), resept qaydası eyni.
 - **Poliqrafiya Xidmətləri** (id `poli`, ÇAP-ın yanında; `S.mig.poliBolme`): 4 qrup — Skan Etmə (`g_skan`), Spiral Cildləmə (`g_spiral`),
   Laminasiya A4 (`g_lamA4`), Laminasiya A3 (`g_lamA3`). İçi (`S.mig.poliIci`):
