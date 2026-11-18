@@ -157,7 +157,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
   kimə (`to`: kassir və ya boş = gün sonu), `left = sayılan − taken` → `c.counted`; kassa hesabı ilə fərq varsa (`D.warn`) qeyd məcburi. `reports` icazəsi olmayan kassir
   "olmalıdır" məbləğini görmür (kor sayım). `cashDay()` `taken`-i çıxır. Girişdən sonra son qeyd təhvildirsə açılış özü açılır (`kzAuto`, "Sonra" = `kzSkip`).
-  Hesabat → Kassadakı Pul: "📒 Təhvil-təslim" jurnalı (`kzTable`). Yazarkən yalnız `#kzLive` yenilənir. v0.90.2: `kzWatch()` — buluddan başqa işçinin təhvili gələndə (girişdən sonra da) açılış pəncərəsi özü çıxır; `noModal` ovKassa-nı da sayır. v0.90.1: admin hər qeydi silə bilir (`data-kzd`, iki klik, `kzRemove` — `c.open`/`c.counted` qalanlara görə yenidən).
+  Hesabat → Kassadakı Pul: "📒 Təhvil-təslim" jurnalı (`kzTable`). Yazarkən yalnız `#kzLive` yenilənir. v0.90.3: başlıqda ⛶ Böyüt / 🗗 Kiçilt (`data-close`). v0.90.2: `kzWatch()` — buluddan başqa işçinin təhvili gələndə (girişdən sonra da) açılış pəncərəsi özü çıxır; `noModal` ovKassa-nı da sayır. v0.90.1: admin hər qeydi silə bilir (`data-kzd`, iki klik, `kzRemove` — `c.open`/`c.counted` qalanlara görə yenidən).
 - **💰 Mənfəət** (v0.74.0, sahibinin istəyi "bu ay nə qədər qazanmışam"): Hesabatda Aylıq-dan sonra tab `pnl` (icazə `cost`), `renderProfit()` —
   ay seçimi (`mSel`, `monthStats()`), 3 KPI (satışdan gələn pul / 📋 bütün xərclərim = maya + zay + S.expenses / 🟢 qazancım = `net`),
   xərclər cədvəli (maya, zay, hər növ), ödənilməyən aylıq təkrarlananlar xəbərdarlığı, mal alışı qeydi (xərc sayılmır), "Xərclər bir-bir".

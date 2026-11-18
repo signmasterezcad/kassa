@@ -619,7 +619,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.click('#btnZay'); await p.click('#ovZay [data-max]');
   ok((await p.evaluate(() => document.querySelector('#ovZay .modal').getBoundingClientRect().width)) === 1366, 'kiçik Zay pəncərəsi də böyüyür');
   await p.click('#ovZay [data-max]'); await p.click('#ovZay [data-close]');
-  ok(await p.locator('.ov [data-max]').count() === 8, 'bütün 8 pəncərədə böyüt düyməsi var');
+  ok(await p.locator('.ov [data-max]').count() === 9, 'bütün 9 pəncərədə (Kassa da) böyüt düyməsi var');
 
   // v0.78.0: A4 Sadə-yə sonradan əlavə olunan düymə də A4 80 qram silir
   ok(await p.evaluate(() => { S.items.push({ id: 'a4s_yeni', name: 'Yeni A4', cat: 'cap', parent: 'g_a4', recipe: [], tiers: [[1, 0.3]] }); item('a4s_40').recipe = []; upgrade();
@@ -743,6 +743,9 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.evaluate(() => { const d = dayKey(Date.now()), c = S.cash[d]; c.log.push({ id: 'kzX', t: 'close', ts: Date.now(), by: 'Leyla', to: 'Admin', expected: 50, counted: 50, taken: 0, left: 50, diff: 0, note: '' }); renderAll(); });
   await p.waitForTimeout(100);
   ok(await p.isVisible('#ovKassa') && (await p.textContent('#kzBody')).includes('Leyla'), 'başqa kompüterdən Leyla təhvil verdi → bu kompüterdə açılış pəncərəsi özü çıxdı');
+  await p.click('#ovKassa [data-max]');
+  ok(await p.evaluate(() => document.querySelector('#ovKassa .modal').classList.contains('max')) && (await p.textContent('#ovKassa [data-max]')).includes('Kiçilt'), 'Kassa pəncərəsində ⛶ Böyüt / 🗗 Kiçilt işləyir');
+  await p.click('#ovKassa [data-max]');
   await p.fill('#kz_cnt', '50'); await p.click('[data-kz=open]');
   ok(await p.evaluate(() => kzOpen() && kzLast().from === 'Leyla' && kzLast().diff === 0), 'Leyladan 50 ₼ təhvil alındı, fərq yoxdur');
   await p.click('#btnRep'); await p.click('[data-rt=kassa]');

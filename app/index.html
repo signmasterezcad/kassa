@@ -524,7 +524,7 @@ h4{margin:6px 0 0;font-size:14px}
 
 <div class="ov" id="ovKassa" hidden>
   <div class="modal sm" role="dialog" aria-labelledby="kzt">
-    <div class="mh"><h3 id="kzt">💰 Kassa</h3><button class="hbtn" data-kz="x">Bağla</button></div>
+    <div class="mh"><h3 id="kzt">💰 Kassa</h3><button class="hbtn" data-close data-kz="x">Bağla</button></div>
     <div class="mb" id="kzBody"></div>
   </div>
 </div>
@@ -692,7 +692,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.90.2";
+const APP_VERSION="0.90.3";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
