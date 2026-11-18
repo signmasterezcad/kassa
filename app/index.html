@@ -682,7 +682,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.88.2";
+const APP_VERSION="0.88.3";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2106,7 +2106,7 @@ function srcSection(m){
       <div class="kpi"><span>🚚 ${esc(suppName(id)||"")}: alış qiyməti ilə</span><b style="color:var(--bad)">−${m2(x.scost)} ₼</b><span>bu ay ona ödənilən (yazılan alış): ${m2(buy)} ₼</span></div>
       <div class="kpi"><span>🚚 ${esc(suppName(id)||"")}: qazanc</span><b style="color:${x.sales-x.scost<0?"var(--bad)":"var(--ok)"}">${m2(x.sales-x.scost)} ₼</b></div>`}).join("")}</div>
   ${rows.length?`<div class="tw"><table><tr><th>Ölçü / düymə</th><th class="n">🖨 Özümüz</th><th class="n">₼</th><th class="n">🚚 Hazır alınan</th><th class="n">₼</th></tr>
-    ${rows.map(([n,r])=>`<tr><td>${esc(n)}</td><td class="n">${r.own||"—"}</td><td class="n">${m2(r.ownS)}</td><td class="n">${r.sup||"—"}</td><td class="n">${m2(r.supS)}</td></tr>`).join("")}</table></div>`:""}`;
+    ${rows.map(([n,r])=>`<tr><td>${esc(n)}</td><td class="n">${r.own?fmtN(r.own):"—"}</td><td class="n">${m2(r.ownS)}</td><td class="n">${r.sup?fmtN(r.sup):"—"}</td><td class="n">${m2(r.supS)}</td></tr>`).join("")}</table></div>`:""}`;
 }
 document.addEventListener("click",e=>{const t=e.target.closest("[data-mk]");if(!t||!$("rbody").contains(t))return;mSel=t.dataset.mk;renderRep()});
 document.addEventListener("change",e=>{if(e.target.id==="m_sel"){mSel=e.target.value;renderRep()}});
