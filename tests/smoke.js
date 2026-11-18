@@ -664,6 +664,14 @@ const path = require('path');
   const s250 = await p.evaluate(() => mat('ms250').stock);
   await p.click('#btnDone'); await p.waitForTimeout(200);
   ok(await p.evaluate(b => Math.abs(mat('ms250').stock - (b - 2)) < 1e-9, s250), '20 vizit kart satıldı → 250 qramdan 2 vərəq silindi');
+  // v0.88.0 audit: zay kəsr miqdarla, zay qeydlərinin id-si, kassir köhnə xərci silə bilmir, adlar ekranda qorunur
+  await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); S.materials.push({ id: 'mZ', name: 'Zay sınaq <b>', unit: 'metr', stock: 3, cost: 2, min: 0 }); });
+  await p.evaluate(() => openZay()); await p.selectOption('#zMat', 'mZ'); await p.fill('#zQty', '0.5'); await p.evaluate(() => saveZay());
+  ok(await p.evaluate(() => mat('mZ').stock === 2.5 && S.waste.at(-1).q === 0.5 && S.waste.at(-1).id), 'zay: 0.5 metr yazılır (əvvəl 1-ə yuvarlanırdı), qeydin id-si var');
+  ok(await p.evaluate(() => { S.waste.push({ ts: 5, mat: 'a', q: 1 }, { ts: 5, mat: 'b', q: 1 }); upgrade(); const u = unitsOf(S); return [...u.keys()].filter(k => k.startsWith('waste~')).length === S.waste.length; }), 'eyni anda yazılan iki zay qeydi buludda bir-birini əzmir');
+  ok(await p.evaluate(() => { const sv = me; me = { id: 'k1', name: 'Kassir X', role: 'kassir', perms: {} }; const r = [canDelRec({ ts: Date.now(), worker: 'Kassir X' }), canDelRec({ ts: Date.now() - 3 * 864e5, worker: 'Kassir X' }), canDelRec({ ts: Date.now(), worker: 'Başqası' })]; me = sv; return r.join() === 'true,false,false'; }), 'kassir: yalnız bu gün öz yazdığı xərci / alışı silə bilər');
+  ok(await p.evaluate(() => { renderHeader(); return !document.querySelector('#chips b b') && document.getElementById('chips').textContent.includes('Zay sınaq <b>'); }), 'mal adındakı < > işarələri səhifəni pozmur');
+  await p.evaluate(() => { S.materials = S.materials.filter(m => m.id !== 'mZ'); document.querySelectorAll('.ov').forEach(o => o.hidden = true); });
   // v0.77.0: Polaroid şəkil
   ok(await p.evaluate(() => { const P = item('fk_polaroid'); S.materials.push({ id: 'mF10', name: 'Foto kağız 10x15', unit: 'vərəq', stock: 50, cost: 0.3 }); P.recipe = []; item('fk_1015').recipe = []; upgrade();
     return P.cat === 'poli' && !P.parent && P.tiers[0][1] === 0.5 && JSON.stringify(P.recipe) === '[["mF10",1]]'; }), 'Poliqrafiya → Polaroid şəkil 0.50, resept 1 vərəq 10x15');

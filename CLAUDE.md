@@ -295,6 +295,12 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   İstifadəçi "deyəndə" anbarı yenidən dolduracağıq və materialları düymələrə qoşacağıq.
   Bu köçürmə `upgrade()`-in **sonunda** qalmalıdır. Yeni quraşdırmada (`firstRun`) tətbiq olunmur.
 
+- **🔍 Audit (v0.88.0, sahibinin istəyi)** — düzəldilənlər: (1) id-siz zay qeydləri (`rkey` = ts) sayımda eyni ms-də yazılanda buludda bir-birini əzirdi →
+  hər zay `id:newId("w")`, köhnələrə deterministik `w<ts>_<mat>` (hər cihazda eyni); (2) Zay pəncərəsi kəsr qəbul etmirdi (`parseInt`) → `parseFloat`, vahid toast-da;
+  (3) kassir (v0.61-dən `exp` icazəsi) istənilən xərci/mal alışını silə bilirdi → `canDelRec()`: admin hamısını, kassir yalnız bu gün öz yazdığını
+  (xərc və alışda indi `worker` yazılır); (4) mal adları / satış sətri adları (kassirin qeydi) bəzi yerlərdə `esc`-siz innerHTML-ə gedirdi (chips, düymə şəbəkəsi,
+  zay siyahısı, məhsul hesabatı, sayım) → `esc`; (5) kəsr qalıqlar (0.1 vərəq, 0.5 metr) `roundStock()` ilə 6 rəqəmə yuvarlanır, ekranda `fmtN`.
+
 ## İstifadəçinin məlumatını dəyişmək
 Düymələr istifadəçinin kompüterindəki faylda saxlanır, `SEED`-i dəyişmək ona təsir etmir.
 Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köçürmə yaz və `S.mig.<ad>` bayrağı qoy
