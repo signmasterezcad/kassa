@@ -619,6 +619,7 @@ const path = require('path');
     const A = S.materials.filter(m => /a4/i.test(m.name) && /(^|\D)80(\D|$)/.test(m.name)).pop();
     const kids = S.items.filter(i => i.parent === 'g_a4' && !i.group); const r = kids.every(i => i.recipe.some(([m]) => m === A.id)) && item('a4s_40').recipe.length === 1;
     S.items = S.items.filter(i => i.id !== 'a4s_yeni'); return r; }), 'A4 Sadə: bütün düymələr (yeni əlavə olunan da) 1 vərəq A4 80 qram silir');
+  ok(await p.evaluate(() => ['pq_kel10', 'pq_kel15', 'pq_ekl10', 'pq_ekl15'].map(id => item(id)?.cat + ':' + item(id)?.tiers[0][1]).join() === 'poli:10,poli:15,poli:10,poli:15'), 'Poliqrafiya: Kəlağayı 10/15, Əklil lenti 10/15');
   // v0.77.0: Polaroid şəkil
   ok(await p.evaluate(() => { const P = item('fk_polaroid'); S.materials.push({ id: 'mF10', name: 'Foto kağız 10x15', unit: 'vərəq', stock: 50, cost: 0.3 }); P.recipe = []; item('fk_1015').recipe = []; upgrade();
     return P.parent === 'g_foto' && P.tiers[0][1] === 0.5 && JSON.stringify(P.recipe) === '[["mF10",1]]'; }), 'Foto Kağızlar → Polaroid şəkil 0.50, resept 1 vərəq 10x15');

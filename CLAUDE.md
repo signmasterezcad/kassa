@@ -53,6 +53,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   - Laminasiya A4 (1.00, 1 Laminasiya A4 plyonka) və A3 (2.00, material yoxdur) qrup deyil, birbaşa satış düyməsidir (id-ləri `g_` ilə qalıb).
   - v0.64.0 (`S.mig.vizitKonfet`): Vizit Kart 0.10 (`pq_vizit`) + 🍬 Konfet Kartı qrupu `g_konfet`: 0.50 / 0.40 / 0.80 (`kk_050`, `kk_040`, `kk_080`;
     adlar "Konfet Kartı 0.50"… — sahibi növlərini deməyib, dəqiqləşdirə bilər).
+  - v0.79.0 (`S.mig.kelagayi`): birbaşa düymələr 🧣 Kəlağayı 10 ₼ / 15 ₼ (`pq_kel10`, `pq_kel15`), 🎗️ Əklil lenti 10 ₼ / 15 ₼ (`pq_ekl10`, `pq_ekl15`); material yoxdur.
 - **Sublim** bölməsini istifadəçi özü yaradıb (id təsadüfi, adla tapılır; `S.mig.sublimFincan`): Fincan Sadə (`fc_sade`), Fincan Termo (`fc_termo`),
   Fincan rəngli (`fc_reng`), Fincan toplu (`fc_toplu`). Qiymətlər (`S.mig.fincanQiymet`): Sadə 8 / 11+ 6, Termo 10, rəngli 10, toplu 13 (11+ pilləsi ləğv edilib; `S.mig.topluPille`).
   Açarlıq 8 (`sb_acar`), Köynək 15 / 6+ 12 (`sb_koynek`; `S.mig.acarKoynek`).
