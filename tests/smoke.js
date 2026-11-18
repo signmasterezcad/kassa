@@ -740,6 +740,13 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.click(`#rbody [data-kzd="${kcid}"]`);
   ok(await p.evaluate(n => kzLog().length === n - 1 && cashDay(dayKey(Date.now())).taken === 0, kn0), 'təhvil qeydi silindi, sahibə verilən 20 ₼ kassa hesabından da getdi');
   await p.click('#ovRep [data-close]');
+  await p.evaluate(() => { const d = dayKey(Date.now()), c = S.cash[d]; c.log.push({ id: 'kzX', t: 'close', ts: Date.now(), by: 'Leyla', to: 'Admin', expected: 50, counted: 50, taken: 0, left: 50, diff: 0, note: '' }); renderAll(); });
+  await p.waitForTimeout(100);
+  ok(await p.isVisible('#ovKassa') && (await p.textContent('#kzBody')).includes('Leyla'), 'başqa kompüterdən Leyla təhvil verdi → bu kompüterdə açılış pəncərəsi özü çıxdı');
+  await p.fill('#kz_cnt', '50'); await p.click('[data-kz=open]');
+  ok(await p.evaluate(() => kzOpen() && kzLast().from === 'Leyla' && kzLast().diff === 0), 'Leyladan 50 ₼ təhvil alındı, fərq yoxdur');
+  await p.click('#btnRep'); await p.click('[data-rt=kassa]');
+  await p.click('#ovRep [data-close]');
   ok(errs.length === 0, 'JS xətası yoxdur ' + (errs.join('; ') || ''));
   await b.close();
 })();

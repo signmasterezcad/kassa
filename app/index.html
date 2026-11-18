@@ -692,7 +692,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.90.1";
+const APP_VERSION="0.90.2";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1985,7 +1985,7 @@ function disarmPay(){keyArm=0;clearTimeout(keyArmT);const b=$("btnDone");b.class
 const ordTotal=()=>{const sub=order.reduce((a,o)=>a+lineUnit(o)*o.q,0);return sub-discAmt(sub)};
 const doneTxt=()=>pay==="qarış"?"Ödənildi (nağd + kart) ✓":order.length&&ordTotal()<-0.004?`↩️ Pulu qaytar: ${m2(-ordTotal())} ₼ ✓`:pay==="borc"?"Nisyəyə yaz ✓":DONE_TXT;
 const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isContentEditable);
-const noModal=()=>$("ovRep").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden&&$("ovCloud").hidden&&$("ovIcon").hidden&&$("ovShop").hidden&&$("ovDisc").hidden&&$("ovRet").hidden&&$("ovReset").hidden;
+const noModal=()=>$("ovRep").hidden&&$("ovKassa").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden&&$("ovCloud").hidden&&$("ovIcon").hidden&&$("ovShop").hidden&&$("ovDisc").hidden&&$("ovRet").hidden&&$("ovReset").hidden;
 function finishSale(){
   disarmPay();
   if(pay==="qarış"){const t=ordTotal(),c=Math.round((+ordSplit||0)*100)/100;
@@ -2217,12 +2217,17 @@ function kzSave(kind){
     c.log.push({id:newId("kz"),t:"close",ts,by:curName(),to:D.to,expected:should,counted:cnt,taken:take,left:cnt-take,diff,note:D.note.trim()});
     c.counted=cnt-take;
     save();$("ovKassa").hidden=true;renderAll();
-    toast(`✓ Təhvil verildi${D.to?" → "+D.to:" (gün sonu)"}. Kassada qalır: ${m2(cnt-take)} ₼`);
+    toast(`${Math.abs(diff)<0.005?"✓ Kassa düzdür. ":`${diff<0?"Çatışmır":"Artıqdır"} ${m2(Math.abs(diff))} ₼ (qeyd olundu). `}Təhvil verildi${D.to?" → "+D.to:" (gün sonu)"}. Kassada qalır: ${m2(cnt-take)} ₼`);
   }
 }
 // Girişdən sonra: kassa təhvil verilib, hələ açılmayıbsa — açılış pəncərəsi özü çıxır ("Sonra" ilə keçmək olar)
 function kzAuto(){if(!me||PHONE_CLOUD)return;const L=kzLast();if(!L||L.t!=="close")return;const k=dayKey(Date.now())+"|"+curName();if(kzSkip===k)return;openKassa()}
-function renderKzBtn(){const b=$("btnKassa");if(!b)return;b.hidden=!me||PHONE_CLOUD;$("kzState").textContent=kzOpen()?"açıqdır · "+(kzLast().by||""):"bağlıdır"}
+let kzSeen;
+// Başqa kompüterdən (bulud) təhvil gələndə: bu kompüterdə girmiş işçiyə açılış pəncərəsi özü çıxır
+function kzWatch(){const L=kzLast(),id=L?.id||"";if(id===kzSeen)return;const first=kzSeen===undefined;kzSeen=id;
+  if(first||!L||L.t!=="close"||L.by===curName()||!me||PHONE_CLOUD||editMode||!noModal())return;
+  setTimeout(()=>{if(noModal()&&!kzOpen())openKassa()},0)}
+function renderKzBtn(){kzWatch();const b=$("btnKassa");if(!b)return;b.hidden=!me||PHONE_CLOUD;$("kzState").textContent=kzOpen()?"açıqdır · "+(kzLast().by||""):"bağlıdır"}
 document.addEventListener("input",e=>{if($("ovKassa").hidden)return;const id=e.target.id,D=kzDraft;
   if(id==="kz_cnt"){D.cnt=e.target.value;D.warn=false}else if(id==="kz_take")D.take=e.target.value;else if(id==="kz_note"){D.note=e.target.value;return}else if(id==="kz_to"){D.to=e.target.value;return}else return;
   const lv=$("kzLive");if(lv)lv.innerHTML=kzLive()});
