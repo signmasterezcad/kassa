@@ -63,6 +63,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   - v0.80.0 (`S.mig.koynekFleks`): 👕 Köynəyə tək ad (müştərinin köynəyi) 10 (`pq_kf10`), Köynəyə ad + nömrə 15 (`pq_kf15`).
     **Fleks** (sahibi 10 metr 7 ₼-dan aldı, qiyməti dəyişir — orta maya alışda özü hesablanır; rulon eni 50 sm, orta sifariş 50×50 sm):
     adında "fleks/flex" olan material hər açılışda Kəlağayı, Əklil lenti və bu iki köynək düyməsinin reseptinə **0.5 metr** (vahid m² isə 0.25) əlavə olunur.
+    v0.83.0: **Əklil lenti parçası** (adında "eklil/əklil" + "lent"; metrlə, 1 m = 1 ₼) hər açılışda `pq_ekl10`-a **1 metr**, `pq_ekl15`-ə **1.5 metr** (fleksdən əlavə).
 - **Sublim** bölməsini istifadəçi özü yaradıb (id təsadüfi, adla tapılır; `S.mig.sublimFincan`): Fincan Sadə (`fc_sade`), Fincan Termo (`fc_termo`),
   Fincan rəngli (`fc_reng`), Fincan toplu (`fc_toplu`). Qiymətlər (`S.mig.fincanQiymet`): Sadə 8 / 11+ 6, Termo 10, rəngli 10, toplu 13 (11+ pilləsi ləğv edilib; `S.mig.topluPille`).
   Açarlıq 8 (`sb_acar`), Köynək 15 / 6+ 12 (`sb_koynek`; `S.mig.acarKoynek`).

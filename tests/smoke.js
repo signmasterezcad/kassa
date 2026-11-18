@@ -640,6 +640,9 @@ const path = require('path');
   await p.fill('#q', '');
   ok(await p.evaluate(() => { item('fk_1015').recipe = []; S.materials.push({ id: 'm1015x', name: '10x15 Foto Kağız (Özümüz)', unit: 'vərəq', stock: 387, cost: 0.065 }); upgrade();
     return JSON.stringify(item('fk_1015').recipe) === '[["m1015x",1]]'; }), 'Foto Kağızlar → 10x15 (Özümüz) 1 vərəq 10x15 foto kağızı silir');
+  ok(await p.evaluate(() => { S.materials.push({ id: 'mEL', name: 'Eklil lenti qara parça', unit: 'metr', stock: 20, cost: 1 }); upgrade();
+    const r = id => JSON.stringify(item(id).recipe.filter(([m]) => m === 'mEL'));
+    return r('pq_ekl10') === '[["mEL",1]]' && r('pq_ekl15') === '[["mEL",1.5]]' && item('pq_ekl15').recipe.some(([m]) => m === 'mFx'); }), 'Əklil lenti: 10 ₼ → 1 metr, 15 ₼ → 1.5 metr lent + 0.5 metr fleks');
   // v0.77.0: Polaroid şəkil
   ok(await p.evaluate(() => { const P = item('fk_polaroid'); S.materials.push({ id: 'mF10', name: 'Foto kağız 10x15', unit: 'vərəq', stock: 50, cost: 0.3 }); P.recipe = []; item('fk_1015').recipe = []; upgrade();
     return P.cat === 'poli' && !P.parent && P.tiers[0][1] === 0.5 && JSON.stringify(P.recipe) === '[["mF10",1]]'; }), 'Poliqrafiya → Polaroid şəkil 0.50, resept 1 vərəq 10x15');

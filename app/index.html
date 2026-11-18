@@ -678,7 +678,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.82.1";
+const APP_VERSION="0.83.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -973,6 +973,10 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
     if(F){const q=F.unit==="m²"?0.25:0.5;
       S.items.filter(i=>["pq_kel10","pq_kel15","pq_ekl10","pq_ekl15","pq_kf10","pq_kf15"].includes(i.id)).forEach(it=>{it.recipe=it.recipe||[];
         if(!it.recipe.some(([m])=>{const M=mat(m);return M&&/fle(k|x)s?/i.test(norm(M.name))}))it.recipe.push([F.id,q])})}}
+  // v0.83.0: Əklil lenti parçası (metrlə, 1 m = 1 ₼): 10 ₼-lıq məhsula 1 metr, 15 ₼-lığa 1.5 metr (+ fleks 0.5 metr yuxarıda). Hər açılışda, hər şöbənin öz lenti.
+  {const isL=m=>/eklil/.test(norm(m.name))&&/lent/.test(norm(m.name))&&!/fle(k|x)s?/.test(norm(m.name)),L=(S.materials||[]).filter(isL).pop();
+    if(L)[["pq_ekl10",1],["pq_ekl15",1.5]].forEach(([id,q])=>{const it=S.items.find(i=>i.id===id);if(!it)return;it.recipe=it.recipe||[];
+      if(!it.recipe.some(([m])=>{const M=mat(m);return M&&isL(M)}))it.recipe.push([L.id,q])})}
   // v0.77.0: Foto Kağızlar → 📸 Polaroid şəkil 0.50 (1 vərəq foto kağız 10x15 = 1 polaroid)
   if(!S.mig.polaroid){S.mig.polaroid=1;
     const g=S.items.find(i=>i.id==="g_foto")||S.items.find(i=>i.group&&norm(i.name)==="foto kagizlar");
