@@ -310,7 +310,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   APK yalnız öz host-u, sw.js.
   v0.88.2: Firebase Spark limiti (gündə 50K oxuma; sahibinin konsolunda 21K/gün, +475%) — `cloudTick` ikinci pull yalnız push yazanda, interval kompüter 30 san, telefon 15 san
   (dəyişiklik olanda `cloudSoon` 1.5 san-da göndərir). Sahibinə Google hesabında 2 addımlı yoxlama (MFA) 24.11.2026-dək açmaq deyildi. Qeyd (düzəldilməyib): PIN izi FNV-dir (zəif, ciddi qoruma deyil); APK-da fayl seçmə/yükləmə (ehtiyat faylı) işləmir — APK yenidən yığılmalıdır
-  (imza açarı yoxdur → yenidən quraşdırma); depo açıqdır (sirr yoxdur, amma satışdan əvvəl Private); Firebase Rules-da e-poçt şərtinin olduğunu sahibi yoxlamalıdır.
+  (imza açarı yoxdur → yenidən quraşdırma); depo açıqdır (sirr yoxdur, amma satışdan əvvəl Private); Firebase Rules sahibi tərəfindən göstərildi (18.11.2026): `request.auth != null && request.auth.token.email == <sahibin e-poçtu>` — düzdür; Google hesabında 2 addımlı doğrulama aktivdir.
 
 ## İstifadəçinin məlumatını dəyişmək
 Düymələr istifadəçinin kompüterindəki faylda saxlanır, `SEED`-i dəyişmək ona təsir etmir.
