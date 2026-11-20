@@ -258,7 +258,8 @@ let n = 0;
   ok((await p.textContent('#srcBody')).includes('Vəfa Foto') && (await p.textContent('#srcBody')).includes('klaviatura: 3'), 'seçim pəncərəsində 3 düymə: Özümüz / Samir / Vəfa');
   await p.keyboard.press('3'); await p.click('#btnDone');
   { const D = JSON.parse(fs.data), sl = D.sales.at(-1), vx = D.expenses.find(x => x.auto && x.sale === sl.id);
-    ok(sl.lines[0].from === 'sp2' && vx && vx.pay === 'nağd' && Math.abs(vx.amount - 0.4) < 1e-9, 'Vəfa Foto satışı: alış 0.40 ₼ nağd xərc kimi özü yazıldı (borca yox)'); }
+    ok(sl.lines[0].from === 'sp2' && vx && vx.pay === 'cib' && Math.abs(vx.amount - 0.4) < 1e-9, 'Vəfa Foto satışı: alış 0.40 ₼ "öz cibimdən" xərc kimi yazıldı (borca da, kassaya da yox)'); }
+  ok(await p.evaluate(() => { const d = dayKey(Date.now()), e1 = cashDay(d).exp; return S.expenses.some(x => x.pay === 'cib') && e1 === S.expenses.filter(x => dayKey(x.ts) === d && x.pay === 'nağd').reduce((a, x) => a + x.amount, 0); }), 'cibdən ödənən xərc kassa hesabından çıxılmır');
   await p.click('#btnRep'); await p.click('[data-rt=suppdebt]');
   ok((await p.textContent('#rbody')).includes('Satışdan (avtomatik)'), 'Hesabat → 🚚 Bizim borclarımız: satışdan yazılan borc görünür');
   await p.click('#ovRep [data-close]');
@@ -271,7 +272,7 @@ let n = 0;
 
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   await p.click('#btnSet'); await p.click('[data-rt=supp]');
-  ok((await p.textContent('#rbody')).includes('Samir Banner') && await p.locator('#rbody [data-sad=sp2]').inputValue() === 'nağd' && await p.locator('#rbody [data-sad=sp4]').inputValue() === 'nisyə', 'Ayarlar → 🚚 Tədarükçülər: Vəfa nağd, Samir Banner borca');
+  ok((await p.textContent('#rbody')).includes('Samir Banner') && await p.locator('#rbody [data-sad=sp2]').inputValue() === 'cib' && await p.locator('#rbody [data-sad=sp4]').inputValue() === 'cib' && await p.locator('#rbody [data-sad=sp1]').inputValue() === 'nisyə', 'Ayarlar → 🚚 Tədarükçülər: Samir Foto borca, Vəfa və Samir Banner öz cibimdən');
   await p.click('#rbody [data-s=pled][data-id=sp2]');
   ok((await p.textContent('#rbody')).includes('alış qiymətləri'), 'Ayarlar-da 💲 Qiymətlər açılır');
   await p.click('#ovRep [data-close]');

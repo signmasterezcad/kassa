@@ -162,6 +162,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Kassir alışı yalnız 💸 Xərclər-ə yazır. `autoMode(sp)`: `sp.auto` = "nisyə" | "nağd" | "" (select `data-sad`); standart sp1 Samir Foto və sp4 Samir Banner — nisyə, sp2 Vəfa Foto — nağd
   (nağd = `pay:"nağd"` auto xərc, kassa hesabından çıxılır). `S.mig.vefaFoto`: Şamil Vinetka (sp3) silindi; Vəfa-ya Samirin mal adları ilə qiymət 0 (`pv_<samir item id>`) —
   **sahibi qiymətləri yazmalıdır**; `g_foto` düymələrinə `it.src2=[{supp:"sp2",item}]`. Çox tədarükçü: `srcList(it)`, `srcFind(it,sid)`; `#ovSrc` 1 = Özümüz, 2… = tədarükçülər.
+- **👛 Öz cibimdən** (v0.94.0, sahibinin dediyi: Samir Banner və Vəfa Foto uzaqdadır, malı yerindəcə öz cibindən ödəyib gətirir): `autoMode` "cib" → auto xərc `pay:"cib"`
+  (mənfəətdən çıxılır, `cashDay` yalnız "nağd"-ı çıxdığı üçün kassaya toxunmur, borc deyil). Standart: sp1 nisyə, sp2/sp4 cib (`S.mig.cibPay` v0.93-ün auto qeydlərini də "cib" edir, ödəniş yoxdursa).
+  Ayarlar select: Borca yaz / Öz cibimdən / Kassadan nağd / heç nə. Göstərmə: `pill`/`payTag` "👛 Öz cibimdən", Xərclər KPI 4 növ.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
