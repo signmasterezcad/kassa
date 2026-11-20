@@ -696,7 +696,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.94.0";
+const APP_VERSION="0.95.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -995,6 +995,12 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   {const isL=m=>/eklil/.test(norm(m.name))&&/lent/.test(norm(m.name))&&!/fle(k|x)s?/.test(norm(m.name)),L=(S.materials||[]).filter(isL).pop();
     if(L)[["pq_ekl10",1],["pq_ekl15",1.5]].forEach(([id,q])=>{const it=S.items.find(i=>i.id===id);if(!it)return;it.recipe=it.recipe||[];
       if(!it.recipe.some(([m])=>{const M=mat(m);return M&&isL(M)}))it.recipe.push([L.id,q])})}
+  // v0.95.0 (sahibi yeni "laminasiya" materialı yaratdı): adında "lamin" olan material Laminasiya düyməsinə 1 ədəd qoşulur — adda A3 varsa A3-ə, başqa ölçü yoxdursa A4-ə.
+  // Hər açılışda, hər şöbənin öz materialı; reseptdə bu şöbənin laminasiya materialı artıq varsa dəyişmir.
+  {const isLam=m=>/lamin/.test(norm(m.name)),sz=m=>/a3/.test(norm(m.name))?"a3":/a[0-25-9]\b/.test(norm(m.name))?"x":"a4";
+    [["g_lamA4","a4"],["g_lamA3","a3"]].forEach(([id,z])=>{const it=S.items.find(i=>i.id===id&&!i.group);if(!it)return;
+      const L=(S.materials||[]).filter(m=>isLam(m)&&sz(m)===z).pop();if(!L)return;it.recipe=it.recipe||[];
+      if(!it.recipe.some(([m])=>{const M=mat(m);return M&&isLam(M)}))it.recipe.push([L.id,1])})}
   // v0.77.0: Foto Kağızlar → 📸 Polaroid şəkil 0.50 (1 vərəq foto kağız 10x15 = 1 polaroid)
   if(!S.mig.polaroid){S.mig.polaroid=1;
     const g=S.items.find(i=>i.id==="g_foto")||S.items.find(i=>i.group&&norm(i.name)==="foto kagizlar");

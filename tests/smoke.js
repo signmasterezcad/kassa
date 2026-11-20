@@ -686,6 +686,10 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   ok(await p.evaluate(() => { S.materials.push({ id: 'mA4x', name: 'A4 Sadə 80 qram', unit: 'vərəq', stock: 100, cost: 0.011 }); delete S.mig.a4Recipe; upgrade();
     return ['a4s_bw', 'a4s_2t', 'ks_tel'].every(id => JSON.stringify(item(id).recipe) === '[["mA4x",1]]') && !item('fk_a4_120').recipe.length; }), 'A4 Sadə 80 qram → A4 düymələrinin reseptinə 1 vərəq');
 
+  // v0.95.0: yeni yaradılan laminasiya materialı Laminasiya A4 düyməsinə özü qoşulur
+  ok(await p.evaluate(() => { const it = item('g_lamA4'); it.recipe = (it.recipe || []).filter(([m]) => !/lamin/.test(norm(mat(m)?.name || '')));
+    S.materials.push({ id: 'mLam', name: 'Laminasiya plyonka paçka', unit: 'ədəd', stock: 100, cost: 0.15, min: 0 }); upgrade();
+    return it.recipe.some(([m, q]) => m === 'mLam' && q === 1) && !item('g_lamA3').recipe.some(([m]) => m === 'mLam'); }), 'yeni "Laminasiya" materialı → Laminasiya A4 reseptinə 1 ədəd (A3-ə yox)');
   // v0.74.0: 💰 Mənfəət tabı
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.click('[data-rr=month]');
