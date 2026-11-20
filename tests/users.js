@@ -122,11 +122,11 @@ let n = 0;
   await p.click('#ovRep [data-close]');
 
   // 8) 🚚 Tədarükçü: kassir yazır, xərclərə düşür, admin aylıq hesabatı görür
-  ok(JSON.parse(fs.data).suppliers.map(x => x.name).join('|') === 'Samir Foto|Vəfa Foto|Şamil Vinetka|Samir Banner', '4 tədarükçü hazırdır');
+  ok(JSON.parse(fs.data).suppliers.map(x => x.name).join('|') === 'Samir Foto|Vəfa Foto|Samir Banner', 'v0.93.0: 3 tədarükçü (Şamil Vinetka silindi)');
   await p.click('#btnUser'); await p.click(`[data-login="${leyla}"]`); await p.keyboard.type('2222'); await p.keyboard.press('Enter');
-  ok(await p.isVisible('#btnSupp') && await p.isVisible('#btnExp'), 'Leyla: 🚚 Tədarükçü və 💸 Xərclər görünür');
-  await p.click('#btnSupp');
-  ok(await p.locator('#stabs .tab').count() === 0 && await p.locator('.stile').count() === 4, 'Leyla: yalnız alış yazmaq (hesabat tabı yoxdur), 4 tədarükçü');
+  ok(await p.isHidden('#btnSupp') && await p.isVisible('#btnExp'), 'v0.93.0: soldakı 🚚 Tədarükçü düyməsi yoxdur, 💸 Xərclər görünür');
+  await p.evaluate(() => openSupp());
+  ok(await p.locator('#stabs .tab').count() === 0 && await p.locator('.stile').count() === 3, 'Leyla: yalnız alış yazmaq (hesabat tabı yoxdur), 3 tədarükçü');
   await p.click('.stile:has-text("Samir Foto")'); await p.click('[data-s=save]');
   ok((await p.textContent('#toast')).includes('məbləği yazın'), 'məbləğsiz yazılmır');
   await p.fill('#sl_s_0', '45.5'); await p.click('[data-s=save]');
@@ -135,21 +135,21 @@ let n = 0;
   await p.click('[data-s=ladd]'); await p.fill('#sl_n_1', 'Çərçivə'); await p.fill('#sl_q_1', '1'); await p.fill('#sl_s_1', '5.5');
   ok((await p.textContent('#s_tot')).startsWith('45.50') && (await p.textContent('#sl_u_0')).includes('0.40'), 'cəmi özü hesablanır (45.50), 1 ədədin qiyməti görünür (0.40)');
   await p.press('#sl_s_1', 'Enter');
-  await p.click('.stile:has-text("Şamil Vinetka")'); await p.fill('#sl_n_0', 'Vinetka'); await p.fill('#sl_s_0', '20'); await p.click('[data-s=pay][data-p=kart]'); await p.click('[data-s=save]');
+  await p.click('.stile:has-text("Samir Banner")'); await p.fill('#sl_n_0', 'Vinetka'); await p.fill('#sl_s_0', '20'); await p.click('[data-s=pay][data-p=kart]'); await p.click('[data-s=save]');
   const ex = JSON.parse(fs.data).expenses.filter(x => x.supp);
   ok(ex.length === 2 && ex[0].cat === 'Samir Foto' && ex[0].amount === 45.5 && ex[0].pay === 'nağd' && ex[0].worker === 'Leyla' && ex[1].pay === 'kart' && ex[0].lines.length === 2 && ex[0].note.includes('Foto kağız 10x15 ×100'), 'alışlar xərclərə tədarükçünün adı ilə düşdü (kim yazıb, ödəniş)');
   ok((await p.textContent('#suppBody')).includes('Foto kağız 10x15 ×100') && await p.locator('#suppBody [data-s=ask]').count() === 2, 'bu günün siyahısı, Leyla öz yazdığını silə bilər');
   await p.click('#ovSupp [data-close]');
   await p.click('#btnUser'); await p.click(`[data-login="${adminId}"]`); await p.keyboard.type('1111'); await p.keyboard.press('Enter');
-  await p.click('#btnSupp'); await p.click('[data-s=tab][data-t=rep]');
+  await p.evaluate(() => openSupp()); await p.click('[data-s=tab][data-t=rep]');
   const sr = await p.textContent('#suppBody');
-  ok(sr.includes('65.50') && sr.includes('45.50') && sr.includes('Samir Foto') && sr.includes('20.00'), 'admin: aylıq hesabat — cəmi 65.50, Samir Foto 45.50, Şamil Vinetka 20.00');
+  ok(sr.includes('65.50') && sr.includes('45.50') && sr.includes('Samir Foto') && sr.includes('20.00'), 'admin: aylıq hesabat — cəmi 65.50, Samir Foto 45.50, Samir Banner 20.00');
   ok(sr.includes('nə alınıb') && sr.includes('Foto kağız 10x15') && sr.includes('Çərçivə'), 'aylıq hesabatda "nə alınıb" cədvəli (mal-mal)');
   await p.click('[data-s=tab][data-t=list]');
   await p.fill('[data-sn=sp1]', 'Samir Foto Studio'); await p.dispatchEvent('[data-sn=sp1]', 'change');
   ok(JSON.parse(fs.data).expenses.find(x => x.supp === 'sp1').cat === 'Samir Foto Studio', 'ad dəyişəndə keçmiş alış da yeni adla');
   await p.fill('#s_new', 'Kamran Kağız'); await p.click('[data-s=sadd]');
-  ok(JSON.parse(fs.data).suppliers.length === 5, 'admin yeni tədarükçü əlavə etdi');
+  ok(JSON.parse(fs.data).suppliers.length === 4, 'admin yeni tədarükçü əlavə etdi');
   await p.click('#ovSupp [data-close]');
   await p.click('#btnRep'); await p.click('[data-rt=kassa]');
   ok((await p.textContent('#rbody')).includes('45.50'), 'nağd alış kassa hesabından çıxılır (− Nağd digər xərclər 45.50)');
@@ -158,7 +158,7 @@ let n = 0;
   await p.click('#ovRep [data-close]');
 
   // 9) Nisyə: borc tədarükçünün adına yazılır, hissə-hissə ödənir
-  await p.click('#btnSupp'); await p.click('[data-s=tab][data-t=add]');
+  await p.evaluate(() => openSupp()); await p.click('[data-s=tab][data-t=add]');
   await p.click('.stile:has-text("Vəfa Foto")'); await p.fill('#sl_n_0', 'Foto albom'); await p.fill('#sl_s_0', '100'); await p.click('[data-s=pay][data-p=nisyə]');
   ok((await p.textContent('#suppBody')).includes('borc Vəfa Foto adına'), 'nisyə seçiləndə izah çıxır');
   await p.click('[data-s=save]');
@@ -183,7 +183,7 @@ let n = 0;
   const months = JSON.parse(fs.data).expenses.filter(x => x.supp === 'sp2' && x.pay === 'nisyə').reduce((a, x) => a + x.amount, 0);
   ok(months === 150, 'nisyə alışlar xərc kimi alış günündə sayılır (150)');
   await p.click('#btnUser'); await p.click(`[data-login="${leyla}"]`); await p.keyboard.type('2222'); await p.keyboard.press('Enter');
-  await p.click('#btnSupp');
+  await p.evaluate(() => openSupp());
   ok(!(await p.textContent('#stabs')).includes('Borclar') && await p.isHidden('#suppBadge'), 'Leyla: borc icazəsi yoxdur — Borclar tabı və nişan görünmür');
   await p.click('#ovSupp [data-close]');
 
@@ -224,7 +224,7 @@ let n = 0;
   await p.click('#ovHist [data-close]');
 
   // 11) Samir Foto qiymət siyahısı: düyməyə bas → say → məbləğ özü
-  await p.click('#btnSupp'); await p.click('[data-s=tab][data-t=add]'); await p.click('.stile:has-text("Samir Foto")');
+  await p.evaluate(() => openSupp()); await p.click('[data-s=tab][data-t=add]'); await p.click('.stile:has-text("Samir Foto")');
   ok(await p.locator('.plist button').count() === 7 && (await p.textContent('.plist')).includes('Foto 15x21') && (await p.textContent('.plist')).includes('0.45'), 'Samir Foto: 7 mallıq qiymət siyahısı (15x21 — 0.45)');
   await p.click('.plist button:has-text("Foto 10x15")'); await p.fill('#sl_q_0', '200'); await p.dispatchEvent('#sl_q_0', 'input');
   ok((await p.inputValue('#sl_s_0')) === '60.00', '10x15 × 200 = 60.00 (0.30-dan)');
@@ -251,6 +251,14 @@ let n = 0;
   ok(ls.length === 2 && !ls[0].from && ls[1].from === 'sp1' && ls[1].cost === 0 && Math.abs(ls[1].scost - 9) < 1e-9 && ls[1].sum === 20, 'satış: özümüz 10 əd + Samir 20 əd (alış 20×0.45=9, maya 0)');
   { const D = JSON.parse(fs.data), sid = D.sales.at(-1).id, ax = D.expenses.find(x => x.auto && x.sale === sid);
     ok(ax && ax.supp === 'sp1' && ax.pay === 'nisyə' && Math.abs(ax.amount - 9) < 1e-9 && ax.note.includes('×20'), 'v0.92.0: Samir Foto seçilən satış → Samir Foto-ya 9 ₼ nisyə borc avtomatik yazıldı'); }
+  // v0.93.0: Vəfa Foto — ikinci tədarükçü, nağd ödənir
+  ok(await p.evaluate(() => srcList(item('fk_1521')).map(x => x.sp.name).join('|') === 'Samir Foto Studio|Vəfa Foto'), '15x21: tədarükçülər Samir Foto və Vəfa Foto');
+  await p.evaluate(() => { const v = S.suppliers.find(x => x.id === 'sp2'); v.items.find(y => y.name === 'Foto 15x21').price = 0.4; save(); });
+  await p.click('#qClear'); await p.fill('#q', '15x21'); await p.press('#q', 'Enter');
+  ok((await p.textContent('#srcBody')).includes('Vəfa Foto') && (await p.textContent('#srcBody')).includes('klaviatura: 3'), 'seçim pəncərəsində 3 düymə: Özümüz / Samir / Vəfa');
+  await p.keyboard.press('3'); await p.click('#btnDone');
+  { const D = JSON.parse(fs.data), sl = D.sales.at(-1), vx = D.expenses.find(x => x.auto && x.sale === sl.id);
+    ok(sl.lines[0].from === 'sp2' && vx && vx.pay === 'nağd' && Math.abs(vx.amount - 0.4) < 1e-9, 'Vəfa Foto satışı: alış 0.40 ₼ nağd xərc kimi özü yazıldı (borca yox)'); }
   await p.click('#btnRep'); await p.click('[data-rt=suppdebt]');
   ok((await p.textContent('#rbody')).includes('Satışdan (avtomatik)'), 'Hesabat → 🚚 Bizim borclarımız: satışdan yazılan borc görünür');
   await p.click('#ovRep [data-close]');
@@ -261,6 +269,12 @@ let n = 0;
   ok((await p.textContent('#rbody')).includes('15x21 · 🚚 Samir Foto') && (await p.textContent('#rbody')).includes('15x21 · 🖨 özümüz'), 'Məhsul + mənfəət: 15x21 iki ayrı sətir');
   await p.click('#ovRep [data-close]');
 
+  await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
+  await p.click('#btnSet'); await p.click('[data-rt=supp]');
+  ok((await p.textContent('#rbody')).includes('Samir Banner') && await p.locator('#rbody [data-sad=sp2]').inputValue() === 'nağd' && await p.locator('#rbody [data-sad=sp4]').inputValue() === 'nisyə', 'Ayarlar → 🚚 Tədarükçülər: Vəfa nağd, Samir Banner borca');
+  await p.click('#rbody [data-s=pled][data-id=sp2]');
+  ok((await p.textContent('#rbody')).includes('alış qiymətləri'), 'Ayarlar-da 💲 Qiymətlər açılır');
+  await p.click('#ovRep [data-close]');
   // 13) Banner / Vinil: m² ilə, qiymət hər sifarişdə; həmişə Samir Banner-dən
   const sb = JSON.parse(fs.data).suppliers.find(x => x.id === 'sp4');
   ok(sb.items.map(x => x.name + ':' + x.price).join('|') === 'Banner (1 m²):6|Vinil (1 m²):6', 'Samir Banner: Banner və Vinil 1 m² — 6 ₼');

@@ -55,7 +55,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     ok(await A.evaluate(() => S.sales.length) === 3 && await B.evaluate(() => S.sales.length) === 3, 'hər iki cihazda 3 satış');
 
     // 4) Ayar dəyişikliyi: B-də tədarükçü əlavə et → A-da görünür; A-da kassir əlavə et → B-də görünür
-    await B.click('#btnSupp'); await B.click('[data-s=tab][data-t=list]');
+    await B.evaluate(() => { stab = 'list'; openSupp(); });
     await B.fill('#s_new', 'Kamran Kağız'); await B.click('[data-s=sadd]'); await B.click('#ovSupp [data-close]');
     await A.click('#btnSet'); await A.click('[data-rt=users]');
     await A.fill('#nu_name', 'Nigar'); await A.fill('#nu_pin', '4444'); await A.click('[data-act=uadd]'); await A.click('#ovRep [data-close]');

@@ -157,6 +157,11 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   `autoDebt`: `sp.autoDebt` (admin ⚙️ Tədarükçülər-də "📝 Satışda borca yaz", `data-sad`), təyin edilməyibsə yalnız `sp1` (Samir Foto) açıq. Satış silinəndə bağlı auto borc da silinir.
   Ödəmə köhnə qayda ilə (💳 Borclar → Bizim borclarımız). Hesabatda yeni tab **🚚 Bizim borclarımız** `suppdebt` (icazə `suppDebt`; Nisyə tabından tədarükçü hissəsi bura köçdü):
   indiki borc (+mal alışı nisyəsi), dövrdə yazılan / satışdan / ödənən, hərəkətlər. 9 tab → `#rtabs.g3` (3×3). Sahibinə: Samir Foto-dan alışı artıq əl ilə yazmasın (iki dəfə olar).
+- **🚚 Tədarükçülər Ayarlarda** (v0.93.0, sahibinin istəyi): soldakı `#btnSupp` həmişə gizli; ⚙️ Ayarlar → 🚚 Tədarükçülər (`rtab="supp"`, `suppListHtml()`, yalnız admin;
+  `data-s` işləyicisi bu tabda da işləyir, `renderSupp()` sonra `renderRep()`). `#ovSupp` (Alışı yaz / Aylıq hesabat) kodda qalır, menyudan açılmır (testlər `openSupp()` çağırır).
+  Kassir alışı yalnız 💸 Xərclər-ə yazır. `autoMode(sp)`: `sp.auto` = "nisyə" | "nağd" | "" (select `data-sad`); standart sp1 Samir Foto və sp4 Samir Banner — nisyə, sp2 Vəfa Foto — nağd
+  (nağd = `pay:"nağd"` auto xərc, kassa hesabından çıxılır). `S.mig.vefaFoto`: Şamil Vinetka (sp3) silindi; Vəfa-ya Samirin mal adları ilə qiymət 0 (`pv_<samir item id>`) —
+  **sahibi qiymətləri yazmalıdır**; `g_foto` düymələrinə `it.src2=[{supp:"sp2",item}]`. Çox tədarükçü: `srcList(it)`, `srcFind(it,sid)`; `#ovSrc` 1 = Özümüz, 2… = tədarükçülər.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
