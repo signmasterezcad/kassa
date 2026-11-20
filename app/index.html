@@ -448,10 +448,11 @@ h4{margin:6px 0 0;font-size:14px}
   </section>
 
   <aside class="order">
-    <div class="ordhead"><button class="hbtn sm discbtn" id="btnDisc" title="Sifarişə endirim et">🏷️ Endirim</button><button class="hbtn sm" id="btnHist">🧾 Satış Tarixçəsi</button></div>
+    <div class="ordhead"><button class="hbtn sm discbtn" id="btnDisc" title="Sifarişə endirim et">🏷️ Endirim</button><button class="hbtn sm tipbtn" id="btnTip" title="Müştəri üstünü götürmədi — çay pulu">☕ Çay pulu</button><button class="hbtn sm" id="btnHist">🧾 Satış Tarixçəsi</button></div>
     <div class="lines" id="lines"></div>
     <div class="foot">
       <div class="discrow" id="discRow" hidden></div>
+      <div class="discrow tiprow" id="tipRow" hidden></div>
       <div class="total"><span>Cəmi</span><b id="total">0.00 ₼</b></div>
       <div class="pay">
         <button id="payCash" class="on">💵 Nağd</button>
@@ -530,6 +531,12 @@ h4{margin:6px 0 0;font-size:14px}
   <div class="modal sm" role="dialog" aria-labelledby="kzt">
     <div class="mh"><h3 id="kzt">💰 Kassa</h3><button class="hbtn" data-close data-kz="x">Bağla</button></div>
     <div class="mb" id="kzBody"></div>
+  </div>
+</div>
+<div class="ov" id="ovTip" hidden>
+  <div class="modal sm" role="dialog" aria-labelledby="tpt">
+    <div class="mh"><h3 id="tpt">☕ Çay pulu (üstü qalsın)</h3><button class="hbtn" data-close>Ləğv</button></div>
+    <div class="mb" id="tipBody"></div>
   </div>
 </div>
 <div class="ov" id="ovDisc" hidden>
@@ -696,7 +703,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.95.0";
+const APP_VERSION="0.96.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1001,6 +1008,12 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
     [["g_lamA4","a4"],["g_lamA3","a3"]].forEach(([id,z])=>{const it=S.items.find(i=>i.id===id&&!i.group);if(!it)return;
       const L=(S.materials||[]).filter(m=>isLam(m)&&sz(m)===z).pop();if(!L)return;it.recipe=it.recipe||[];
       if(!it.recipe.some(([m])=>{const M=mat(m);return M&&isLam(M)}))it.recipe.push([L.id,1])})}
+  // v0.96.0 (sahibinin istəyi): ÇAP → 🧇 Vafli 2 ₼ (vaflini müştəri gətirir, biz yalnız çap edirik; material yoxdur)
+  if(!S.mig.vafli){S.mig.vafli=1;const c=S.cats.find(x=>x.id==="cap")||S.cats.find(x=>norm(x.name)==="cap");
+    if(c&&!S.items.some(i=>i.id==="cap_vafli"))S.items.push({id:"cap_vafli",name:"Vafli",cat:c.id,icon:"🧇",color:"#b45309",fav:0,ink:0,recipe:[],tiers:[[1,2]]})}
+  // v0.96.0: Laminasiya düymələri satanda materialı soruşur (məs. 80 / 125 mikron) — A4-ə adında A3 olmayan, A3-ə A3 olan "lamin" materialları
+  if(!S.mig.lamPick){S.mig.lamPick=1;const a4=S.items.find(i=>i.id==="g_lamA4"&&!i.group),a3=S.items.find(i=>i.id==="g_lamA3"&&!i.group);
+    if(a4&&!a4.pick)a4.pick="lamin !a3";if(a3&&!a3.pick)a3.pick="lamin a3"}
   // v0.77.0: Foto Kağızlar → 📸 Polaroid şəkil 0.50 (1 vərəq foto kağız 10x15 = 1 polaroid)
   if(!S.mig.polaroid){S.mig.polaroid=1;
     const g=S.items.find(i=>i.id==="g_foto")||S.items.find(i=>i.group&&norm(i.name)==="foto kagizlar");
@@ -1458,7 +1471,7 @@ async function switchShop(id){
     CLOUD_SHOP=prevShop;S=prev;Object.assign(CL,prevCL);
     toast("Şöbə dəyişmədi: "+(e.message||e)+". İnterneti yoxlayın.");
   }finally{CL.busy=false;shopSwitching=false;$("ovCloud").hidden=true}
-  order=[];ordDisc=null;draft=null;backups=null;
+  order=[];ordDisc=null;ordTip=0;draft=null;backups=null;
   if(me){me=S.users.find(u=>u.id===me.id)||null}
   if(!me){logout();startSession()}else{renderAll();renderDebtBadge();applyPerms()}
   renderShop();cloudSoon();
@@ -1804,6 +1817,8 @@ function renderOrder(){
       <div class="sum">${m2(p*o.q)} ₼</div></div>`}).join("");
   const sub=order.reduce((a,o)=>a+lineUnit(o)*o.q,0),d=discAmt(sub),t=sub-d;
   if(!order.length)ordDisc=null;
+  if(!order.length)ordTip=0;
+  {const tr=$("tipRow");tr.hidden=!ordTip;if(ordTip)tr.innerHTML=`<span>☕ Çay pulu<span class="why">müştəri ${m2(t+ordTip)} ₼ verdi, üstü qaldı · kassaya düşür</span></span><b>+${m2(ordTip)} ₼</b><button class="link" data-tp="x" title="Çay pulunu sil">✕</button>`}
   $("discRow").hidden=!d;
   if(d)$("discRow").innerHTML=`<span>🏷️ Endirim${ordDisc.mode==="pct"?` ${fmtN(ordDisc.v)}%`:""}<span class="why">${esc(ordDisc.reason)} · cəmi idi ${m2(sub)} ₼</span></span><b>−${m2(d)} ₼</b><button class="link" data-dc="x" title="Endirimi sil">✕</button>`;
   $("btnDisc").classList.toggle("on",!!d);$("btnDisc").hidden=!can("disc");
@@ -1831,7 +1846,9 @@ document.addEventListener("keydown",e=>{if(e.target.id==="sp_cash"&&(e.key==="En
 const payPart=(s,p)=>s.split?(+s.split[p]||0):(s.pay===p?s.total:0);
 const okey=o=>o.uid||(o.id+(o.from?"@"+o.from:"")+(o.mat?"#"+o.mat:""));
 // v0.82.0: satanda material seçimi (it.pick = açar söz, məs. "sertifikat"): bu şöbənin adında o söz olan materialları
-const pickMats=it=>it?.pick?(S.materials||[]).filter(m=>norm(m.name).includes(norm(it.pick))):[];
+// pick: söz(lər) — hamısı adda olmalıdır; "!söz" — adda olmamalıdır (v0.96.0, məs. "lamin !a3")
+const pickMats=it=>{if(!it?.pick)return[];const ws=norm(it.pick).split(" ").filter(Boolean);
+  return (S.materials||[]).filter(m=>{const n=norm(m.name);return ws.every(w=>w[0]==="!"?!n.includes(w.slice(1)):n.includes(w))})};
 // sətrin resepti: seçilən material + reseptin qalan (seçim olmayan) hissəsi
 function lineRecipe(o){const it=item(o.id);if(!it)return[];const mt=o.mat||o.ret?.mat;if(!mt)return it.recipe;
   const pm=pickMats(it).map(m=>m.id);return [...it.recipe.filter(([m])=>!pm.includes(m)&&m!==mt),[mt,it.pickQ||1]]}
@@ -1876,7 +1893,7 @@ document.addEventListener("click",e=>{const t=e.target.closest("[data-ic],[data-
   if(t.hasAttribute("data-icx")){closeIcon();return}
   let v=t.dataset.ic;if(v==="own")v=$("ic_own").value.trim();else if(v==="none")v="";
   const cb=icCb;closeIcon();cb?.(v)},true);
-$("ovIcon").addEventListener("click",e=>{if(e.target===$("ovIcon"))closeIcon()});
+
 document.addEventListener("keydown",e=>{if($("ovIcon").hidden)return;
   if(e.key==="Escape"){e.preventDefault();e.stopImmediatePropagation();closeIcon()}
   else if(e.key==="Enter"&&e.target.id==="ic_own"){e.preventDefault();e.stopImmediatePropagation();const v=e.target.value.trim(),cb=icCb;closeIcon();cb?.(v)}},true);
@@ -1884,6 +1901,23 @@ const catIcon=k=>S.cats.find(c=>c.id===k)?.icon||"";
 let ncIcon="";
 // 🏷️ Endirim (v0.52.0): sifarişə məbləğ (₼) və ya faiz (%) endirim + səbəb. Satışda total = cəm − endirim; sale.sub, disc, discReason
 let ordDisc=null,dD=null;
+// ---------- ☕ Çay pulu (v0.96.0, sahibinin istəyi): müştəri 2.70 əvəzinə 3 verib "üstü qalsın" deyir ----------
+// Satışda sale.tip (nağd, kassaya düşür) — satış/mənfəət sayılmır; kassa hesabında "+ Çay pulu", Hesabat → Kassadakı Pul-da ayrıca.
+let ordTip=0;
+function openTip(){if(!order.length){toast("Əvvəlcə sifarişə məhsul əlavə edin");return}const t=ordTotal();
+  $("tipBody").innerHTML=`<p class="sub">Sifarişin cəmi: <b>${m2(t)} ₼</b>. Müştəri neçə manat verdi? Artığı çay pulu kimi yazılır (nağd, kassaya düşür).</p>
+    <label class="f">Müştəri verdi ₼<input id="tp_g" type="number" step="0.01" min="0" inputmode="decimal" value="${ordTip?m2(t+ordTip):Math.ceil(t+0.001)}"></label>
+    <div id="tp_live"></div><div class="frow"><span class="grow"></span><button class="btn" data-tp="ok">✓ Çay pulu yaz</button></div>`;
+  tipLive();$("ovTip").hidden=false;setTimeout(()=>{$("tp_g")?.focus();$("tp_g")?.select()},30)}
+function tipLive(){const g=+$("tp_g")?.value||0,d=Math.round((g-ordTotal())*100)/100;
+  $("tp_live").innerHTML=d>0?`<div class="kline ksum"><span>☕ Çay pulu</span><b>${m2(d)} ₼</b></div>`:`<p class="sub">Verilən məbləğ cəmdən çox olmalıdır.</p>`}
+document.addEventListener("input",e=>{if(e.target.id==="tp_g")tipLive()});
+document.addEventListener("keydown",e=>{if(e.target.id==="tp_g"&&e.key==="Enter"){e.preventDefault();e.stopPropagation();$("ovTip").querySelector("[data-tp=ok]").click()}},true);
+document.addEventListener("click",e=>{const t=e.target.closest("#btnTip,[data-tp]");if(!t)return;
+  if(t.id==="btnTip"){openTip();return}
+  if(t.dataset.tp==="x"){ordTip=0;renderOrder();toast("Çay pulu silindi");return}
+  const d=Math.round(((+$("tp_g").value||0)-ordTotal())*100)/100;if(!(d>0)){toast("Verilən məbləğ cəmdən çox olmalıdır");return}
+  ordTip=d;$("ovTip").hidden=true;renderOrder();toast(`☕ Çay pulu: ${m2(d)} ₼`)});
 const DISC_REASONS=["Daimi müştəri","Toplu sifariş","Tanış / dost","Qüsurlu iş","Kampaniya"];
 const discAmt=sub=>{if(!ordDisc||!(sub>0))return 0;const v=ordDisc.mode==="pct"?sub*Math.min(100,ordDisc.v)/100:Math.min(ordDisc.v,sub);return Math.round(v*100)/100};
 function openDisc(){if(!can("disc"))return;if(!order.length){toast("Əvvəlcə sifarişə məhsul əlavə edin");return}
@@ -2012,7 +2046,7 @@ function disarmPay(){keyArm=0;clearTimeout(keyArmT);const b=$("btnDone");b.class
 const ordTotal=()=>{const sub=order.reduce((a,o)=>a+lineUnit(o)*o.q,0);return sub-discAmt(sub)};
 const doneTxt=()=>pay==="qarış"?"Ödənildi (nağd + kart) ✓":order.length&&ordTotal()<-0.004?`↩️ Pulu qaytar: ${m2(-ordTotal())} ₼ ✓`:pay==="borc"?"Nisyəyə yaz ✓":DONE_TXT;
 const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isContentEditable);
-const noModal=()=>$("ovRep").hidden&&$("ovKassa").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden&&$("ovCloud").hidden&&$("ovIcon").hidden&&$("ovShop").hidden&&$("ovDisc").hidden&&$("ovRet").hidden&&$("ovReset").hidden;
+const noModal=()=>$("ovRep").hidden&&$("ovKassa").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden&&$("ovCloud").hidden&&$("ovIcon").hidden&&$("ovShop").hidden&&$("ovDisc").hidden&&$("ovTip").hidden&&$("ovRet").hidden&&$("ovReset").hidden;
 function finishSale(){
   disarmPay();
   if(kzLocked()){kzLockMsg();return}
@@ -2035,11 +2069,12 @@ function finishSale(){
   order.filter(o=>!o.from&&!o.ret).forEach(o=>lineRecipe(o).forEach(([m,q])=>{const M=mat(m);if(!M)return;M.stock-=q*o.q;used[m]=(used[m]||0)+q*o.q;if(M.stock<0)short.push(M.name)}));
   const sub=lines.reduce((a,l)=>a+l.sum,0),dsc=discAmt(sub);
   const sale={id:newId("s"),ts:Date.now(),worker:curName(),pay,lines,total:sub-dsc,used};
+  if(ordTip>0&&sale.total>0)sale.tip=ordTip;
   if(dsc){sale.sub=sub;sale.disc=dsc;sale.discReason=ordDisc.reason;if(ordDisc.mode==="pct")sale.discPct=ordDisc.v}
   const oc=pay==="borc"?custById(ordCust):null;if(oc){sale.cust=oc.id;sale.custName=oc.name}
   if(pay==="qarış"){const c=Math.round((+ordSplit||0)*100)/100;sale.split={nağd:c,kart:Math.round((sale.total-c)*100)/100}}
   S.sales.push(sale);roundStock();suppAutoDebt(sale);
-  pay="nağd";ordCust=null;ordDisc=null;ordSplit="";
+  pay="nağd";ordCust=null;ordDisc=null;ordSplit="";ordTip=0;
   save();order=[];renderAll();autoBackup();
   if(sale.lines.some(l=>l.ret))toast(sale.total<-0.004?`↩️ Qaytarma yazıldı: müştəriyə ${m2(-sale.total)} ₼ qaytarın (${payName(sale.pay)})`:sale.total>0.004?`🔁 Əvəzləmə yazıldı: müştəri fərqi ödədi ${m2(sale.total)} ₼`:"🔁 Əvəzləmə yazıldı (fərq yoxdur)");
   else toast((oc?`${oc.name} borcuna yazıldı: ${m2(sale.total)} ₼ · borc indi ${m2(custOwed(oc.id))} ₼`:"Satış yazıldı ✓")+(short.length?`. Diqqət: ${short.join(", ")} mənfiyə düşdü`:""));
@@ -2159,8 +2194,9 @@ function cashDay(day){
     +(S.suppPays||[]).filter(y=>y.by==="nağd"&&on(y.ts)).reduce((a,y)=>a+y.amount,0);
   const exp=S.expenses.filter(x=>on(x.ts)&&x.pay==="nağd").reduce((a,x)=>a+x.amount,0);
   const custIn=(S.custPays||[]).filter(y=>y.by==="nağd"&&on(y.ts)).reduce((a,y)=>a+y.amount,0);
-  const c=S.cash[day]||{},open=c.open??null,counted=c.counted??null,taken=(c.log||[]).reduce((a,x)=>a+(x.t==="close"?+x.taken||0:0),0),should=(+open||0)+sales+custIn-purch-exp-taken;
-  return{sales,custIn,purch,exp,taken,open,counted,should,diff:counted==null?0:counted-should,log:c.log||[]};
+  const tips=S.sales.filter(s=>on(s.ts)).reduce((a,s)=>a+(+s.tip||0),0);
+  const c=S.cash[day]||{},open=c.open??null,counted=c.counted??null,taken=(c.log||[]).reduce((a,x)=>a+(x.t==="close"?+x.taken||0:0),0),should=(+open||0)+sales+custIn+tips-purch-exp-taken;
+  return{sales,custIn,tips,purch,exp,taken,open,counted,should,diff:counted==null?0:counted-should,log:c.log||[]};
 }
 
 // ---------- 💰 Kassa açılışı / təhvil-təslim (v0.90.0, sahibinin istəyi) ----------
@@ -2339,7 +2375,7 @@ async function doReset(){if(!isAdmin())return;
   if($("rs_word").value.trim().toLocaleUpperCase("az")!=="SIFIRLA"){toast("Təsdiq üçün SIFIRLA yazın");$("rs_word").focus();return}
   const stock=$("rs_stock").checked,sel={};document.querySelectorAll("#resetBody [data-rsk]").forEach(c=>{sel[c.dataset.rsk]=c.checked});
   if(!stock&&!Object.values(sel).some(Boolean)){toast("Heç nə seçilməyib");return}
-  if(order.length){order=[];ordDisc=null}
+  if(order.length){order=[];ordDisc=null;ordTip=0}
   if(NATIVE&&!REMOTE)try{await window.erpBackup(backupText(),"el")}catch(e){}
   if(sel.sales)S.sales=[];if(sel.purchases)S.purchases=[];if(sel.expenses)S.expenses=[];if(sel.waste)S.waste=[];
   if(sel.pays){S.custPays=[];S.suppPays=[]}if(sel.cash)S.cash={};
@@ -2391,7 +2427,7 @@ const payName=p=>p==="nağd"?"💵 Nağd":p==="kart"?"💳 Kart":p==="qarış"?"
 function changeSalePay(k){if(!can("delSale"))return;const s=S.sales.find(x=>saleKey(x)===k);hPayEd=null;if(!s||s.pay==="borc"||s.split){renderHist();return}
   const to=s.pay==="nağd"?"kart":"nağd";(s.payEdits=s.payEdits||[]).push({from:s.pay,to,ts:Date.now(),by:curName()});s.pay=to;
   save();renderHeader();renderHist();toast(`${fmtDate(s.ts)} ${fmtTime(s.ts)} — ${m2(s.total)} ₼ satış: ödəniş ${payName(to)} oldu ✓`)}
-const salePill=s=>s.split?`<span class="pill ok">💵 ${m2(s.split.nağd)}</span> <span class="pill card">💳 ${m2(s.split.kart)}</span>`:s.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':s.pay==="borc"?`<span class="pill warn">📝 Nisyə: ${esc(s.custName||custById(s.cust)?.name||"")}</span>`:'<span class="pill card">💳 Kart</span>';
+const salePill=s=>(s.tip?`<span class="pill ok">☕ +${m2(s.tip)}</span> `:"")+(s.split?`<span class="pill ok">💵 ${m2(s.split.nağd)}</span> <span class="pill card">💳 ${m2(s.split.kart)}</span>`:s.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':s.pay==="borc"?`<span class="pill warn">📝 Nisyə: ${esc(s.custName||custById(s.cust)?.name||"")}</span>`:'<span class="pill card">💳 Kart</span>');
 async function deleteSale(k){
   if(!can("delSale"))return;
   const i=S.sales.findIndex(s=>saleKey(s)===k);if(i<0)return;
@@ -3015,6 +3051,7 @@ function renderRep(){
         <label class="f xs">Səhər kassada idi ₼<input id="k_open" type="number" step="0.01" value="${K.open??""}" placeholder="0.00"></label>
         <div class="kline"><span>+ Nağd satış</span><b>${m2(K.sales)} ₼</b></div>
         <div class="kline"><span>+ Borclulardan alınan nağd</span><b>${m2(K.custIn)} ₼</b></div>
+        ${K.tips?`<div class="kline"><span>+ ☕ Çay pulu</span><b>${m2(K.tips)} ₼</b></div>`:""}
         <div class="kline"><span>− Nağd mal alışı / borc ödənişi</span><b>${m2(K.purch)} ₼</b></div>
         <div class="kline"><span>− Nağd digər xərclər</span><b>${m2(K.exp)} ₼</b></div>
         ${K.taken?`<div class="kline"><span>− Sahibə verilən (kassadan götürülən)</span><b>${m2(K.taken)} ₼</b></div>`:""}
@@ -3025,6 +3062,9 @@ function renderRep(){
           :`<span class="pill ${K.diff<0?"bad":"warn"}">${K.diff<0?"Çatışmır":"Artıqdır"}: ${m2(Math.abs(K.diff))} ₼</span><p class="sub">Fərq varsa: qeyd olunmayan satış, xərc və ya qaytarılan qalıq ola bilər.</p>`}
         ${K.open==null&&K.should<0?`<p class="sub" style="color:var(--warn)">Mənfi çıxır, çünki səhər kassada olan pul yazılmayıb — yuxarıda "Səhər kassada idi" xanasına yazın.</p>`:""}
       </div>
+      ${(()=>{const tl=sales.filter(s=>+s.tip>0);if(!tl.length)return "";const tt=tl.reduce((a,s)=>a+s.tip,0),bw={};tl.forEach(s=>{const w=s.worker||"—";bw[w]=(bw[w]||0)+s.tip});
+        return `<h4>☕ Çay pulu — ${esc(rTitle)}: <b>${m2(tt)} ₼</b></h4><p class="sub">Müştərinin "üstü qalsın" dediyi pul. Kassaya düşür, satış və mənfəət sayılmır. Kassirlər üzrə: ${Object.entries(bw).map(([w,v])=>`${esc(w)} ${m2(v)} ₼`).join(", ")}</p>
+        ${tbl(["Vaxt","Kassir","#Satış","#Çay pulu"],tl.slice().sort((a,b)=>b.ts-a.ts).map(s=>`<tr><td>${fmtDate(s.ts)} ${fmtTime(s.ts)}</td><td>${esc(s.worker||"")}</td><td class="n">${m2(s.total)}</td><td class="n"><b>${m2(s.tip)} ₼</b></td></tr>`))}`})()}
       <h4>📒 Təhvil-təslim — ${esc(fdk(kd))}</h4>${K.log.length?kzTable(K.log.slice().reverse(),true):`<p class="sub">Bu gün kassa açılışı / təhvil qeyd olunmayıb. Kassirlər soldakı <b>💰 Kassa</b> düyməsi ilə edir.</p>`}
       <h4>👥 Kassirlər üzrə nağd satış — ${esc(fdk(kd))}</h4>${tbl(["Kassir","#Nağd"],Object.entries(byW).map(([w,v])=>`<tr><td>${esc(w)}</td><td class="n">${m2(v)} ₼</td></tr>`),"Bu gün nağd satış yoxdur.")}
       ${dsel}`;
@@ -3539,7 +3579,7 @@ document.addEventListener("click",e=>{
   else if(t.id==="paySplit"){if(!order.length){toast("Əvvəl sifarişə məhsul əlavə edin");return}pay="qarış";ordCust=null;renderOrder();setTimeout(()=>$("sp_cash")?.focus(),0)}
   else if(t.id==="btnCust"){openCDebt()}
   else if(t.id==="btnDone")finishSale();
-  else if(t.id==="btnClear"){order=[];ordDisc=null;renderGrid();renderOrder()}
+  else if(t.id==="btnClear"){order=[];ordDisc=null;ordTip=0;renderGrid();renderOrder()}
   else if(t.dataset.rx){order=order.filter(o=>okey(o)!==t.dataset.rx);renderGrid();renderOrder()}
   else if(t.id==="btnUser")logout();
   else if(t.id==="btnCloud"){mode="set";rtab="cloud";draft=null;renderRep();$("ovRep").hidden=false}
@@ -3568,7 +3608,7 @@ document.addEventListener("change",e=>{
   const o=order.find(x=>okey(x)===id);if(!o)return;o.q=Math.max(1,parseInt(e.target.value)||1);
   setTimeout(()=>{renderGrid();renderOrder()},0); // blur zamanı DOM-u dərhal dəyişməmək üçün
 });
-document.querySelectorAll(".ov:not(.lock)").forEach(o=>o.addEventListener("click",e=>{if(e.target===o)o.hidden=true}));
+// v0.96.0 (sahibinin istəyi): pəncərə kənara basanda BAĞLANMIR — yalnız öz "Bağla / Ləğv" düyməsi (və Esc) ilə
 document.addEventListener("change",e=>{
   if(e.target.id!=="k_open"&&e.target.id!=="k_cnt")return;
   const d=rFrom&&rFrom===rTo?rFrom:(rTo||dayKey(Date.now())),c=S.cash[d]||(S.cash[d]={}),v=e.target.value===""?null:+e.target.value;

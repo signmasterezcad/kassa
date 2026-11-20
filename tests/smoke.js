@@ -619,7 +619,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.click('#btnZay'); await p.click('#ovZay [data-max]');
   ok((await p.evaluate(() => document.querySelector('#ovZay .modal').getBoundingClientRect().width)) === 1366, 'kiçik Zay pəncərəsi də böyüyür');
   await p.click('#ovZay [data-max]'); await p.click('#ovZay [data-close]');
-  ok(await p.locator('.ov [data-max]').count() === 9, 'bütün 9 pəncərədə (Kassa da) böyüt düyməsi var');
+  ok(await p.locator('.ov [data-max]').count() === 10, 'bütün 10 pəncərədə (Kassa, Çay pulu da) böyüt düyməsi var');
 
   // v0.78.0: A4 Sadə-yə sonradan əlavə olunan düymə də A4 80 qram silir
   ok(await p.evaluate(() => { S.items.push({ id: 'a4s_yeni', name: 'Yeni A4', cat: 'cap', parent: 'g_a4', recipe: [], tiers: [[1, 0.3]] }); item('a4s_40').recipe = []; upgrade();
@@ -690,6 +690,26 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   ok(await p.evaluate(() => { const it = item('g_lamA4'); it.recipe = (it.recipe || []).filter(([m]) => !/lamin/.test(norm(mat(m)?.name || '')));
     S.materials.push({ id: 'mLam', name: 'Laminasiya plyonka paçka', unit: 'ədəd', stock: 100, cost: 0.15, min: 0 }); upgrade();
     return it.recipe.some(([m, q]) => m === 'mLam' && q === 1) && !item('g_lamA3').recipe.some(([m]) => m === 'mLam'); }), 'yeni "Laminasiya" materialı → Laminasiya A4 reseptinə 1 ədəd (A3-ə yox)');
+  // v0.96.0: Vafli, çay pulu, laminasiya seçimi, pəncərə kənara basanda bağlanmır
+  await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
+  ok(await p.evaluate(() => { const v = item('cap_vafli'); return v && v.name === 'Vafli' && v.tiers[0][1] === 2 && !v.parent; }), 'ÇAP → 🧇 Vafli 2 ₼');
+  await p.click('#btnRep'); await p.mouse.click(5, 5);
+  ok(await p.isVisible('#ovRep'), 'pəncərənin kənarına basanda bağlanmır');
+  await p.click('#ovRep [data-close]');
+  await p.evaluate(() => { order = []; renderOrder(); });
+  await p.fill('#q', 'vafli'); await p.press('#q', 'Enter'); await p.click('#qClear');
+  await p.click('#btnTip'); await p.fill('#tp_g', '3'); await p.dispatchEvent('#tp_g', 'input');
+  ok((await p.textContent('#tp_live')).includes('1.00'), 'çay pulu: 2.00 cəm, 3 verdi → 1.00');
+  await p.click('[data-tp=ok]');
+  ok(await p.isVisible('#tipRow') && (await p.textContent('#total')).startsWith('2.00'), 'sifarişdə ☕ sətri, cəmi dəyişmir (2.00)');
+  const k0 = await p.evaluate(() => cashDay(dayKey(Date.now())).should);
+  await p.click('#btnDone');
+  ok(await p.evaluate(k => { const s = S.sales.at(-1), K = cashDay(dayKey(Date.now())); return s.tip === 1 && s.total === 2 && Math.abs(K.should - k - 3) < 1e-9 && K.tips >= 1; }, k0), 'satışda tip 1.00; kassa +3 (2 satış + 1 çay pulu), satış 2.00');
+  await p.click('#btnRep'); await p.click('[data-rt=kassa]'); await p.click('[data-rr=today]');
+  ok((await p.textContent('#rbody')).includes('Çay pulu'), 'Hesabat → Kassadakı Pul: ☕ Çay pulu bölməsi');
+  await p.click('#ovRep [data-close]');
+  ok(await p.evaluate(() => { S.materials.push({ id: 'mLam125', name: 'Laminasiya A4 125 mikron', unit: 'ədəd', stock: 100, cost: 0.16, min: 0 }, { id: 'mLamA3', name: 'Laminasiya A3', unit: 'ədəd', stock: 10, cost: 0.3, min: 0 });
+    upgrade(); const a4 = pickMats(item('g_lamA4')).map(m => m.id), a3 = pickMats(item('g_lamA3')).map(m => m.id); return a4.length >= 2 && a4.includes('mLam125') && !a4.includes('mLamA3') && a3.join() === 'mLamA3'; }), 'laminasiya: A4 düyməsi 2 A4 plyonkanı soruşur (A3 yox), A3 düyməsi yalnız A3-ü');
   // v0.74.0: 💰 Mənfəət tabı
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.click('[data-rr=month]');

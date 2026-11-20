@@ -167,6 +167,11 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **👛 Öz cibimdən** (v0.94.0, sahibinin dediyi: Samir Banner və Vəfa Foto uzaqdadır, malı yerindəcə öz cibindən ödəyib gətirir): `autoMode` "cib" → auto xərc `pay:"cib"`
   (mənfəətdən çıxılır, `cashDay` yalnız "nağd"-ı çıxdığı üçün kassaya toxunmur, borc deyil). Standart: sp1 nisyə, sp2/sp4 cib (`S.mig.cibPay` v0.93-ün auto qeydlərini də "cib" edir, ödəniş yoxdursa).
   Ayarlar select: Borca yaz / Öz cibimdən / Kassadan nağd / heç nə. Göstərmə: `pill`/`payTag` "👛 Öz cibimdən", Xərclər KPI 4 növ.
+- **v0.96.0 (sahibinin 4 istəyi):** (1) ÇAP → 🧇 Vafli 2 ₼ `cap_vafli` (`S.mig.vafli`, material yoxdur — vaflini müştəri gətirir).
+  (2) **☕ Çay pulu**: "Cari sifariş" başlığında `#btnTip` → `#ovTip` ("Müştəri verdi" `#tp_g`, artığı `ordTip`), `#tipRow` (✕ `data-tp=x`); satışda `sale.tip` (yalnız `total>0`) —
+  satış/mənfəət sayılmır, `cashDay().tips` kassaya əlavə olunur ("+ ☕ Çay pulu"); Hesabat → Kassadakı Pul-da dövr üzrə ☕ bölməsi (kassirlər üzrə), `salePill` "☕ +x".
+  (3) Laminasiya: `pickMats` çox sözlü (`"lamin !a3"` — hamısı olmalı, `!` olmamalı); `S.mig.lamPick`: `g_lamA4.pick="lamin !a3"`, `g_lamA3.pick="lamin a3"` — 2+ plyonka (məs. 80/125 mikron) olanda satanda soruşur.
+  (4) Pəncərələr kənara basanda **bağlanmır** (`.ov` backdrop və `#ovIcon` işləyiciləri silindi) — yalnız Bağla/Ləğv və Esc.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
