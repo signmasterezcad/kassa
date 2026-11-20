@@ -707,7 +707,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.98.0";
+const APP_VERSION="0.99.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1036,6 +1036,11 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   {const sz=t=>{const m=String(t||"").match(/(?:^|\D)(\d{1,3})\s*[xх×]\s*(\d{1,3})(?!\d)/i);return m?m[1]+"x"+m[2]:""},bad=t=>/çərçivə|cerceve|plaket/i.test(t||"");
     S.items.filter(i=>!i.group&&i.parent==="g_foto"&&sz(i.name)).forEach(f=>{f.recipe=f.recipe||[];if(f.recipe.some(([m])=>mat(m)))return;
       const M=(S.materials||[]).filter(m=>sz(m.name)===sz(f.name)&&!bad(m.name)).pop();if(M)f.recipe.push([M.id,1])})}
+  // v0.99.0 (sahibinin vitrindəki köhnə çərçivələri): adında "çərçivə" + ölçü (məs. "Çərçivə 15x21") olan material Standart çərçivələr-dəki eyni ölçülü düyməyə 1 ədəd qoşulur.
+  // Hər açılışda, hər şöbənin öz materialı; lazer çərçivə materialları (adda laser/lazer) standart düymələrə qoşulmur.
+  {const sz=t=>{const m=String(t||"").match(/(?:^|\D)(\d{1,3})\s*[xх×]\s*(\d{1,3})(?!\d)/i);return m?m[1]+"x"+m[2]:""},isC=m=>/cercive|cerceve/.test(norm(m.name))&&!/laser|lazer/.test(norm(m.name));
+    S.items.filter(i=>!i.group&&i.parent==="g_cer_std"&&sz(i.name)).forEach(f=>{f.recipe=f.recipe||[];if(f.recipe.some(([m])=>{const M=mat(m);return M&&isC(M)}))return;
+      const M=(S.materials||[]).filter(m=>isC(m)&&sz(m.name)===sz(f.name)).pop();if(M)f.recipe.push([M.id,1])})}
   // reseptə bu şöbənin 10x15 foto kağızı (hər şöbədə öz materialı; tapılmayıbsa sonrakı açılışda yenə axtarılır)
   {const P=S.items.find(i=>i.id==="fk_polaroid");
     if(P&&!P.recipe.some(([m])=>mat(m))){const f=S.items.find(i=>i.id==="fk_1015"),own=(f?.recipe||[]).find(([m])=>mat(m));

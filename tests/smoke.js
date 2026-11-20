@@ -717,6 +717,9 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.click('#ovRep [data-close]');
   ok(await p.evaluate(() => { S.materials.push({ id: 'mLam125', name: 'Laminasiya A4 125 mikron', unit: 'ədəd', stock: 100, cost: 0.16, min: 0 }, { id: 'mLamA3', name: 'Laminasiya A3', unit: 'ədəd', stock: 10, cost: 0.3, min: 0 });
     upgrade(); const a4 = pickMats(item('g_lamA4')).map(m => m.id), a3 = pickMats(item('g_lamA3')).map(m => m.id); return a4.length >= 2 && a4.includes('mLam125') && !a4.includes('mLamA3') && a3.join() === 'mLamA3'; }), 'laminasiya: A4 düyməsi 2 A4 plyonkanı soruşur (A3 yox), A3 düyməsi yalnız A3-ü');
+  // v0.99.0: köhnə çərçivələr anbara → Standart çərçivə düyməsinə özü qoşulur
+  ok(await p.evaluate(() => { S.materials.push({ id: 'mC1521', name: 'Çərçivə 15x21 (vitrin)', unit: 'ədəd', stock: 7, cost: 2.5, min: 0 }, { id: 'mCL', name: 'Laser çərçivə 13x18', unit: 'ədəd', stock: 3, cost: 4, min: 0 }); upgrade();
+    return item('cs_15_21')?.recipe.some(([m, q]) => m === 'mC1521' && q === 1) && !item('cs_13_18')?.recipe.some(([m]) => m === 'mCL'); }), 'anbara "Çərçivə 15x21" yazılanda Çərçivə 15x21 düyməsinə 1 ədəd qoşulur (lazer çərçivə qoşulmur)');
   // v0.74.0: 💰 Mənfəət tabı
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.click('[data-rr=month]');
