@@ -174,6 +174,10 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   (4) Pəncərələr kənara basanda **bağlanmır** (`.ov` backdrop və `#ovIcon` işləyiciləri silindi) — yalnız Bağla/Ləğv və Esc.
 - **v0.97.0 (sahibinin istəyi): satış ekranı düymələri icazə ilə** — yeni `PERMS`: `tip` ☕, `payCard` 💳, `paySplit` 💵+💳, `clearOrder` ✕ (KASSIR_DEFAULT-da açıq, `S.mig.payPerms` mövcud kassirlərə verdi).
   Əvvəldən: `disc` 🏷️ Endirim, `hist` 🧾 Tarixçə, `custSale` 📝 Nisyə. 💵 Nağd və Ödənildi həmişə var. `renderOrder` gizlədir (+ CSS `[hidden]{display:none!important}`, Kart yoxsa Nağd tam en), klik işləyiciləri də yoxlayır.
+- **v0.98.0 (sahibinin istəyi):** (1) **Pəncərəni sürüşdürmək** — hər `.ov .mh` başlığından siçanla tutub (düymə/xana yox), `m._dx/_dy` + `transform`, ekrandan çıxmasın deyə sərhəd;
+  böyüdülmüş (`.max`) sürüşmür, `applyMax` transform-u götürür/qaytarır; `body.dragging`. (2) "Çay pulu" → **🪙 Artıq ödəmə** (ekranda; daxili ad `tip`/`sale.tip`/`ordTip` qalır).
+  Kassa tabındakı bölmə silindi → Hesabatda yeni tab **🪙 Artıq ödəmə** `artiq` (icazə `reports`, Nisyə-dən sonra): KPI, kassirlər üzrə (növbə), günlər, aylar, xidmət üzrə
+  (bir satışda bir neçə xidmət — məbləğə görə bölünür), hamısı bir-bir. Admin 10 tab → `#rtabs.g5` (5+5).
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

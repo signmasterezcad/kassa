@@ -439,7 +439,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   const rb = await p.textContent('#rbody');
   const inMonth = await p.evaluate(() => new Date(Date.now() - 3 * 864e5).getMonth() === new Date().getMonth());
   ok(!inMonth || (rb.includes('Günü seçin') && rb.includes('Kassa hər gün ayrıca')), 'Bu ay: Kassadakı Pul — günlər siyahısı, kassa bir gün üçün');
-  ok(await p.locator('#rtabs .tab').evaluateAll(b => b.map(x => x.textContent).join('|')) === '💰 Kassadakı Pul|💵 Nağd Satış|💳 Kart Satış|📝 Nisyə Satış|🚚 Bizim borclarımız|🗑️ Zay olan pul|🧾 Xərclər|📦 Anbarda qalan pul|📈 Mənfəət', 'Hesabatda 9 tab (v0.92.0: + Bizim borclarımız)');
+  ok(await p.locator('#rtabs .tab').evaluateAll(b => b.map(x => x.textContent).join('|')) === '💰 Kassadakı Pul|💵 Nağd Satış|💳 Kart Satış|📝 Nisyə Satış|🪙 Artıq ödəmə|🚚 Bizim borclarımız|🗑️ Zay olan pul|🧾 Xərclər|📦 Anbarda qalan pul|📈 Mənfəət', 'Hesabatda 10 tab (+ Bizim borclarımız, Artıq ödəmə)');
   await p.click('[data-rr=all]'); await p.click('[data-rt=kart]');
   ok((await p.textContent('#rbody')).includes('Dövr satışı'), 'Kart Satış: bütün dövrdə köhnə satış var');
   await p.click('[data-rr=today]');
@@ -706,7 +706,14 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.click('#btnDone');
   ok(await p.evaluate(k => { const s = S.sales.at(-1), K = cashDay(dayKey(Date.now())); return s.tip === 1 && s.total === 2 && Math.abs(K.should - k - 3) < 1e-9 && K.tips >= 1; }, k0), 'satışda tip 1.00; kassa +3 (2 satış + 1 çay pulu), satış 2.00');
   await p.click('#btnRep'); await p.click('[data-rt=kassa]'); await p.click('[data-rr=today]');
-  ok((await p.textContent('#rbody')).includes('Çay pulu'), 'Hesabat → Kassadakı Pul: ☕ Çay pulu bölməsi');
+  ok((await p.textContent('.kassa')).includes('Artıq ödəmə'), 'kassa hesabında + 🪙 Artıq ödəmə sətri');
+  await p.click('[data-rt=artiq]');
+  { const t = await p.textContent('#rbody'); ok(t.includes('Kassirlər üzrə') && t.includes('Günlər üzrə') && t.includes('Aylar üzrə') && t.includes('Vafli') && t.includes('1.00'), 'Hesabat → 🪙 Artıq ödəmə: kassir, gün, ay, xidmət (Vafli) üzrə'); }
+  ok(await p.evaluate(() => document.getElementById('rtabs').classList.contains('g5')), '10 tab → 5+5 düzülüş');
+  { const b0 = await p.evaluate(() => { const r = document.querySelector('#ovRep .modal').getBoundingClientRect(); return [r.x, r.y]; });
+    const hb = await p.locator('#ovRep .mh h3').boundingBox(); await p.mouse.move(hb.x + 5, hb.y + 5); await p.mouse.down(); await p.mouse.move(hb.x - 95, hb.y + 45, { steps: 5 }); await p.mouse.up();
+    const b1 = await p.evaluate(() => { const r = document.querySelector('#ovRep .modal').getBoundingClientRect(); return [r.x, r.y]; });
+    ok(Math.abs(b1[0] - b0[0] + 100) < 2 && Math.abs(b1[1] - b0[1] - 40) < 2, `pəncərə başlıqdan tutub sürüşdürülür (${b0.map(Math.round)} → ${b1.map(Math.round)})`); }
   await p.click('#ovRep [data-close]');
   ok(await p.evaluate(() => { S.materials.push({ id: 'mLam125', name: 'Laminasiya A4 125 mikron', unit: 'ədəd', stock: 100, cost: 0.16, min: 0 }, { id: 'mLamA3', name: 'Laminasiya A3', unit: 'ədəd', stock: 10, cost: 0.3, min: 0 });
     upgrade(); const a4 = pickMats(item('g_lamA4')).map(m => m.id), a3 = pickMats(item('g_lamA3')).map(m => m.id); return a4.length >= 2 && a4.includes('mLam125') && !a4.includes('mLamA3') && a3.join() === 'mLamA3'; }), 'laminasiya: A4 düyməsi 2 A4 plyonkanı soruşur (A3 yox), A3 düyməsi yalnız A3-ü');
