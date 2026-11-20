@@ -172,6 +172,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   satış/mənfəət sayılmır, `cashDay().tips` kassaya əlavə olunur ("+ ☕ Çay pulu"); Hesabat → Kassadakı Pul-da dövr üzrə ☕ bölməsi (kassirlər üzrə), `salePill` "☕ +x".
   (3) Laminasiya: `pickMats` çox sözlü (`"lamin !a3"` — hamısı olmalı, `!` olmamalı); `S.mig.lamPick`: `g_lamA4.pick="lamin !a3"`, `g_lamA3.pick="lamin a3"` — 2+ plyonka (məs. 80/125 mikron) olanda satanda soruşur.
   (4) Pəncərələr kənara basanda **bağlanmır** (`.ov` backdrop və `#ovIcon` işləyiciləri silindi) — yalnız Bağla/Ləğv və Esc.
+- **v0.97.0 (sahibinin istəyi): satış ekranı düymələri icazə ilə** — yeni `PERMS`: `tip` ☕, `payCard` 💳, `paySplit` 💵+💳, `clearOrder` ✕ (KASSIR_DEFAULT-da açıq, `S.mig.payPerms` mövcud kassirlərə verdi).
+  Əvvəldən: `disc` 🏷️ Endirim, `hist` 🧾 Tarixçə, `custSale` 📝 Nisyə. 💵 Nağd və Ödənildi həmişə var. `renderOrder` gizlədir (+ CSS `[hidden]{display:none!important}`, Kart yoxsa Nağd tam en), klik işləyiciləri də yoxlayır.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
