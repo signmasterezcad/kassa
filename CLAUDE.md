@@ -180,6 +180,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   böyüdülmüş (`.max`) sürüşmür, `applyMax` transform-u götürür/qaytarır; `body.dragging`. (2) "Çay pulu" → **🪙 Artıq ödəmə** (ekranda; daxili ad `tip`/`sale.tip`/`ordTip` qalır).
   Kassa tabındakı bölmə silindi → Hesabatda yeni tab **🪙 Artıq ödəmə** `artiq` (icazə `reports`, Nisyə-dən sonra): KPI, kassirlər üzrə (növbə), günlər, aylar, xidmət üzrə
   (bir satışda bir neçə xidmət — məbləğə görə bölünür), hamısı bir-bir. Admin 10 tab → `#rtabs.g5` (5+5).
+- **🛍️ Vitrin** (v1.0.0, sahibinin istəyi: vitrində/anbarda çoxdan qalan, adı və alışı proqramda olmayan, qiyməti/görünüşü fərqli mallar): bölmə `vitrin` (sonda),
+  düymə `vit_mal` "Vitrin malı" — `free:1` + `noteReq:1`, `noteLabel` "Nə satıldı?", `notePh` (`#ovM2` free rejimi bunları oxuyur; qeyd yazılmasa əlavə olunmur).
+  Maya yoxdur → satış tam qazanc sayılır (pulu çoxdan, sistemdən əvvəl ödənib). Hesabatda "Vitrin malı" bir sətir (`plain`), satış sətri adında qeyd.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

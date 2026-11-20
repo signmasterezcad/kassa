@@ -172,7 +172,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.click('[data-cat=cap]', { position: { x: 12, y: 12 } });
   const tabNames = await p.locator('#tabs .tab').allTextContents();
   ok(tabNames[0].startsWith('ÇAP') && tabNames[1].startsWith('Poliqrafiya Xidmətləri'), 'ÇAP birinci, Poliqrafiya Xidmətləri onun yanında');
-  ok(tabNames.slice(-3).join('|') === 'Banner / Vinil|Studiya|🖼️ Çərçivə' && !tabNames.some(t => /Plotter|Lazer/.test(t)), 'Banner / Vinil, Studiya, 🖼️ Çərçivə sonda; Plotter və Lazer ayrıca bölmə deyil');
+  ok(tabNames.slice(-4).join('|') === 'Banner / Vinil|Studiya|🖼️ Çərçivə|🛍️ Vitrin' && !tabNames.some(t => /Plotter|Lazer/.test(t)), 'Banner / Vinil, Studiya, 🖼️ Çərçivə, 🛍️ Vitrin sonda; Plotter və Lazer ayrıca bölmə deyil');
   ok(await p.evaluate(() => { const i = S.items.find(x => x.id === 'st_sened'); return i && i.name === 'Sənəd Şəkli' && i.cat === 'studiya'; }), 'Studiya bölməsində "Sənəd Şəkli" düyməsi');
   // v0.42.0: sahibinin özü yaratdığı "Sənəd şəkili Kostyum montaj" və "Digər" (qiymət razılaşma ilə)
   await p.evaluate(() => { S.items.push({ id: 'u_k1', name: 'Sənəd şəkili Kostyum montaj', cat: 'studiya', icon: '⭐', color: '#2563eb', fav: 0, ink: 0, recipe: [], tiers: [[1, 3]] },
@@ -720,6 +720,16 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   // v0.99.0: köhnə çərçivələr anbara → Standart çərçivə düyməsinə özü qoşulur
   ok(await p.evaluate(() => { S.materials.push({ id: 'mC1521', name: 'Çərçivə 15x21 (vitrin)', unit: 'ədəd', stock: 7, cost: 2.5, min: 0 }, { id: 'mCL', name: 'Laser çərçivə 13x18', unit: 'ədəd', stock: 3, cost: 4, min: 0 }); upgrade();
     return item('cs_15_21')?.recipe.some(([m, q]) => m === 'mC1521' && q === 1) && !item('cs_13_18')?.recipe.some(([m]) => m === 'mCL'); }), 'anbara "Çərçivə 15x21" yazılanda Çərçivə 15x21 düyməsinə 1 ədəd qoşulur (lazer çərçivə qoşulmur)');
+  // v1.0.0: 🛍️ Vitrin malı — qiymət və "nə satıldı" satanda yazılır
+  await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); order = []; renderOrder(); });
+  ok(await p.evaluate(() => S.cats.some(c => c.id === 'vitrin') && item('vit_mal')?.free === 1), '🛍️ Vitrin bölməsi və "Vitrin malı" düyməsi');
+  await p.evaluate(() => tapItem('vit_mal'));
+  ok((await p.textContent('#m2Body')).includes('Nə satıldı'), 'pəncərədə "Nə satıldı? (məcburi)"');
+  await p.fill('#m2_tot', '12'); await p.dispatchEvent('#m2_tot', 'input'); await p.click('#ovM2 [data-m2=add]').catch(() => {}); await p.evaluate(() => addM2());
+  ok(await p.evaluate(() => !order.length), 'nə satıldığı yazılmayanda əlavə olunmur');
+  await p.fill('#m2_note', 'taxta çərçivə 20x30'); await p.dispatchEvent('#m2_note', 'input'); await p.evaluate(() => addM2());
+  ok(await p.evaluate(() => order.length === 1 && order[0].note === 'taxta çərçivə 20x30' && Math.abs(order[0].cp - 12) < 1e-9), 'Vitrin malı — taxta çərçivə 20x30, 12 ₼ sifarişdə');
+  await p.evaluate(() => { order = []; renderOrder(); });
   // v0.74.0: 💰 Mənfəət tabı
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.click('[data-rr=month]');

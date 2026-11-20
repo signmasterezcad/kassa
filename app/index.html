@@ -707,7 +707,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="0.99.0";
+const APP_VERSION="1.0.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -896,6 +896,9 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   // v0.45.0: "Çərçivə" bölməsi (boş; düymələri sahibi özü əlavə edəcək)
   if(!S.mig.cerceve){S.mig.cerceve=1;
     if(!S.cats.some(c=>c.id==="cerceve"||norm(c.name)==="cercive"))S.cats.push({id:"cerceve",name:"Çərçivə",icon:"🖼️"})}
+  // v1.0.0 (sahibinin istəyi): vitrində/mağazada çoxdan qalan, adı və alışı proqramda olmayan müxtəlif mallar — 🛍️ Vitrin bölməsi, "Vitrin malı" (qiymət satanda yazılır, nə satıldığı məcburi)
+  if(!S.mig.vitrin){S.mig.vitrin=1;let c=S.cats.find(x=>x.id==="vitrin");if(!c){c={id:"vitrin",name:"Vitrin",icon:"🛍️"};S.cats.push(c)}
+    if(!S.items.some(i=>i.id==="vit_mal"))S.items.push({id:"vit_mal",name:"Vitrin malı",cat:c.id,icon:"🛍️",color:"#be185d",fav:0,ink:0,recipe:[],tiers:[[1,0]],free:1,noteReq:1,noteLabel:"Nə satıldı?",notePh:"məs. taxta çərçivə 20x30, suvenir fincan"})}
   if(!S.mig.studiya2){S.mig.studiya2=1;
     const sc=S.cats.find(c=>c.id==="studiya")||S.cats.find(c=>norm(c.name)==="studiya"),inS=i=>sc&&i.cat===sc.id&&!i.group;
     S.items.filter(i=>inS(i)&&norm(i.name).includes("kost")).forEach(i=>{i.icon="🤵"});
@@ -1977,7 +1980,7 @@ const num=v=>+String(v).replace(",",".")||0;
 function renderM2(){
   const it=item(m2For),sp=srcSup(it),si=srcItem(it),A=m2Area(),n=Math.max(1,Math.round(num(m2D.n))),total=num(m2D.tot);
   if(m2D.mode==="free"){
-    $("m2Body").innerHTML=`<label class="f">Nə çəkildi / nə edildi? (istəyə görə)<input id="m2_note" value="${esc(m2D.note)}" placeholder="məs. it şəkli, əşya çəkilişi"></label>
+    $("m2Body").innerHTML=`<label class="f">${esc(it?.noteLabel||"Nə çəkildi / nə edildi?")} ${it?.noteReq?"(məcburi)":"(istəyə görə)"}<input id="m2_note" value="${esc(m2D.note)}" placeholder="${esc(it?.notePh||"məs. it şəkli, əşya çəkilişi")}"></label>
       <div class="m2grid"><label class="f">Ədəd<input id="m2_n" type="number" min="1" step="1" value="${esc(m2D.n)}"></label><span></span></div>
       <div class="m2grid"><label class="f">1 ədədin qiyməti ₼<input id="m2_pm" inputmode="decimal" value="${esc(m2D.pm)}" placeholder="məs. 5"></label>
         <label class="f">və ya cəmi məbləğ ₼<input id="m2_tot" inputmode="decimal" value="${esc(m2D.tot)}" placeholder="məs. 15"></label></div>
@@ -2010,7 +2013,7 @@ function updM2(){
 function addM2(){
   syncM2();const it=item(m2For),A=m2Area(),n=Math.max(1,Math.round(num(m2D.n))),tot=num(m2D.tot);
   if(m2D.mode==="free"){if(!(tot>0)){toast("Qiyməti yazın: 1 ədədin qiyməti və ya cəmi məbləğ");return}
-    const o={uid:newId("o"),id:it.id,q:n,cp:tot/n},nt=String(m2D.note||"").trim();if(nt)o.note=nt.slice(0,80);
+    const o={uid:newId("o"),id:it.id,q:n,cp:tot/n},nt=String(m2D.note||"").trim();if(it.noteReq&&!nt){toast(`${it.noteLabel||"Qeyd"} — yazın (hesabatda görünsün)`);$("m2_note")?.focus();return}if(nt)o.note=nt.slice(0,80);
     order.push(o);m2For=null;$("ovM2").hidden=true;renderGrid();renderOrder();return}
   if(!(A>0)){toast("Ölçünü yazın (en və hündürlük, və ya m²)");return}
   if(!(tot>0)){toast("Qiyməti yazın: 1 m² qiyməti və ya cəmi məbləğ");return}
