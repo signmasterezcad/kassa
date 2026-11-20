@@ -183,6 +183,11 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **🛍️ Vitrin** (v1.0.0, sahibinin istəyi: vitrində/anbarda çoxdan qalan, adı və alışı proqramda olmayan, qiyməti/görünüşü fərqli mallar): bölmə `vitrin` (sonda),
   düymə `vit_mal` "Vitrin malı" — `free:1` + `noteReq:1`, `noteLabel` "Nə satıldı?", `notePh` (`#ovM2` free rejimi bunları oxuyur; qeyd yazılmasa əlavə olunmur).
   Maya yoxdur → satış tam qazanc sayılır (pulu çoxdan, sistemdən əvvəl ödənib). Hesabatda "Vitrin malı" bir sətir (`plain`), satış sətri adında qeyd.
+- **👥 İşçi faizi** (v1.1.0, sahibinin istəyi, Mida: 2 işçi maaş + faiz alır — fotosessiya 10%, çap və satış 5%): Hesabatda tab `faiz` — **yalnız admin** (`TAB_PERM` "_admin", heç bir kassirdə yoxdur).
+  `S.comm={users:[id], rates:{catId:%}}` (şöbəyə görə ayrı; standart `studiya` 10, qalan bölmələr 5). Faiz = satış sətri `sum` × (`total/sub` endirim nisbəti) × bölmə faizi; qaytarma mənfi;
+  `from` (Samir/Vəfa/Banner hazır alınan) sayılmır. Şöbənin ümumi faizi seçilmiş işçilərə **bərabər** bölünür (sahibinin seçimi). "Ödə" (`data-cp` = uid|nağd/cib/kart, `data-amt`) →
+  `S.expenses` `{cat:"İşçi faizi", comm:{u,from,to}}` (dövr üzrə ödənilən çıxılır). Maaş əvvəlki kimi Xərclər-də "Maaş" (burada yalnız məbləği göstərilir — iki dəfə sayılmır).
+  Ayarlar tabın içindədir (`data-cu` işçi, `data-cr` bölmə faizi). Admin 11 tab → `#rtabs.g4c` (4+4+3, ortada).
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

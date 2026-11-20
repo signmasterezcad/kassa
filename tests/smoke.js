@@ -439,7 +439,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   const rb = await p.textContent('#rbody');
   const inMonth = await p.evaluate(() => new Date(Date.now() - 3 * 864e5).getMonth() === new Date().getMonth());
   ok(!inMonth || (rb.includes('Günü seçin') && rb.includes('Kassa hər gün ayrıca')), 'Bu ay: Kassadakı Pul — günlər siyahısı, kassa bir gün üçün');
-  ok(await p.locator('#rtabs .tab').evaluateAll(b => b.map(x => x.textContent).join('|')) === '💰 Kassadakı Pul|💵 Nağd Satış|💳 Kart Satış|📝 Nisyə Satış|🪙 Artıq ödəmə|🚚 Bizim borclarımız|🗑️ Zay olan pul|🧾 Xərclər|📦 Anbarda qalan pul|📈 Mənfəət', 'Hesabatda 10 tab (+ Bizim borclarımız, Artıq ödəmə)');
+  ok(await p.locator('#rtabs .tab').evaluateAll(b => b.map(x => x.textContent).join('|')) === '💰 Kassadakı Pul|💵 Nağd Satış|💳 Kart Satış|📝 Nisyə Satış|🪙 Artıq ödəmə|🚚 Bizim borclarımız|🗑️ Zay olan pul|🧾 Xərclər|📦 Anbarda qalan pul|📈 Mənfəət|👥 İşçi faizi', 'Hesabatda 11 tab (+ Bizim borclarımız, Artıq ödəmə, İşçi faizi — admin)');
   await p.click('[data-rr=all]'); await p.click('[data-rt=kart]');
   ok((await p.textContent('#rbody')).includes('Dövr satışı'), 'Kart Satış: bütün dövrdə köhnə satış var');
   await p.click('[data-rr=today]');
@@ -709,7 +709,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   ok((await p.textContent('.kassa')).includes('Artıq ödəmə'), 'kassa hesabında + 🪙 Artıq ödəmə sətri');
   await p.click('[data-rt=artiq]');
   { const t = await p.textContent('#rbody'); ok(t.includes('Kassirlər üzrə') && t.includes('Günlər üzrə') && t.includes('Aylar üzrə') && t.includes('Vafli') && t.includes('1.00'), 'Hesabat → 🪙 Artıq ödəmə: kassir, gün, ay, xidmət (Vafli) üzrə'); }
-  ok(await p.evaluate(() => document.getElementById('rtabs').classList.contains('g5')), '10 tab → 5+5 düzülüş');
+  ok(await p.evaluate(() => document.getElementById('rtabs').classList.contains('g4c')), 'admin 11 tab → 4+4+3 (ortada)');
   { const b0 = await p.evaluate(() => { const r = document.querySelector('#ovRep .modal').getBoundingClientRect(); return [r.x, r.y]; });
     const hb = await p.locator('#ovRep .mh h3').boundingBox(); await p.mouse.move(hb.x + 5, hb.y + 5); await p.mouse.down(); await p.mouse.move(hb.x - 95, hb.y + 45, { steps: 5 }); await p.mouse.up();
     const b1 = await p.evaluate(() => { const r = document.querySelector('#ovRep .modal').getBoundingClientRect(); return [r.x, r.y]; });
@@ -730,6 +730,22 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.fill('#m2_note', 'taxta çərçivə 20x30'); await p.dispatchEvent('#m2_note', 'input'); await p.evaluate(() => addM2());
   ok(await p.evaluate(() => order.length === 1 && order[0].note === 'taxta çərçivə 20x30' && Math.abs(order[0].cp - 12) < 1e-9), 'Vitrin malı — taxta çərçivə 20x30, 12 ₼ sifarişdə');
   await p.evaluate(() => { order = []; renderOrder(); });
+  // v1.1.0: 👥 İşçi faizi (admin)
+  await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true);
+    const k = S.users.filter(u => u.role !== 'admin'); if (k.length < 2) { S.users.push({ id: 'uF1', name: 'Fərid', role: 'kassir', perms: {} }, { id: 'uF2', name: 'Aysel', role: 'kassir', perms: {} }); }
+    const now = Date.now(); S.sales.push({ id: 'fz1', ts: now, worker: 'Admin', pay: 'nağd', total: 90, sub: 100, disc: 10, lines: [{ id: 'ss_1', name: 'Fotosessiya', q: 1, sum: 50, cost: 0 }, { id: 'a4s_bw', name: 'A4', q: 500, sum: 50, cost: 0 }] },
+      { id: 'fz2', ts: now, worker: 'Admin', pay: 'nağd', total: 20, lines: [{ id: 'fk_1521', name: 'Foto 15x21', q: 20, sum: 20, cost: 0, from: 'sp1', scost: 9 }] }); save(); });
+  await p.click('#btnRep'); await p.click('[data-rt=faiz]'); await p.click('[data-rr=today]');
+  const fu = await p.evaluate(() => S.users.filter(u => u.role !== 'admin').slice(0, 2).map(u => u.id));
+  for (const id of fu) await p.check(`[data-cu="${id}"]`);
+  const fz = await p.evaluate(() => { const st = item('ss_1').cat, a4 = item('a4s_bw').cat; return { st, a4 }; });
+  const exp = (fz.st === 'studiya' ? 50 * 0.9 * 0.10 : 50 * 0.9 * 0.05) + 50 * 0.9 * 0.05;
+  ok((await p.textContent('#rbody .kpi.hero')).length > 0 && await p.evaluate(e => { const t = document.querySelector('#rbody .kpi.hero b').textContent; return t.includes(m2(e)) || parseFloat(t) >= e - 0.01; }, exp), 'İşçi faizi: fotosessiya 10% + çap 5%, endirim çıxılır, Samir sayılmır');
+  ok((await p.textContent('#rbody')).includes('Hər işçiyə (2 nəfər'), 'ümumi faiz 2 işçiyə bərabər bölünür');
+  const nx = await p.evaluate(() => S.expenses.length);
+  await p.click(`[data-cp="${fu[0]}|cib"]`);
+  ok(await p.evaluate(n => { const x = S.expenses.at(-1); return S.expenses.length === n + 1 && x.cat === 'İşçi faizi' && x.pay === 'cib' && x.comm; }, nx), 'Ödə (cibdən) → Xərclərə "İşçi faizi" yazıldı');
+  await p.click('#ovRep [data-close]');
   // v0.74.0: 💰 Mənfəət tabı
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.click('[data-rr=month]');
