@@ -439,7 +439,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   const rb = await p.textContent('#rbody');
   const inMonth = await p.evaluate(() => new Date(Date.now() - 3 * 864e5).getMonth() === new Date().getMonth());
   ok(!inMonth || (rb.includes('Günü seçin') && rb.includes('Kassa hər gün ayrıca')), 'Bu ay: Kassadakı Pul — günlər siyahısı, kassa bir gün üçün');
-  ok(await p.locator('#rtabs .tab').evaluateAll(b => b.map(x => x.textContent).join('|')) === '💰 Kassadakı Pul|💵 Nağd Satış|💳 Kart Satış|📝 Nisyə Satış|🗑️ Zay olan pul|🧾 Xərclər|📦 Anbarda qalan pul|📈 Mənfəət', 'v0.89.0: Hesabatda 8 yeni tab');
+  ok(await p.locator('#rtabs .tab').evaluateAll(b => b.map(x => x.textContent).join('|')) === '💰 Kassadakı Pul|💵 Nağd Satış|💳 Kart Satış|📝 Nisyə Satış|🚚 Bizim borclarımız|🗑️ Zay olan pul|🧾 Xərclər|📦 Anbarda qalan pul|📈 Mənfəət', 'Hesabatda 9 tab (v0.92.0: + Bizim borclarımız)');
   await p.click('[data-rr=all]'); await p.click('[data-rt=kart]');
   ok((await p.textContent('#rbody')).includes('Dövr satışı'), 'Kart Satış: bütün dövrdə köhnə satış var');
   await p.click('[data-rr=today]');

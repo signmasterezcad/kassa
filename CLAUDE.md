@@ -152,6 +152,11 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   (`payTab(p)`: `payPart` ilə cəm, günlər, kassirlər, nə satılıb (qarışıqsız), satışlar; nisyədə + borclar baxışı), 🗑️ Zay olan pul `zay` (₼), 🧾 Xərclər `xerc` (növlər, bir-bir, mal alışları, `srcSection`),
   📦 Anbarda qalan pul `anbarpul` (qalıq × maya, dövrsüz), 📈 Mənfəət `menfeet` (yalnız gəlir: satış − maya − zay − xərclər; günlər + cəmi; bir neçə ay olanda aylar + qrafik).
   İcazə: ilk 5 `reports`, son 3 `cost`. Açılanda `kassa`, bu gün. Tablar 4+4 (`#rtabs.g4`, telefonda 2 sütun). `renderMonthly/renderProfit` kodda qalır (işlənmir).
+- **🚚 Tədarükçü satışı → avtomatik borc** (v0.92.0, sahibinin istəyi: Samir Foto-ya borc yığılır, sonra ödəyir): `finishSale` → `suppAutoDebt(sale)` — `from` sətirləri
+  (qaytarma yox, `scost>0`) tədarükçü üzrə toplanır, `autoDebt(sp)` açıqdırsa `S.expenses`-ə `{pay:"nisyə",auto:1,sale,amount:Σscost,lines,note:"🧾 Satışdan: …"}`.
+  `autoDebt`: `sp.autoDebt` (admin ⚙️ Tədarükçülər-də "📝 Satışda borca yaz", `data-sad`), təyin edilməyibsə yalnız `sp1` (Samir Foto) açıq. Satış silinəndə bağlı auto borc da silinir.
+  Ödəmə köhnə qayda ilə (💳 Borclar → Bizim borclarımız). Hesabatda yeni tab **🚚 Bizim borclarımız** `suppdebt` (icazə `suppDebt`; Nisyə tabından tədarükçü hissəsi bura köçdü):
+  indiki borc (+mal alışı nisyəsi), dövrdə yazılan / satışdan / ödənən, hərəkətlər. 9 tab → `#rtabs.g3` (3×3). Sahibinə: Samir Foto-dan alışı artıq əl ilə yazmasın (iki dəfə olar).
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
