@@ -226,7 +226,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.evaluate(() => { S.sales.pop(); save(); renderAll(); }); // sonrakı yoxlamaların satış sayı dəyişməsin
   ok(await p.evaluate(() => { const g = id => S.items.find(i => i.id === id); return g('g_plotter')?.cat === 'poli' && g('g_lazer')?.cat === 'poli' && g('pl_m2').parent === 'g_plotter' && g('lz_m2').parent === 'g_lazer' && !S.cats.some(c => c.id === 'plotter' || c.id === 'lazer'); }), 'Kəsim Plotter və Fiber Lazer Poliqrafiya-nın içində qrup oldu (içindəki düymələrlə)');
   await p.click('[data-cat=poli]', { position: { x: 12, y: 12 } }); await p.click('[data-grp=g_lazer]');
-  ok(await p.locator('#grid [data-add]').count() === 1 && (await p.locator('[data-add=lz_m2]').textContent()).includes('m² ilə'), 'Poliqrafiya → Fiber Lazer: "Lazer işi" — m² ilə');
+  ok(await p.locator('#grid [data-add]').count() === 2 && !(await p.locator('[data-add=lz_m2]').textContent()).includes('m²') && await p.locator('[data-add=lz_bizim]').count() === 1, 'Poliqrafiya → Fiber Lazer: "Lazer yazı (müştərinin məhsulu)" + "Lazer — bizim məhsul" (m² yoxdur)');
   await p.click('[data-back]');
   await p.click('[data-cat=poli]', { position: { x: 12, y: 12 } });
   ok((await p.locator('#grid .svc.grpt .nm').allTextContents()).join('|') === 'Skan Etmə|Spiral Cildləmə|Kəsim Plotter|Fiber Lazer|Konfet Kartı', 'Poliqrafiya: 5 qrup (Skan, Spiral, Kəsim Plotter, Fiber Lazer, Konfet Kartı)');
@@ -763,6 +763,11 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.fill('#m2_note', 'Excel cədvəli'); await p.dispatchEvent('#m2_note', 'input'); await p.fill('#m2_tot', '5'); await p.dispatchEvent('#m2_tot', 'input'); await p.evaluate(() => addM2());
   ok(await p.evaluate(() => order.length === 1 && order[0].note === 'Excel cədvəli' && Math.abs(order[0].cp - 5) < 1e-9), 'Xidmət — Excel cədvəli, 5 ₼ sifarişdə');
   await p.evaluate(() => { order = []; renderOrder(); });
+  // v1.4.0: Fiber Lazer — ölçüsüz, qiyməti satanda
+  ok(await p.evaluate(() => { const L = item('lz_m2'), B = item('lz_bizim'); return L && !L.area && L.free === 1 && L.noteReq === 1 && /müştərinin/.test(L.name) && B && B.free === 1 && B.parent === L.parent && B.cat === L.cat; }), 'Lazer yazı (müştərinin məhsulu) ölçüsüz + "Lazer — bizim məhsul" əlavə olundu');
+  await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); order = []; renderOrder(); tapItem('lz_m2'); });
+  ok((await p.textContent('#m2Body')).includes('Nəyin üzərinə') && !(await p.isVisible('#m2_w').catch(() => false)), 'Lazer pəncərəsində ölçü yoxdur, "Nəyin üzərinə nə yazıldı?" var');
+  await p.click('#ovM2 [data-close], #ovM2 [data-m2x]').catch(() => {}); await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); order = []; renderOrder(); });
   // v0.74.0: 💰 Mənfəət tabı
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.click('[data-rr=month]');

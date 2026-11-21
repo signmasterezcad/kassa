@@ -708,7 +708,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.3.0";
+const APP_VERSION="1.4.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1090,6 +1090,12 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   if(!S.mig.cibPay){S.mig.cibPay=1;["sp2","sp4"].forEach(id=>{const sp=(S.suppliers||[]).find(x=>x.id===id);if(sp)sp.auto="cib";
     const ax=(S.expenses||[]).filter(x=>x.auto&&x.supp===id&&(x.pay==="nağd"||x.pay==="nisyə"));
     if(!(S.suppPays||[]).some(y=>y.supp===id))ax.forEach(x=>x.pay="cib")})}
+  // v1.4.0 (sahibinin istəyi): Fiber Lazer — "Lazer işi" (m²) əvəzinə: müştərinin gətirdiyi məhsula yazı (ölçüsüz, qiyməti satanda) + "bizim məhsul" (nadir hallar).
+  // Eyni id (lz_m2) saxlanır ki, köhnə satışlar hesabatda qalsın. Bizim tez-tez satılan məhsulların ayrıca düymələrini sahibi sonra deyəcək.
+  if(!S.mig.lazerYazi){S.mig.lazerYazi=1;const L=S.items.find(i=>i.id==="lz_m2");
+    if(L){delete L.area;delete L.src;Object.assign(L,{name:"Lazer yazı (müştərinin məhsulu)",free:1,noteReq:1,noteLabel:"Nəyin üzərinə nə yazıldı?",notePh:"məs. müştərinin qələminə ad yazıldı",tiers:[[1,0]],recipe:[]});
+      if(!S.items.some(i=>i.id==="lz_bizim")){const it={id:"lz_bizim",name:"Lazer — bizim məhsul",cat:L.cat,icon:"🎁",color:"#9a3412",fav:0,ink:0,recipe:[],tiers:[[1,0]],free:1,noteReq:1,
+        noteLabel:"Hansı məhsul satıldı, nə yazıldı?",notePh:"məs. metal açarlıq, üzərinə ad"};if(L.parent)it.parent=L.parent;S.items.splice(S.items.indexOf(L)+1,0,it)}}}
   if(!S.mig.anbarSifir){S.mig.anbarSifir=1;
     if(!firstRun){S.materials=[];S.items.forEach(i=>{i.recipe=[]})}
   }

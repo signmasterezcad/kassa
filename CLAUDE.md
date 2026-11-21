@@ -95,6 +95,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **Kəsim Plotter** və **Fiber Lazer** — v0.53.0-dan (`S.mig.plotLazPoli`, sahibinin istəyi) ayrıca bölmə deyil, **Poliqrafiya Xidmətləri**-nin içində qrup:
   `g_plotter` ✂️, `g_lazer` ⚡ (köhnə bölmələrdəki düymələr bu qruplara köçür, bölmələr silinir; köhnə id-lər `plotter`/`lazer` (`S.mig.plotterLazer`)). Lazerdə (v0.50.0, `S.mig.lazerM2`) `lz_m2` "Lazer işi" ⚡ — eyni qayda. Plotterdə (v0.49.0, `S.mig.plotterM2`)
   `pl_m2` "Plotter kəsimi" ✂️ — `area:1`, tədarükçüsüz (banner/vinil kimi m² + sərbəst qiymət, alış dəyəri yoxdur).
+  v1.4.0 (`S.mig.lazerYazi`, sahibinin istəyi; `upgrade()`-in sonunda, `lz_m2` yaranandan sonra): `lz_m2` → **"Lazer yazı (müştərinin məhsulu)"** — `area` silindi, `free:1`+`noteReq:1`
+  ("Nəyin üzərinə nə yazıldı?"), id eyni (köhnə satışlar qalır); + `lz_bizim` 🎁 "Lazer — bizim məhsul" (free+noteReq, nadir hallar). Sahibinin öz satdığı lazer məhsullarının
+  ayrıca sabit qiymətli düymələrini (anbarla) sonra deyəcək.
 - **🔍 Axtarış** (v0.13.0; v0.56.0-dan **tab yoxdur**, sahibinin istəyi): axtarış çubuğu `#searchbar` həmişə bölmə düymələrinin altında görünür.
   `cat` açılışda birinci bölmə (`refreshCats`: "search" → `S.cats[0]`); yazı varsa (`q.trim()`) qrupsuz rejimdə bütün bölmələrdən nəticə (`S_`),
   nəticədəki qrupa basanda qrup açılır (geri = "🔍 Axtarış", yazı qalır); yazmağa başlayanda `grp=null`; bölmə tabına basanda axtarış təmizlənir;
