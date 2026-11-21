@@ -434,13 +434,13 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.evaluate(() => { S.sales.push({ id: 'rr1', ts: Date.now() - 3 * 864e5, worker: 'Admin', pay: 'kart', lines: [{ id: 'x', name: 'Dövr satışı', q: 2, price: 5, sum: 10, cost: 2 }], total: 10 }); });
   await p.click('#btnRep');
   ok((await p.textContent('#rbody')).includes('Bu gün,') && (await p.textContent('#rbody')).includes('Kassa (yalnız nağd pul)'), 'Hesabat açılır: bu gün, kassa görünür');
-  await p.click('[data-rr=week]');
-  await p.click('[data-rr=month]');
+  await p.evaluate(() => rrSet('week'));
+  await p.evaluate(() => rrSet('month'));
   const rb = await p.textContent('#rbody');
   const inMonth = await p.evaluate(() => new Date(Date.now() - 3 * 864e5).getMonth() === new Date().getMonth());
   ok(!inMonth || (rb.includes('Günü seçin') && rb.includes('Kassa hər gün ayrıca')), 'Bu ay: Kassadakı Pul — günlər siyahısı, kassa bir gün üçün');
-  ok(await p.locator('#rtabs .tab').evaluateAll(b => b.map(x => x.textContent).join('|')) === '💰 Kassadakı Pul|💵 Nağd Satış|💳 Kart Satış|📝 Nisyə Satış|🪙 Artıq ödəmə|🚚 Bizim borclarımız|🗑️ Zay olan pul|🧾 Xərclər|📦 Anbarda qalan pul|📈 Mənfəət|👥 İşçi faizi', 'Hesabatda 11 tab (+ Bizim borclarımız, Artıq ödəmə, İşçi faizi — admin)');
-  await p.click('[data-rr=all]'); await p.click('[data-rt=kart]');
+  ok(await p.locator('#rtabs .tab').evaluateAll(b => b.map(x => x.textContent).join('|')) === '📊 Ümumi Satış|💵 Nağd Satış|💳 Kart Satış|📝 Nisyə Satış|🪙 Artıq ödəmə|🚚 Bizim borclarımız|🗑️ Zay olan pul|🧾 Xərclər|📦 Anbarda qalan pul|📈 Xalis Gəlir|👥 İşçi faizi', 'Hesabatda 11 tab (+ Bizim borclarımız, Artıq ödəmə, İşçi faizi — admin)');
+  await p.evaluate(() => rrSet('all')); await p.click('[data-rt=kart]');
   ok((await p.textContent('#rbody')).includes('Dövr satışı'), 'Kart Satış: bütün dövrdə köhnə satış var');
   await p.click('[data-rr=today]');
   ok(!(await p.textContent('#rbody')).includes('Dövr satışı'), 'Kart Satış: bu gün seçiləndə köhnə satış yoxdur');
@@ -586,7 +586,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
     S.waste.push({ ts: prev, mat: 'a4', q: 5, reason: 'Test', worker: 'Admin', cost: 30 });
     S.expenses.push({ id: 'oldx', ts: prev, cat: 'İcarə', amount: 500, pay: 'kart', note: '', rec: null });
   });
-  await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.click('[data-rr=all]');
+  await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.evaluate(() => rrSet('all'));
   const cur = await p.evaluate(() => monthStats()[0]), prv = await p.evaluate(() => monthStats()[1]);
   ok(Math.abs(prv.net - (1000 - 200 - 30 - 500)) < 1e-9, 'keçən ay: 1000 − 200 − 30 − 500 = 270 xalis');
   ok(Math.abs(cur.net - (cur.sales - cur.cost - cur.waste - cur.exp)) < 1e-9 && cur.exp > 0, `bu ay: ${cur.sales.toFixed(2)} − ${cur.cost.toFixed(2)} − ${cur.waste.toFixed(2)} − ${cur.exp.toFixed(2)} = ${cur.net.toFixed(2)}`);
@@ -768,9 +768,19 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); order = []; renderOrder(); tapItem('lz_m2'); });
   ok((await p.textContent('#m2Body')).includes('Nəyin üzərinə') && !(await p.isVisible('#m2_w').catch(() => false)), 'Lazer pəncərəsində ölçü yoxdur, "Nəyin üzərinə nə yazıldı?" var');
   await p.click('#ovM2 [data-close], #ovM2 [data-m2x]').catch(() => {}); await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); order = []; renderOrder(); });
+  // v1.5.0: Hesabat bölmələri bağlı, ▸ ilə açılır; dövr: Bu gün / Dünən / Gün seç / Tarix aralığı
+  await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); window.REP_FORCE_CLOSED = 1; });
+  await p.click('#btnRep'); await p.click('[data-rt=zay]');
+  ok(await p.evaluate(() => { const d = [...document.querySelectorAll('#rbody details.rsec')]; return d.length >= 2 && d.every(x => !x.open); }), 'Hesabat bölmələri bağlı gəlir (▸)');
+  await p.click('#rbody details.rsec > summary');
+  ok(await p.evaluate(() => document.querySelector('#rbody details.rsec').open), 'başlığa basanda açılır');
+  ok(await p.evaluate(() => [...document.querySelectorAll('.rrange [data-rr]')].map(b => b.textContent).join('|') === 'Bu gün|Dünən' && !!document.getElementById('r_day')), 'dövr düymələri: Bu gün, Dünən + Gün seç + Tarix aralığı');
+  const yd = await p.evaluate(() => dayKey(Date.now() - 3 * 864e5)); await p.fill('#r_day', yd); await p.dispatchEvent('#r_day', 'change');
+  ok(await p.evaluate(d => rFrom === d && rTo === d, yd), 'Gün seç → həmin gün');
+  await p.evaluate(() => { window.REP_FORCE_CLOSED = 0; document.querySelectorAll('.ov').forEach(o => o.hidden = true); });
   // v0.74.0: 💰 Mənfəət tabı
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
-  await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.click('[data-rr=month]');
+  await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.evaluate(() => rrSet('month'));
   ok(await p.evaluate(() => { const m = monthStats()[0]; return document.querySelector('#rbody .kpi.hero').textContent.includes(m2(m.net)); }), 'Mənfəət tabı (bu ay) = monthStats net');
   await p.click('#ovRep [data-close]');
 

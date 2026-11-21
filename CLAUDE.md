@@ -193,6 +193,10 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   `from` (Samir/Vəfa/Banner hazır alınan) sayılmır. Şöbənin ümumi faizi seçilmiş işçilərə **bərabər** bölünür (sahibinin seçimi). "Ödə" (`data-cp` = uid|nağd/cib/kart, `data-amt`) →
   `S.expenses` `{cat:"İşçi faizi", comm:{u,from,to}}` (dövr üzrə ödənilən çıxılır). Maaş əvvəlki kimi Xərclər-də "Maaş" (burada yalnız məbləği göstərilir — iki dəfə sayılmır).
   Ayarlar tabın içindədir (`data-cu` işçi, `data-cr` bölmə faizi). Admin 11 tab → `#rtabs.g4c` (4+4+3, ortada).
+- **v1.5.0 Hesabat sadələşdi (sahibinin istəyi):** (1) bütün bölmələr (h4 + altındakı) `repCollapse()` ilə `<details class="rsec">` — bağlı gəlir, ▸ ilə açılır; KPI qutuları
+  həmişə görünür; əl ilə açılan bölmə yadda qalır (`localStorage["kassa.repOpen"]`, açar `rtab:sıra`, yalnız summary klikində); Playwright-da (`navigator.webdriver`) hamısı açıq,
+  `window.REP_FORCE_CLOSED` testdə bağlı saxlayır. (2) Dövr: yalnız **Bu gün / Dünən / 📅 Gün seç** (`#r_day`) / **Tarix aralığı** (`#r_from`–`#r_to`); həftə/ay/bütün dövr düymələri
+  silindi (`rrPreset` qalır, testlər `rrSet(k)` çağırır). (3) Tab adları: `kassa` → **📊 Ümumi Satış** (başda ümumi satış + nağd/kart/nisyə KPI, sonra kassa), `menfeet` → **📈 Xalis Gəlir**.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
