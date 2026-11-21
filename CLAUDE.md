@@ -60,6 +60,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   - Laminasiya A4 (1.00, 1 Laminasiya A4 plyonka) və A3 (2.00, material yoxdur) qrup deyil, birbaşa satış düyməsidir (id-ləri `g_` ilə qalıb).
   - v0.95.0: adında "lamin" olan material **hər açılışda** Laminasiya düyməsinə 1 ədəd qoşulur (adda A3 → `g_lamA3`, başqa ölçü yoxdursa → `g_lamA4`), reseptdə bu şöbənin laminasiya materialı yoxdursa
     (sahibi plyonkanı Mal alışı yox, birbaşa Anbar → Alış(+) ilə yeni material kimi yazdı).
+  - v1.3.0 (`S.mig.xidmet`, sahibinin istəyi): 💼 **Xidmət** `pq_xidmet` — material/çap yoxdur, yalnız əmək (məs. Excel cədvəli doldurub telefona göndərmək); `free:1` + `noteReq:1`,
+    `noteLabel` "Hansı xidmət göstərildi?" — ad və qiymət satanda yazılır (Vitrin malı ilə eyni qayda); işçi faizi Poliqrafiya bölməsinin faizi ilə (5%).
   - v0.64.0 (`S.mig.vizitKonfet`): Vizit Kart 0.10 (`pq_vizit`) + 🍬 Konfet Kartı qrupu `g_konfet`: 0.50 / 0.40 / 0.80 (`kk_050`, `kk_040`, `kk_080`;
     adlar "Konfet Kartı 0.50"… — sahibi növlərini deməyib, dəqiqləşdirə bilər).
   - v0.87.0 (`S.mig.vizitPick`, sahibinin istəyi): Vizit Kart `pick="sertifikat"`, `pickQ=0.1` — satanda 250/300 qram soruşulur, 1 A4 vərəqə 10 vizit.

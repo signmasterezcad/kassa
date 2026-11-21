@@ -708,7 +708,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.2.1";
+const APP_VERSION="1.3.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -900,6 +900,10 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   // v1.0.0 (sahibinin istəyi): vitrində/mağazada çoxdan qalan, adı və alışı proqramda olmayan müxtəlif mallar — 🛍️ Vitrin bölməsi, "Vitrin malı" (qiymət satanda yazılır, nə satıldığı məcburi)
   if(!S.mig.vitrin){S.mig.vitrin=1;let c=S.cats.find(x=>x.id==="vitrin");if(!c){c={id:"vitrin",name:"Vitrin",icon:"🛍️"};S.cats.push(c)}
     if(!S.items.some(i=>i.id==="vit_mal"))S.items.push({id:"vit_mal",name:"Vitrin malı",cat:c.id,icon:"🛍️",color:"#be185d",fav:0,ink:0,recipe:[],tiers:[[1,0]],free:1,noteReq:1,noteLabel:"Nə satıldı?",notePh:"məs. taxta çərçivə 20x30, suvenir fincan"})}
+  // v1.3.0 (sahibinin istəyi): 💼 Xidmət — çap/material yoxdur, yalnız əmək (məs. Excel cədvəli doldurub müştəriyə göndərmək). Adı və qiyməti satanda yazılır.
+  if(!S.mig.xidmet){S.mig.xidmet=1;const pc=S.cats.find(c=>c.id==="poli")||S.cats.find(c=>norm(c.name)==="poliqrafiya xidmetleri")||S.cats[0];
+    if(pc&&!S.items.some(i=>i.id==="pq_xidmet"))S.items.push({id:"pq_xidmet",name:"Xidmət",cat:pc.id,icon:"💼",color:"#0f766e",fav:0,ink:0,recipe:[],tiers:[[1,0]],free:1,noteReq:1,
+      noteLabel:"Hansı xidmət göstərildi?",notePh:"məs. Excel cədvəli doldurulub telefona göndərildi"})}
   if(!S.mig.studiya2){S.mig.studiya2=1;
     const sc=S.cats.find(c=>c.id==="studiya")||S.cats.find(c=>norm(c.name)==="studiya"),inS=i=>sc&&i.cat===sc.id&&!i.group;
     S.items.filter(i=>inS(i)&&norm(i.name).includes("kost")).forEach(i=>{i.icon="🤵"});

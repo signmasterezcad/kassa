@@ -755,6 +755,14 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.check('#kzReqChk'); await p.click('#ovRep [data-close]');
   // v1.2.1: Mal alışı "👛 Öz cibimdən" — kassa hesabından çıxılmır
   ok(await p.evaluate(() => { const d = dayKey(Date.now()), k0 = cashDay(d).purch; S.purchases.push({ id: 'puCib', ts: Date.now(), supplier: 'Test', pay: 'cib', paid: false, lines: [], total: 16 }); const k1 = cashDay(d).purch; S.purchases = S.purchases.filter(p => p.id !== 'puCib'); return k0 === k1 && /cibimdən/.test(payPill({ pay: 'cib' })); }), 'Mal alışı "Öz cibimdən": kassadan çıxılmır, etiketi görünür');
+  // v1.3.0: 💼 Xidmət — adı və qiyməti satanda
+  await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); order = []; renderOrder(); });
+  ok(await p.evaluate(() => { const x = item('pq_xidmet'); return x && x.name === 'Xidmət' && x.free === 1 && x.noteReq === 1 && !x.recipe.length; }), 'Poliqrafiya → 💼 Xidmət düyməsi (material yoxdur)');
+  await p.evaluate(() => tapItem('pq_xidmet'));
+  ok((await p.textContent('#m2Body')).includes('Hansı xidmət göstərildi'), 'pəncərədə "Hansı xidmət göstərildi? (məcburi)"');
+  await p.fill('#m2_note', 'Excel cədvəli'); await p.dispatchEvent('#m2_note', 'input'); await p.fill('#m2_tot', '5'); await p.dispatchEvent('#m2_tot', 'input'); await p.evaluate(() => addM2());
+  ok(await p.evaluate(() => order.length === 1 && order[0].note === 'Excel cədvəli' && Math.abs(order[0].cp - 5) < 1e-9), 'Xidmət — Excel cədvəli, 5 ₼ sifarişdə');
+  await p.evaluate(() => { order = []; renderOrder(); });
   // v0.74.0: 💰 Mənfəət tabı
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.click('[data-rr=month]');
