@@ -439,13 +439,17 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   const rb = await p.textContent('#rbody');
   const inMonth = await p.evaluate(() => new Date(Date.now() - 3 * 864e5).getMonth() === new Date().getMonth());
   ok(!inMonth || (rb.includes('Günü seçin') && rb.includes('Kassa hər gün ayrıca')), 'Bu ay: Kassadakı Pul — günlər siyahısı, kassa bir gün üçün');
-  ok(await p.locator('#rtabs .tab').evaluateAll(b => b.map(x => x.textContent).join('|')) === '📊 Ümumi Satış|💵 Nağd Satış|💳 Kart Satış|📝 Nisyə Satış|🪙 Artıq ödəmə|🚚 Bizim borclarımız|🗑️ Zay olan pul|🧾 Xərclər|📦 Anbarda qalan pul|📈 Xalis Gəlir|👥 İşçi faizi', 'Hesabatda 11 tab (+ Bizim borclarımız, Artıq ödəmə, İşçi faizi — admin)');
-  await p.evaluate(() => rrSet('all')); await p.click('[data-rt=kart]');
+  ok(await p.locator('#rtabs .tab').evaluateAll(b => b.map(x => x.textContent).join('|')) === '📊 Ümumi Satış|🪙 Artıq ödəmə|🚚 Bizim borclarımız|🗑️ Zay olan pul|🧾 Xərclər|📦 Anbarda qalan pul|📈 Xalis Gəlir|👥 İşçi faizi', 'Hesabatda 8 tab (Nağd/Kart/Nisyə tabı yoxdur — admin)');
+  ok(await p.evaluate(() => $('rtabs').classList.contains('g4')), 'Hesabat tabları 4+4');
+  await p.evaluate(() => rrSet('all')); ok(!(await p.$('.ksub')), 'Ümumi Satış: təfərrüat əvvəl bağlıdır'); await p.click('[data-ks=kart]');
+  ok(await p.isVisible('.ksub') && (await p.textContent('.ksub')).includes('Kart — təfərrüat') && await p.isVisible('[data-ks=kart].on'), 'Kart qutusuna basanda təfərrüat açılır');
   ok((await p.textContent('#rbody')).includes('Dövr satışı'), 'Kart Satış: bütün dövrdə köhnə satış var');
   await p.click('[data-rr=today]');
   ok(!(await p.textContent('#rbody')).includes('Dövr satışı'), 'Kart Satış: bu gün seçiləndə köhnə satış yoxdur');
-  await p.click('[data-rt=nagd]');
-  ok(!(await p.textContent('#rbody')).includes('Dövr satışı'), 'Nağd Satış: kart satışı görünmür');
+  await p.click('[data-ks="nağd"]');
+  ok(!(await p.textContent('.ksub')).includes('Dövr satışı') && (await p.textContent('.ksub')).includes('Nağd — təfərrüat'), 'Nağd qutusu: kart satışı görünmür');
+  await p.click('[data-ks=borc]'); ok((await p.textContent('.ksub')).includes('Bizə borclular'), 'Nisyə qutusu: müəssisə borcları da görünür');
+  await p.click('[data-ks=borc]'); ok(!(await p.$('.ksub')), 'yenidən basanda təfərrüat bağlanır');
   await p.click('#ovRep [data-close]');
   await p.evaluate(() => { S.sales = S.sales.filter(s => s.id !== 'rr1'); });
   await p.click('#btnHist');
@@ -709,7 +713,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   ok((await p.textContent('.kassa')).includes('Artıq ödəmə'), 'kassa hesabında + 🪙 Artıq ödəmə sətri');
   await p.click('[data-rt=artiq]');
   { const t = await p.textContent('#rbody'); ok(t.includes('Kassirlər üzrə') && t.includes('Günlər üzrə') && t.includes('Aylar üzrə') && t.includes('Vafli') && t.includes('1.00'), 'Hesabat → 🪙 Artıq ödəmə: kassir, gün, ay, xidmət (Vafli) üzrə'); }
-  ok(await p.evaluate(() => document.getElementById('rtabs').classList.contains('g4c')), 'admin 11 tab → 4+4+3 (ortada)');
+  ok(await p.evaluate(() => document.getElementById('rtabs').classList.contains('g4')), 'admin 8 tab → 4+4');
   { const b0 = await p.evaluate(() => { const r = document.querySelector('#ovRep .modal').getBoundingClientRect(); return [r.x, r.y]; });
     const hb = await p.locator('#ovRep .mh h3').boundingBox(); await p.mouse.move(hb.x + 5, hb.y + 5); await p.mouse.down(); await p.mouse.move(hb.x - 95, hb.y + 45, { steps: 5 }); await p.mouse.up();
     const b1 = await p.evaluate(() => { const r = document.querySelector('#ovRep .modal').getBoundingClientRect(); return [r.x, r.y]; });

@@ -197,6 +197,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   həmişə görünür; əl ilə açılan bölmə yadda qalır (`localStorage["kassa.repOpen"]`, açar `rtab:sıra`, yalnız summary klikində); Playwright-da (`navigator.webdriver`) hamısı açıq,
   `window.REP_FORCE_CLOSED` testdə bağlı saxlayır. (2) Dövr: yalnız **Bu gün / Dünən / 📅 Gün seç** (`#r_day`) / **Tarix aralığı** (`#r_from`–`#r_to`); həftə/ay/bütün dövr düymələri
   silindi (`rrPreset` qalır, testlər `rrSet(k)` çağırır). (3) Tab adları: `kassa` → **📊 Ümumi Satış** (başda ümumi satış + nağd/kart/nisyə KPI, sonra kassa), `menfeet` → **📈 Xalis Gəlir**.
+- **v1.6.0 (sahibinin istəyi):** Hesabatda 💵 Nağd / 💳 Kart / 📝 Nisyə **tabları silindi** (admin 8 tab → `g4` 4+4; kassir reports ilə: Ümumi Satış, Artıq ödəmə, Zay).
+  📊 Ümumi Satış-dakı Nağd/Kart/Nisyə KPI qutuları düymədir (`data-ks` = nağd|kart|borc, `kSub`, yenidən basanda bağlanır; Hesabat açılanda sıfırlanır) — altında `.ksub` çərçivədə
+  `payTab(...)` (Nisyədə + "🏢 Bizə borclular"); `%%KSUB%%` yer tutucusu; `repCollapse(box,pre)` `.ksub` içində də (açar `kassa-<növ>:i`).
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

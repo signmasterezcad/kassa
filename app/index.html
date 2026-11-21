@@ -327,6 +327,11 @@ header h1 .logo{width:28px;height:28px;vertical-align:-7px;margin-right:8px;bord
 .chg.up{color:var(--ok)}.chg.dn{color:var(--bad)}
 .kpi.hero{border:1px solid var(--line)}
 .kpi.hero b{font-size:26px}
+.kpi.kbtn{font:inherit;color:inherit;text-align:left;border:2px solid transparent;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.kpi.kbtn:hover{border-color:var(--line)}
+.kpi.kbtn.on{border-color:var(--accent,#3b82f6)}
+.kpi.kbtn .sub{font-size:12px;margin:0}
+.ksub{border:2px solid var(--accent,#3b82f6);border-radius:14px;padding:10px 12px;margin:10px 0}
 .legend{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 .legend .sw1{background:var(--series-1)}.legend .sw2{background:var(--series-2)}
@@ -715,7 +720,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.5.0";
+const APP_VERSION="1.6.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1670,7 +1675,7 @@ const canDelRec=r=>isAdmin()||(!!r&&isToday(r.ts)&&r.worker===curName());
 function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,1800)}
 
 // ---------- Vəziyyət ----------
-let editMode=false, grp=null, q="", cat="search", order=[], pay="nağd", ordSplit="", zReason=REASONS[0], rtab="kassa", mode="rep", setCat="all";
+let editMode=false, grp=null, q="", cat="search", order=[], pay="nağd", ordSplit="", zReason=REASONS[0], rtab="kassa", kSub="", mode="rep", setCat="all";
 
 // ---------- 👥 İstifadəçilər: Admin və kassirlər, PIN ilə giriş, icazələr ----------
 const PERMS=[
@@ -3039,12 +3044,14 @@ function rrPreset(a){const now=new Date(),D=(y,m,d)=>dayKey(new Date(y,m,d).getT
   if(a==="month")return[D(now.getFullYear(),now.getMonth(),1),t];
   if(a==="pmonth")return[D(now.getFullYear(),now.getMonth()-1,1),D(now.getFullYear(),now.getMonth(),0)];
   return["",""]}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-ks]");if(!b||$("ovRep").hidden)return;kSub=kSub===b.dataset.ks?"":b.dataset.ks;renderRep();
+  if(kSub)setTimeout(()=>{const k=$("rbody").querySelector(".ksub");if(k)k.scrollIntoView({behavior:"smooth",block:"nearest"})},30)});
 document.addEventListener("click",e=>{const t=e.target.closest("[data-rr],[data-rd]");if(!t||$("ovRep").hidden)return;
   if(t.dataset.rd)rFrom=rTo=t.dataset.rd;else[rFrom,rTo]=rrPreset(t.dataset.rr);renderRep()});
 // v1.5.0: dövr — yalnız Bu gün, Dünən, Gün seç, Tarix aralığı (sahibinin istəyi). rrSet testlər üçün qalır.
 window.rrSet=k=>{[rFrom,rTo]=rrPreset(k);renderRep()};
 document.addEventListener("change",e=>{if(e.target.id==="r_day"){if(e.target.value){rFrom=rTo=e.target.value;renderRep()}return}if(e.target.id==="r_from"){rFrom=e.target.value;renderRep()}else if(e.target.id==="r_to"){rTo=e.target.value;renderRep()}});
-const RT_REP=[["kassa","📊 Ümumi Satış"],["nagd","💵 Nağd Satış"],["kart","💳 Kart Satış"],["nisye","📝 Nisyə Satış"],["artiq","🪙 Artıq ödəmə"],["suppdebt","🚚 Bizim borclarımız"],["zay","🗑️ Zay olan pul"],["xerc","🧾 Xərclər"],["anbarpul","📦 Anbarda qalan pul"],["menfeet","📈 Xalis Gəlir"],["faiz","👥 İşçi faizi"]];
+const RT_REP=[["kassa","📊 Ümumi Satış"],["artiq","🪙 Artıq ödəmə"],["suppdebt","🚚 Bizim borclarımız"],["zay","🗑️ Zay olan pul"],["xerc","🧾 Xərclər"],["anbarpul","📦 Anbarda qalan pul"],["menfeet","📈 Xalis Gəlir"],["faiz","👥 İşçi faizi"]];
 // 📦 Anbar (v0.38.0: Hesabatdan və Ayarlardan ayrıca düyməyə köçdü)
 const RT_STOCK=[["anbar","Qalıq / Sayım"],["mat","Materiallar"],["low","⚠ Az qalanlar"]];
 const stockTabs=()=>RT_STOCK.filter(()=>can("stock"));
@@ -3052,9 +3059,9 @@ const RT_SET=[["bolme","Bölmələr"],["admin","Düymələr / Xidmətlər"],["us
 // v1.5.0 (sahibinin istəyi): Hesabatda hər bölmə (başlıq + cədvəl/izah) bağlı gəlir, yanında ▸ — basanda açılır. Rəqəm qutuları (KPI) həmişə görünür.
 // Açıq bölmələr yadda qalır (localStorage "kassa.repOpen", tab + sıra). Avtomatlaşdırılmış sınaqda (navigator.webdriver) hamısı açıq.
 let repOpen=new Set();try{repOpen=new Set(JSON.parse(localStorage.getItem("kassa.repOpen")||"[]"))}catch(e){}
-function repCollapse(box){const kids=[...box.children];let cur=null,i=0;const all=navigator.webdriver&&!window.REP_FORCE_CLOSED;
+function repCollapse(box,pre){const kids=[...box.children];let cur=null,i=0;const all=navigator.webdriver&&!window.REP_FORCE_CLOSED;
   kids.forEach(el=>{
-    if(el.tagName==="H4"&&!el.classList.contains("rtitle")){const key=rtab+":"+(i++),d=document.createElement("details");d.className="rsec";d.dataset.k=key;
+    if(el.tagName==="H4"&&!el.classList.contains("rtitle")){const key=(pre||rtab)+":"+(i++),d=document.createElement("details");d.className="rsec";d.dataset.k=key;
       if(all||repOpen.has(key))d.open=true;const sm=document.createElement("summary");sm.innerHTML=el.innerHTML;d.appendChild(sm);el.replaceWith(d);cur=d;
       sm.addEventListener("click",()=>setTimeout(()=>{d.open?repOpen.add(key):repOpen.delete(key);try{localStorage.setItem("kassa.repOpen",JSON.stringify([...repOpen]))}catch(e){}},0));return}
     if(cur&&!el.classList.contains("kpis"))cur.appendChild(el);else if(el.classList.contains("kpis"))cur=null})}
@@ -3073,7 +3080,7 @@ function renderRep(){
   const one=rFrom&&rFrom===rTo, fdk=k=>fmtDate(new Date(k+"T12:00").getTime());
   const rTitle=!rFrom&&!rTo?"Bütün dövr":one?(rFrom===dayKey(Date.now())?"Bu gün, "+fdk(rFrom):fdk(rFrom)):`${rFrom?fdk(rFrom):"əvvəldən"} – ${rTo?fdk(rTo):"bu günədək"}`;
   const sales=S.sales.filter(s=>inR(s.ts)), waste=S.waste.filter(w=>inR(w.ts));
-  let h=["kassa","nagd","kart","nisye","artiq","suppdebt","faiz","zay","xerc","menfeet"].includes(rtab)&&mode==="rep"?`<div class="frow rrange">
+  let h=["kassa","artiq","suppdebt","faiz","zay","xerc","menfeet"].includes(rtab)&&mode==="rep"?`<div class="frow rrange">
       ${[["today","Bu gün"],["yday","Dünən"]].map(([k,l])=>`<button class="btn ghost sm" data-rr="${k}">${l}</button>`).join("")}
       <label class="f">📅 Gün seç<input type="date" id="r_day" value="${one?rFrom:""}"></label>
       <span class="rrsep">Tarix aralığı:</span><label class="f">Tarixdən<input type="date" id="r_from" value="${rFrom}"></label><label class="f">Tarixədək<input type="date" id="r_to" value="${rTo}"></label></div>
@@ -3106,8 +3113,7 @@ function renderRep(){
     const byW={};S.sales.filter(s=>dayKey(s.ts)===kd&&payPart(s,"nağd")).forEach(s=>byW[s.worker||"—"]=(byW[s.worker||"—"]||0)+payPart(s,"nağd"));
     {const tot=sales.reduce((a,s)=>a+s.total,0),pp=p=>sales.reduce((a,s)=>a+payPart(s,p),0);
      h+=`<div class="kpis"><div class="kpi hero"><span>📊 Ümumi satış — ${esc(rTitle)}</span><b>${m2(tot)} ₼</b><span>${sales.length} satış</span></div>
-      <div class="kpi"><span>💵 Nağd</span><b>${m2(pp("nağd"))} ₼</b></div><div class="kpi"><span>💳 Kart</span><b>${m2(pp("kart"))} ₼</b></div>
-      <div class="kpi"><span>📝 Nisyə</span><b>${m2(pp("borc"))} ₼</b></div></div>`}
+      ${[["nağd","💵 Nağd"],["kart","💳 Kart"],["borc","📝 Nisyə"]].map(([p,l])=>`<button class="kpi kbtn${kSub===p?" on":""}" data-ks="${p}" title="Təfərrüatı aç / bağla"><span>${l} ${kSub===p?"▾":"▸"}</span><b>${m2(pp(p))} ₼</b><span class="sub">${kSub===p?"bağlamaq üçün basın":"təfərrüat üçün basın"}</span></button>`).join("")}</div>%%KSUB%%`}
     h+=`<div class="kpis"><div class="kpi"><span>💰 Kassada olmalıdır — ${esc(fdk(kd))}</span><b>${m2(K.should)} ₼</b></div>
       ${K.counted!=null?`<div class="kpi"><span>Sayılıb</span><b>${m2(K.counted)} ₼</b></div>`:""}</div>
       <h4>💰 Kassa (yalnız nağd pul) — ${esc(fdk(kd))}</h4>
@@ -3130,17 +3136,20 @@ function renderRep(){
       <h4>👥 Kassirlər üzrə nağd satış — ${esc(fdk(kd))}</h4>${tbl(["Kassir","#Nağd"],Object.entries(byW).map(([w,v])=>`<tr><td>${esc(w)}</td><td class="n">${m2(v)} ₼</td></tr>`),"Bu gün nağd satış yoxdur.")}
       ${dsel}`;
   }
-  if(rtab==="nagd")h+=payTab("nağd","💵 Nağd satış");
-  if(rtab==="kart")h+=payTab("kart","💳 Kart satış");
-  if(rtab==="nisye"){
-    h+=payTab("borc","📝 Nisyə satış");
+  // v1.6.0 (sahibinin istəyi): Nağd / Kart / Nisyə ayrıca tab deyil — Ümumi Satış-dakı qutuya basanda təfərrüat orada açılır (kSub).
+  if(rtab==="kassa"){let x="";
+   if(kSub==="nağd")x=payTab("nağd","💵 Nağd satış");
+   if(kSub==="kart")x=payTab("kart","💳 Kart satış");
+   if(kSub==="borc"){x=payTab("borc","📝 Nisyə satış");
     const inP=ts=>inR(ts);
     const cust=custIds().map(id=>({id,name:custLabel(id),owed:custOwed(id),sold:S.sales.filter(s=>s.pay==="borc"&&s.cust===id&&inP(s.ts)).reduce((a,s)=>a+s.total,0),
       got:S.custPays.filter(y=>y.cust===id&&inP(y.ts)).reduce((a,y)=>a+y.amount,0)})).filter(x=>Math.abs(x.owed)>0.004||x.sold||x.got).sort((a,b)=>b.owed-a.owed);
-    h+=`<h4>🏢 Bizə borclular</h4><div class="kpis"><div class="kpi"><span>🏢 Bizə borcludurlar (indi)</span><b style="color:var(--warn)">${m2(custDebtAll())} ₼</b></div></div>
+    x+=`<h4>🏢 Bizə borclular</h4><div class="kpis"><div class="kpi"><span>🏢 Bizə borcludurlar (indi)</span><b style="color:var(--warn)">${m2(custDebtAll())} ₼</b></div></div>
       ${tbl(["Müəssisə","#Dövrdə nisyə satış","#Dövrdə alınan","#İndiki borc"],cust.map(x=>`<tr><td>${esc(x.name)}</td><td class="n">${m2(x.sold)}</td><td class="n">${m2(x.got)}</td><td class="n"><b>${m2(x.owed)} ₼</b></td></tr>`),"Yoxdur.")}
       <p class="sub">Bu, yalnız baxış üçündür. Pul almaq: soldakı <b>💳 Borclar</b> düyməsi. Tədarükçülərə olan borcumuz — <b>🚚 Bizim borclarımız</b> tabında.</p>`;
   }
+   if(x)x=`<div class="ksub"><h4 class="rtitle">${kSub==="nağd"?"💵 Nağd":kSub==="kart"?"💳 Kart":"📝 Nisyə"} — təfərrüat</h4>${x}</div>`;
+   h=h.replace("%%KSUB%%",x);}
   // v0.98.0 (sahibinin istəyi): 🪙 Artıq ödəmə — müştərinin "üstü qalsın" dediyi pul (sale.tip). Kassir (növbə), xidmət, gün və ay üzrə.
   if(rtab==="artiq"){
     const tl=sales.filter(s=>+s.tip>0),tt=tl.reduce((a,s)=>a+s.tip,0),bw={},bd={},bm={},bi={};
@@ -3273,7 +3282,7 @@ function renderRep(){
   if(rtab==="cloud") h=renderCloud();
   if(rtab==="phone") h=`<div id="phoneBox" class="phonebox"><p class="sub">Yüklənir…</p></div>`;
   $("rbody").innerHTML=h;
-  if(mode==="rep"&&RT_REP.some(([k])=>k===rtab))repCollapse($("rbody"));
+  if(mode==="rep"&&RT_REP.some(([k])=>k===rtab)){repCollapse($("rbody"));$("rbody").querySelectorAll(".ksub").forEach(k=>repCollapse(k,"kassa-"+kSub))}
   if(rtab==="backup")fillBackupList();
   if(rtab==="phone")fillPhone();
 }
@@ -3692,7 +3701,7 @@ document.addEventListener("click",e=>{
   else if(t.id==="btnZay")openZay();
   else if(t.id==="zSave")saveZay();
   else if(t.id==="btnStock"){mode="stock";rtab="anbar";draft=null;renderRep();$("ovRep").hidden=false}
-  else if(t.id==="btnRep"){mode="rep";rtab="kassa";draft=null;rFrom=rTo=dayKey(Date.now());renderRep();$("ovRep").hidden=false}
+  else if(t.id==="btnRep"){mode="rep";rtab="kassa";kSub="";draft=null;rFrom=rTo=dayKey(Date.now());renderRep();$("ovRep").hidden=false}
   else if(t.id==="btnEdit"){setEdit(!editMode)}
   else if(t.id==="btnHist"){openHist()}
   else if(t.id==="btnExp"){openExp()}

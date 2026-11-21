@@ -102,7 +102,7 @@ let n = 0;
   ok(await p.isVisible('#btnRep') && await p.isHidden('#btnSet'), 'Nigar: Hesabat görünür, Ayarlar yox');
   await p.click('#btnRep');
   const tabs = await p.locator('#rtabs .tab').allTextContents();
-  ok(tabs.join('|') === '📊 Ümumi Satış|💵 Nağd Satış|💳 Kart Satış|📝 Nisyə Satış|🪙 Artıq ödəmə|🗑️ Zay olan pul', 'Nigar: Kassa, Nağd, Kart, Nisyə, Zay tabları (Xərclər, Anbar pulu, Mənfəət yox)');
+  ok(tabs.join('|') === '📊 Ümumi Satış|🪙 Artıq ödəmə|🗑️ Zay olan pul', 'Nigar: Ümumi Satış, Artıq ödəmə, Zay tabları (Xərclər, Anbar pulu, Mənfəət yox)');
   const rb = await p.textContent('#rbody');
   ok(rb.includes('Kassa') && !rb.includes('Satışdan qazanc') && !rb.includes('mayası'), 'Nigar: kassa görünür, maya və qazanc gizlidir');
   await p.click('#ovRep [data-close]');
@@ -271,7 +271,7 @@ let n = 0;
   await p.click('#btnRep'); await p.click('[data-rt=xerc]');
   const mr = await p.textContent('#rbody');
   ok(mr.includes('özümüz çap etdik') && mr.includes('Samir Foto Studio: satış') && mr.includes('11.00'), 'aylıq: Samir Foto-dan satış 20, alış qiyməti 9, qazanc 11');
-  await p.click('[data-rt=nagd]');
+  await p.click('[data-rt=kassa]'); await p.click('[data-ks="nağd"]');
   ok((await p.textContent('#rbody')).includes('15x21 · 🚚 Samir Foto') && (await p.textContent('#rbody')).includes('15x21 · 🖨 özümüz'), 'Məhsul + mənfəət: 15x21 iki ayrı sətir');
   await p.click('#ovRep [data-close]');
 
