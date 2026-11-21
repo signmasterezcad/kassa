@@ -81,6 +81,7 @@ let n = 0;
   ok(await p.isVisible('#ovKassa') && await p.evaluate(() => !order.length), 'kassa açılmadan məhsul əlavə olunmur — kassa pəncərəsi açılır');
   await p.fill('#kz_cnt', '50'); await p.click('[data-kz=open]');
   ok(await p.isHidden('#kzLockBar') && await p.evaluate(() => kzOpen()), 'Leyla kassanı açdı (50 ₼) — satış açıldı');
+  ok(await p.evaluate(() => { S.kzReq = false; const r1 = !kzLocked(); S.kzReq = true; const r2 = kzLocked() === !kzOpen(); return r1 && r2; }), 'v1.2.0: açılış tələbi söndürüləndə kassir kilidlənmir');
   ok(await p.evaluate(() => ['tip', 'payCard', 'paySplit', 'clearOrder'].every(k => me.perms[k] === 1)) && await p.isVisible('#payCard') && await p.isVisible('#btnTip'), 'v0.97.0: yeni kassirə Çay pulu, Kart, Nağd+Kart, Ləğv et icazələri standart açıq');
   await p.evaluate(() => { ['tip', 'payCard', 'paySplit', 'clearOrder'].forEach(k => me.perms[k] = 0); renderOrder(); });
   ok(await p.isHidden('#payCard') && await p.isHidden('#paySplit') && await p.isHidden('#btnClear') && await p.isHidden('#btnTip') && await p.isVisible('#payCash'), 'icazə götürüləndə Kart, Nağd+Kart, Ləğv et, Çay pulu gizlənir (Nağd qalır)');

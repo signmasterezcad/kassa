@@ -708,7 +708,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.1.0";
+const APP_VERSION="1.2.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2236,7 +2236,9 @@ const kzLast=()=>kzLog().at(-1)||null;
 // Kassa "açıq" sayılır: son qeyd açılışdır və BU GÜN edilib (dünən bağlanmayıbsa, bu gün yenidən sayılmalıdır)
 const kzOpen=()=>{const L=kzLast();return L?.t==="open"&&dayKey(L.ts)===dayKey(Date.now())};
 // v0.91.0 (sahibinin istəyi): kassir kassanı açmadan satış edə bilməz (admin üçün yoxdur)
-const kzLocked=()=>!!me&&!isAdmin()&&!PHONE_CLOUD&&!kzOpen();
+// v1.2.0 (sahibinin istəyi): admin Ayarlar → Kassirlər-də açılış tələbini söndürə bilər (S.kzReq===false) — onda kilid və avtomatik açılış pəncərəsi yoxdur
+const kzReq=()=>S.kzReq!==false;
+const kzLocked=()=>kzReq()&&!!me&&!isAdmin()&&!PHONE_CLOUD&&!kzOpen();
 function kzLockMsg(){toast("🔒 Əvvəl kassanı sayıb açın — sonra satış edə bilərsiniz");openKassa()}
 let kzDraft={cnt:"",take:"",to:"",note:"",warn:false},kzSkip="",kzDel=null;
 // Admin səhv qeydi silir: günün açılış (c.open) və son sayım (c.counted) qalan qeydlərə görə yenidən hesablanır
@@ -2321,10 +2323,10 @@ function kzSave(kind){
   }
 }
 // Girişdən sonra: kassa təhvil verilib, hələ açılmayıbsa — açılış pəncərəsi özü çıxır ("Sonra" ilə keçmək olar)
-function kzAuto(){if(!me||PHONE_CLOUD||kzOpen())return;const L=kzLast();if(!L&&!kzLocked())return;const k=dayKey(Date.now())+"|"+curName();if(kzSkip===k)return;openKassa()}
+function kzAuto(){if(!me||PHONE_CLOUD||!kzReq()||kzOpen())return;const L=kzLast();if(!L&&!kzLocked())return;const k=dayKey(Date.now())+"|"+curName();if(kzSkip===k)return;openKassa()}
 let kzSeen;
 // Başqa kompüterdən (bulud) təhvil gələndə: bu kompüterdə girmiş işçiyə açılış pəncərəsi özü çıxır
-function kzWatch(){const L=kzLast(),id=L?.id||"";if(id===kzSeen)return;const first=kzSeen===undefined;kzSeen=id;
+function kzWatch(){const L=kzLast(),id=L?.id||"";if(id===kzSeen)return;const first=kzSeen===undefined;kzSeen=id;if(!kzReq())return;
   if(first||!L||L.t!=="close"||L.by===curName()||!me||PHONE_CLOUD||editMode||!noModal())return;
   setTimeout(()=>{if(noModal()&&!kzOpen())openKassa()},0)}
 function renderKzBtn(){kzWatch();const lk=$("kzLockBar");if(lk)lk.hidden=!kzLocked();const b=$("btnKassa");if(!b)return;b.hidden=!me||PHONE_CLOUD;$("kzState").textContent=kzOpen()?"açıqdır · "+(kzLast().by||""):"bağlıdır"}
@@ -3381,7 +3383,9 @@ function renderMatAdmin(){
 // ---------- Admin: 👥 Kassirlər ----------
 function renderUsers(){
   const oa=openAdmin();
-  return `${oa?`<div class="warnbox">⚠ <b>Admin üçün PIN qoyulmayıb.</b> Proqram açılanda hər kəs avtomatik admin kimi girir və hər şeyi görür. Kassirlərin icazələrinin işləməsi üçün aşağıda “${esc(oa.name)}” üçün PIN qoyun.</div>`:""}
+  return `<div class="sform kzset"><label class="perm"><input type="checkbox" id="kzReqChk" ${kzReq()?"checked":""}> <b>💰 Kassa açılışı məcburidir</b></label>
+    <p class="sub" style="margin:4px 0 0">${kzReq()?"Açıqdır: kassir proqrama girəndə kassanı sayıb açmalıdır, açmasa satış edə bilmir.":"Söndürülüb: kassirdən kassa açılışı soruşulmur, satış birbaşa edilir. 💰 Kassa düyməsi (təhvil-təslim) istəyən üçün yenə işləyir."} Bu seçim yalnız bu şöbəyə aiddir.</p></div>
+  `+`${oa?`<div class="warnbox">⚠ <b>Admin üçün PIN qoyulmayıb.</b> Proqram açılanda hər kəs avtomatik admin kimi girir və hər şeyi görür. Kassirlərin icazələrinin işləməsi üçün aşağıda “${esc(oa.name)}” üçün PIN qoyun.</div>`:""}
   <p class="sub">Hər işçi proqrama öz adı və PIN kodu (4–6 rəqəm) ilə girir. Satış və zay kimin adına yazılır. Admin hər şeyi görür. Kassirə yalnız işarələdiyiniz işlər açıqdır: icazəsi olmayan düymələri o, ümumiyyətlə görmür.</p>
   <div class="ulist">${S.users.map(userCard).join("")}</div>
   <h4>➕ Yeni kassir</h4>
@@ -3682,6 +3686,7 @@ document.addEventListener("change",e=>{
     if(e.target.dataset.cu){const id=e.target.dataset.cu,L=new Set(S.comm.users||[]);e.target.checked?L.add(id):L.delete(id);S.comm.users=[...L]}
     else{const v=Math.max(0,Math.min(100,+e.target.value||0));S.comm.rates={...(S.comm.rates||{}),[e.target.dataset.cr]:v}}
     save();renderRep();return}
+  if(e.target.id==="kzReqChk"&&isAdmin()){S.kzReq=e.target.checked;save();renderRep();renderAll();toast(S.kzReq?"✓ Kassa açılışı məcburidir":"Kassa açılışı söndürüldü — kassir birbaşa satış edə bilər");return}
   if(e.target.id!=="k_open"&&e.target.id!=="k_cnt")return;
   const d=rFrom&&rFrom===rTo?rFrom:(rTo||dayKey(Date.now())),c=S.cash[d]||(S.cash[d]={}),v=e.target.value===""?null:+e.target.value;
   c[e.target.id==="k_open"?"open":"counted"]=v;save();renderRep();

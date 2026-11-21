@@ -746,6 +746,13 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.click(`[data-cp="${fu[0]}|cib"]`);
   ok(await p.evaluate(n => { const x = S.expenses.at(-1); return S.expenses.length === n + 1 && x.cat === 'İşçi faizi' && x.pay === 'cib' && x.comm; }, nx), 'Ödə (cibdən) → Xərclərə "İşçi faizi" yazıldı');
   await p.click('#ovRep [data-close]');
+  // v1.2.0: Ayarlar → Kassirlər: "Kassa açılışı məcburidir" seçimi
+  await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
+  await p.click('#btnSet'); await p.click('[data-rt=users]');
+  ok(await p.isChecked('#kzReqChk'), 'Kassirlər tabında "💰 Kassa açılışı məcburidir" — standart açıq');
+  await p.uncheck('#kzReqChk');
+  ok(await p.evaluate(() => S.kzReq === false) && (await p.textContent('#rbody')).includes('Söndürülüb'), 'söndürüldü (S.kzReq=false)');
+  await p.check('#kzReqChk'); await p.click('#ovRep [data-close]');
   // v0.74.0: 💰 Mənfəət tabı
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.click('[data-rr=month]');
