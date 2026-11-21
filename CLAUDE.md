@@ -168,7 +168,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   **sahibi qiymətləri yazmalıdır**; `g_foto` düymələrinə `it.src2=[{supp:"sp2",item}]`. Çox tədarükçü: `srcList(it)`, `srcFind(it,sid)`; `#ovSrc` 1 = Özümüz, 2… = tədarükçülər.
 - **👛 Öz cibimdən** (v0.94.0, sahibinin dediyi: Samir Banner və Vəfa Foto uzaqdadır, malı yerindəcə öz cibindən ödəyib gətirir): `autoMode` "cib" → auto xərc `pay:"cib"`
   (mənfəətdən çıxılır, `cashDay` yalnız "nağd"-ı çıxdığı üçün kassaya toxunmur, borc deyil). Standart: sp1 nisyə, sp2/sp4 cib (`S.mig.cibPay` v0.93-ün auto qeydlərini də "cib" edir, ödəniş yoxdursa).
-  Ayarlar select: Borca yaz / Öz cibimdən / Kassadan nağd / heç nə. Göstərmə: `pill`/`payTag` "👛 Öz cibimdən", Xərclər KPI 4 növ.
+  Ayarlar select: Borca yaz / Öz cibimdən / Kassadan nağd / heç nə. v1.2.1: 💸 Xərclər → Mal alışı və Digər xərclər formalarında da ödəniş "👛 Öz cibimdən" (`pay:"cib"`, `payPill`) — kassaya toxunmur. Göstərmə: `pill`/`payTag` "👛 Öz cibimdən", Xərclər KPI 4 növ.
 - **v0.96.0 (sahibinin 4 istəyi):** (1) ÇAP → 🧇 Vafli 2 ₼ `cap_vafli` (`S.mig.vafli`, material yoxdur — vaflini müştəri gətirir).
   (2) **☕ Çay pulu**: "Cari sifariş" başlığında `#btnTip` → `#ovTip` ("Müştəri verdi" `#tp_g`, artığı `ordTip`), `#tipRow` (✕ `data-tp=x`); satışda `sale.tip` (yalnız `total>0`) —
   satış/mənfəət sayılmır, `cashDay().tips` kassaya əlavə olunur ("+ ☕ Çay pulu"); Hesabat → Kassadakı Pul-da dövr üzrə ☕ bölməsi (kassirlər üzrə), `salePill` "☕ +x".

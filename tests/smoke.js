@@ -753,6 +753,8 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.uncheck('#kzReqChk');
   ok(await p.evaluate(() => S.kzReq === false) && (await p.textContent('#rbody')).includes('Söndürülüb'), 'söndürüldü (S.kzReq=false)');
   await p.check('#kzReqChk'); await p.click('#ovRep [data-close]');
+  // v1.2.1: Mal alışı "👛 Öz cibimdən" — kassa hesabından çıxılmır
+  ok(await p.evaluate(() => { const d = dayKey(Date.now()), k0 = cashDay(d).purch; S.purchases.push({ id: 'puCib', ts: Date.now(), supplier: 'Test', pay: 'cib', paid: false, lines: [], total: 16 }); const k1 = cashDay(d).purch; S.purchases = S.purchases.filter(p => p.id !== 'puCib'); return k0 === k1 && /cibimdən/.test(payPill({ pay: 'cib' })); }), 'Mal alışı "Öz cibimdən": kassadan çıxılmır, etiketi görünür');
   // v0.74.0: 💰 Mənfəət tabı
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   await p.click('#btnRep'); await p.click('[data-rt=menfeet]'); await p.click('[data-rr=month]');

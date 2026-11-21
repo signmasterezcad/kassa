@@ -708,7 +708,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.2.0";
+const APP_VERSION="1.2.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2521,7 +2521,7 @@ function renderExp(){
       <label class="f">Tarix<input type="date" id="p_day" value="${pd.day}"></label>
       <label class="f grow">Təchizatçı (haradan aldınız)<input id="p_sup" list="supList" value="${esc(pd.supplier)}" placeholder="məs. Kağız mağazası"></label>
       <datalist id="supList">${[...new Set(S.purchases.map(p=>p.supplier).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join("")}</datalist>
-      <div class="f"><span class="sub">Ödəniş</span><div class="frow">${[["nağd","💵 Nağd"],["kart","💳 Kart"],["nisyə","📝 Nisyə (borc)"]].map(([k,l])=>`<button class="tab sm ${pd.pay===k?"on":""}" data-x="pay" data-p="${k}">${l}</button>`).join("")}</div></div>
+      <div class="f"><span class="sub">Ödəniş</span><div class="frow">${[["nağd","💵 Nağd (kassadan)"],["cib","👛 Öz cibimdən"],["kart","💳 Kart"],["nisyə","📝 Nisyə (borc)"]].map(([k,l])=>`<button class="tab sm ${pd.pay===k?"on":""}" data-x="pay" data-p="${k}">${l}</button>`).join("")}</div></div>
     </div>
     <div class="buylines">${pd.lines.map((l,i)=>{const c=lineCalc(l),M=mat(l.mat);return `<div class="bline">
       <label class="f grow">Mal<select id="l_mat_${i}" data-li="${i}" data-x="matsel"><option value="">— seçin —</option>${mats.map(m=>`<option value="${m.id}" ${m.id===l.mat?"selected":""}>${esc(m.name)} (qalıq ${fmtN(m.stock)} ${esc(m.unit||"ədəd")})</option>`).join("")}<option value="__new" ${l.mat==="__new"?"selected":""}>➕ Yeni mal (siyahıda yoxdur)</option></select></label>
@@ -2571,7 +2571,7 @@ function renderExp(){
         <label class="f">Tarix<input type="date" id="x_day" value="${ed.day}"></label>
         <label class="f">Növ<select id="x_cat">${S.expCats.map(c=>`<option ${c===ed.cat?"selected":""}>${esc(c)}</option>`).join("")}</select></label>
         <label class="f xs">Məbləğ ₼<input id="x_amt" type="number" min="0" step="0.01" value="${ed.amount}" placeholder="0.00"></label>
-        <div class="f"><span class="sub">Ödəniş</span><div class="frow">${[["nağd","💵 Nağd"],["kart","💳 Kart"]].map(([k,l])=>`<button class="tab sm ${ed.pay===k?"on":""}" data-x="xpay" data-p="${k}">${l}</button>`).join("")}</div></div>
+        <div class="f"><span class="sub">Ödəniş</span><div class="frow">${[["nağd","💵 Nağd (kassadan)"],["cib","👛 Öz cibimdən"],["kart","💳 Kart"]].map(([k,l])=>`<button class="tab sm ${ed.pay===k?"on":""}" data-x="xpay" data-p="${k}">${l}</button>`).join("")}</div></div>
         <label class="f grow">Qeyd (istəyə görə)<input id="x_note" value="${esc(ed.note)}" placeholder="məs. Leylanın noyabr maaşı"></label>
       </div>
       <div class="frow"><label class="chk"><input type="checkbox" id="x_rec" ${ed.rec?"checked":""}> Hər ay təkrarlanır (icarə, maaş kimi) — siyahıya əlavə et</label>
@@ -2580,7 +2580,7 @@ function renderExp(){
     <h4>🔁 Aylıq təkrarlanan xərclər — ${monName(cur)}</h4>
     ${S.recurring.length?`<div class="tw"><table class="hist">${S.recurring.map(r=>{const done=S.expenses.find(x=>x.rec===r.id&&monKey(x.ts)===cur);return `<tr>
       <td><b>${esc(r.cat)}</b>${r.note?` <span class="sub">${esc(r.note)}</span>`:""}</td><td class="n"><b>${m2(r.amount)} ₼</b></td>
-      <td>${done?`<span class="pill ok">✓ ödənilib ${fmtDate(done.ts)} (${done.pay==="nağd"?"nağd":"kart"})</span>`
+      <td>${done?`<span class="pill ok">✓ ödənilib ${fmtDate(done.ts)} (${done.pay==="nağd"?"nağd":done.pay==="cib"?"cibdən":"kart"})</span>`
         :`<span class="sub">Bu ay:</span> <button class="btn sm" data-x="rpay" data-id="${r.id}" data-by="nağd">💵 Nağd ödədim</button> <button class="btn ghost sm" data-x="rpay" data-id="${r.id}" data-by="kart">💳 Kart</button>`}</td>
       <td><button class="btn ghost sm del" data-x="rdel" data-id="${r.id}">${eDel==="r"+r.id?"Əminsiniz?":"Siyahıdan çıxar"}</button></td></tr>`}).join("")}</table></div>`
       :`<p class="sub">Hələ yoxdur. Xərci yazanda "Hər ay təkrarlanır" işarələsəniz, burada görünəcək və hər ay bir kliklə ödəyəcəksiniz.</p>`}
@@ -2597,7 +2597,7 @@ function renderExp(){
   }
   $("expBody").innerHTML=h;
 }
-const payPill=p=>p.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':p.pay==="kart"?'<span class="pill card">💳 Kart</span>'
+const payPill=p=>p.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':p.pay==="cib"?'<span class="pill card">👛 Öz cibimdən</span>':p.pay==="kart"?'<span class="pill card">💳 Kart</span>'
   :p.paid?`<span class="pill ok">📝 Nisyə → ödənildi ${fmtDate(p.paidTs)}</span>`:'<span class="pill warn">📝 Nisyə (borc)</span>';
 function syncPd(){
   if(!pd||!$("p_day"))return;
