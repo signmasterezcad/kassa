@@ -339,7 +339,7 @@ header h1 .logo{width:28px;height:28px;vertical-align:-7px;margin-right:8px;bord
 #rbody .kpi span.sub,#rbody .kpi b+span{font-weight:500;font-size:13px;color:var(--fg);opacity:.8}
 #rbody .kpi.kbtn:hover{border-color:var(--accent)}
 #rbody .rrange .f{color:var(--fg);font-weight:600}
-.kpis.kboxes{display:flex;flex-wrap:wrap;justify-content:center;margin-top:10px}.kpis.kboxes .kbtn{flex:0 0 calc(25% - 8px);box-sizing:border-box}@media(max-width:640px){.kpis.kboxes .kbtn{flex-basis:calc(50% - 6px)}}
+.kpis.kboxes{display:flex;flex-wrap:wrap;justify-content:center;margin-top:10px}.kpis.kboxes .kbtn{flex:0 0 calc(25% - 8px);box-sizing:border-box}.kpis.kboxes.k3 .kbtn{flex-basis:calc(33.333% - 8px)}@media(max-width:640px){.kpis.kboxes .kbtn{flex-basis:calc(50% - 6px)}}
 .kback{display:flex;align-items:center;gap:12px;margin:0 0 10px;padding-bottom:10px;border-bottom:1px solid var(--line)}.kback h3{margin:0;font-size:20px}.kback .btn{font-size:16px;padding:8px 16px}
 .ksub{border:2px solid var(--accent,#3b82f6);border-radius:14px;padding:10px 12px;margin:10px 0}
 .legend{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px}
@@ -737,7 +737,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.10.6";
+const APP_VERSION="1.11.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1101,6 +1101,8 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
     if(P.exp)["expBuy","expOther","expDebt","expDel"].forEach(k=>P[k]=1);
     if(P.stock)P.stockMat=1;
     P.free=1;P.kassa=1;P.upd=1;delete P.exp;delete P.supp;delete P.suppRep});
+  // v1.11.0: yeni Hesabat qutusu 🏪 Alver və xərclər — maya/qazancı görən kassirə (cost) bir dəfə açılır
+  (S.users||[]).forEach(u=>{if(u.role==="admin")return;const P=u.perms=u.perms||{};if(P._alv)return;P._alv=1;if(P.cost)P.rb_alver=1});
   if(!S.mig.discPerm&&S.users){S.mig.discPerm=1;S.users.forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};if(u.perms.disc===undefined)u.perms.disc=1}})}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
     if(sf)S.items.filter(i=>i.parent==="g_foto"&&!i.group).forEach(i=>{const m=(i.name.match(/(\d+)\s*[x×]\s*(\d+)/)||[])[0];if(!m)return;
@@ -1130,6 +1132,9 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   if(!S.mig.cibPay){S.mig.cibPay=1;["sp2","sp4"].forEach(id=>{const sp=(S.suppliers||[]).find(x=>x.id===id);if(sp)sp.auto="cib";
     const ax=(S.expenses||[]).filter(x=>x.auto&&x.supp===id&&(x.pay==="nağd"||x.pay==="nisyə"));
     if(!(S.suppPays||[]).some(y=>y.supp===id))ax.forEach(x=>x.pay="cib")})}
+  // v1.11.0 (sahibinin istəyi): "👛 Öz cibimdən" ləğv edildi, yerinə "🏪 Ümumi alverdən" (pay:"alver") — satışdan yığılıb sahibə verilmiş pulla ödəniş; kassaya toxunmur, hesabatda "alverdən xərclənib"
+  if(!S.mig.cibToAlver){S.mig.cibToAlver=1;(S.expenses||[]).forEach(x=>{if(x.pay==="cib")x.pay="alver"});(S.purchases||[]).forEach(p=>{if(p.pay==="cib")p.pay="alver"});
+    (S.suppliers||[]).forEach(sp=>{if(sp.auto==="cib")sp.auto="alver"});(S.recurring||[]).forEach(r=>{if(r.pay==="cib")r.pay="alver"})}
   // v1.4.0 (sahibinin istəyi): Fiber Lazer — "Lazer işi" (m²) əvəzinə: müştərinin gətirdiyi məhsula yazı (ölçüsüz, qiyməti satanda) + "bizim məhsul" (nadir hallar).
   // Eyni id (lz_m2) saxlanır ki, köhnə satışlar hesabatda qalsın. Bizim tez-tez satılan məhsulların ayrıca düymələrini sahibi sonra deyəcək.
   if(!S.mig.lazerYazi){S.mig.lazerYazi=1;const L=S.items.find(i=>i.id==="lz_m2");
@@ -1736,6 +1741,7 @@ const PERMS=[
   ["rb_xerc","🧾 Xərclər"],
   ["rb_anbarpul","📦 Anbarda qalan pul"],
   ["rb_menfeet","📈 Xalis Gəlir"],
+  ["rb_alver","🏪 Alver və xərclər (satışdan gələn pul hara xərclənib)"],
   ["suppDebt","🚚 Bizim borclarımız (görmək və ödəmək)"],
   ["cost","💰 Maya və qazancı görmək (cədvəllərdə, Banner pəncərəsində)"],
   ["#","💸 Xərclər"],
@@ -1752,10 +1758,10 @@ const PERMS=[
   ["edit","✏️ Düymələri, qiymətləri və bölmələri dəyişmək"],
   ["backup","💾 Ehtiyat nüsxə və bərpa"],
 ];
-const KASSIR_DEFAULT={zay:1,hist:1,custSale:1,disc:1,expBuy:1,expOther:1,expDebt:1,expDel:1,tip:1,payCard:1,paySplit:1,clearOrder:1,free:1,kassa:1,upd:1,_v2:1};
+const KASSIR_DEFAULT={zay:1,hist:1,custSale:1,disc:1,expBuy:1,expOther:1,expDebt:1,expDel:1,tip:1,payCard:1,paySplit:1,clearOrder:1,free:1,kassa:1,upd:1,_v2:1,_alv:1};
 // Hesabatdakı Nağd/Kart/Nisyə/Kassadakı pul qutularının icazəsi
 const PK={"nağd":"rb_nagd","kart":"rb_kart","borc":"rb_nisye","kassapul":"rb_kassapul"};
-const TAB_PERM={faiz:"_admin",artiq:"rb_artiq",suppdebt:"suppDebt",kassa:"reports",nagd:"reports",kart:"reports",nisye:"reports",xerc:"rb_xerc",anbarpul:"rb_anbarpul",menfeet:"rb_menfeet",pnl:"cost",borc:"reports",low:"stock",gun:"reports",ay:"cost",mal:"cost",zay:"rb_zay",anbar:"stock",bolme:"edit",admin:"edit",mat:"stockMat",backup:"backup"};
+const TAB_PERM={faiz:"_admin",artiq:"rb_artiq",suppdebt:"suppDebt",kassa:"reports",nagd:"reports",kart:"reports",nisye:"reports",xerc:"rb_xerc",anbarpul:"rb_anbarpul",menfeet:"rb_menfeet",alver:"rb_alver",pnl:"cost",borc:"reports",low:"stock",gun:"reports",ay:"cost",mal:"cost",zay:"rb_zay",anbar:"stock",bolme:"edit",admin:"edit",mat:"stockMat",backup:"backup"};
 let me=null, loginSel=null, pinBuf="", pinErr="";
 const isAdmin=()=>me?.role==="admin";
 const can=p=>!!me&&(me.role==="admin"||(p==="exp"?["expBuy","expOther","expDebt"].some(k=>!!me.perms?.[k]):!!me.perms?.[p]));
@@ -2018,7 +2024,7 @@ document.addEventListener("click",e=>{const t=e.target.closest("[data-cp]");if(!
   const per=(rFrom?fmtDate(new Date(rFrom+"T12:00").getTime()):"əvvəldən")+" – "+(rTo?fmtDate(new Date(rTo+"T12:00").getTime()):"bu günədək");
   const ts=rTo&&rTo<dayKey(Date.now())?new Date(rTo+"T20:00").getTime():Date.now();
   S.expenses.push({id:newId("x"),ts,cat:"İşçi faizi",amount:Math.round(rest*100)/100,pay,note:`${u.name} — faiz (${per})`,rec:null,worker:curName(),comm:{u:uid,from:rFrom,to:rTo}});
-  save();renderRep();toast(`✓ ${u.name}: ${m2(rest)} ₼ faiz ödənildi (${pay==="nağd"?"kassadan":pay==="cib"?"öz cibimdən":"kartla"}) — Xərclərə yazıldı`)});
+  save();renderRep();toast(`✓ ${u.name}: ${m2(rest)} ₼ faiz ödənildi (${pay==="nağd"?"kassadan":pay==="alver"?"ümumi alverdən":"kartla"}) — Xərclərə yazıldı`)});
 document.addEventListener("click",e=>{const t=e.target.closest("#btnTip,[data-tp]");if(!t)return;
   if(t.id==="btnTip"){if(can("tip"))openTip();return}
   if(t.dataset.tp==="x"){ordTip=0;renderOrder();toast("Artıq ödəmə silindi");return}
@@ -2133,7 +2139,7 @@ function tapItem(id){if(!editMode&&kzLocked()){kzLockMsg();return}const it=item(
   srcFor=id;
   $("srt").textContent=`${it.name}: kim çap edir?`;
   $("srcBody").innerHTML=`<div class="srcbtns"><button class="own" data-src="own">🖨 Özümüz<span class="sub">öz kağızımızla çap edirik</span><span class="sub">klaviatura: 1</span></button>
-    ${SL.map(({sp,si},i)=>{const md=autoMode(sp);return `<button class="sup" data-src="${sp.id}">🚚 ${esc(sp.name)}<span class="sub">hazır alırıq${si?.price?` · alış ${m2(si.price)} ₼`:" · ⚠ alış qiyməti yazılmayıb"}${md==="nisyə"?" · borca yazılır":md==="nağd"?" · kassadan nağd":md==="cib"?" · öz cibimdən":""}</span><span class="sub">klaviatura: ${i+2}</span></button>`}).join("")}</div>
+    ${SL.map(({sp,si},i)=>{const md=autoMode(sp);return `<button class="sup" data-src="${sp.id}">🚚 ${esc(sp.name)}<span class="sub">hazır alırıq${si?.price?` · alış ${m2(si.price)} ₼`:" · ⚠ alış qiyməti yazılmayıb"}${md==="nisyə"?" · borca yazılır":md==="nağd"?" · kassadan nağd":md==="alver"?" · ümumi alverdən":""}</span><span class="sub">klaviatura: ${i+2}</span></button>`}).join("")}</div>
     <p class="sub">Satış qiyməti eynidir (${m2(it.tiers[0][1])} ₼). Seçim yalnız hesabatda ayırmaq üçündür.</p>`;
   $("ovSrc").hidden=false}
 function pickSrc(v){const id=srcFor;srcFor=null;$("ovSrc").hidden=true;if(!id)return;addItem(v==="own"?id:id+"@"+v,1)}
@@ -2254,7 +2260,7 @@ function renderProfit(){
   const exps=S.expenses.filter(x=>inM(x.ts)).sort((a,b)=>b.ts-a.ts),cats=Object.entries(m.cats).sort((a,b)=>b[1]-a[1]);
   const allExp=m.cost+m.waste+m.exp,buy=S.purchases.filter(p=>inM(p.ts)).reduce((a,p)=>a+(p.total||0),0);
   const unpaid=(S.recurring||[]).filter(r=>!S.expenses.some(x=>x.rec===r.id&&monKey(x.ts)===m.k));
-  const pill=x=>x.pay==="nisyə"?"📝 Nisyə":x.pay==="kart"?"💳 Kart":x.pay==="cib"?"👛 Öz cibimdən":"💵 Nağd";
+  const pill=x=>x.pay==="nisyə"?"📝 Nisyə":x.pay==="kart"?"💳 Kart":x.pay==="alver"?"🏪 Ümumi alverdən":"💵 Nağd";
   const row=(lab,v,sub)=>`<tr><td>${lab}${sub?`<div class="sub">${sub}</div>`:""}</td><td class="n"><b>${m2(v)} ₼</b></td><td class="n sub">${allExp?(v/allExp*100).toFixed(0)+"%":""}</td></tr>`;
   return `<div class="frow"><label class="f">Ay<select id="m_sel">${rows.map(r=>`<option value="${r.k}" ${r.k===mSel?"selected":""}>${monName(r.k)}</option>`).join("")}</select></label>
     ${pv?`<span class="sub">Faizlər ${monName(pv.k)} ilə müqayisədir</span>`:""}</div>
@@ -2582,11 +2588,11 @@ document.addEventListener("click",e=>{
 // Satış olanda maya reseptlə mənfəətdən çıxılır. Digər xərclər (maaş, icarə…) 2-ci mərhələdə.
 const UNITS=["ədəd","vərəq","paçka","metr","m²","qram","litr"];
 let etab="buy",pd=null,pDel=null,ed=null,eDel=null,eMon="";
-const newEd=()=>({day:dayKey(Date.now()),cat:S.expCats[0],amount:"",pay:"nağd",note:"",rec:false});
+const newEd=()=>({day:dayKey(Date.now()),cat:S.expCats[0],amount:"",pay:isAdmin()?"alver":"nağd",note:"",rec:false});
 const monKey=ts=>dayKey(ts).slice(0,7);
 const monName=k=>{const [y,m]=k.split("-");return ["Yanvar","Fevral","Mart","Aprel","May","İyun","İyul","Avqust","Sentyabr","Oktyabr","Noyabr","Dekabr"][+m-1]+" "+y};
 const blankLine=()=>({mat:"",newName:"",unit:"ədəd",packs:1,perPack:1,total:"",link:""});
-const newPd=()=>({day:dayKey(Date.now()),supplier:"",pay:"nağd",note:"",lines:[blankLine()]});
+const newPd=()=>({day:dayKey(Date.now()),supplier:"",pay:isAdmin()?"alver":"nağd",note:"",lines:[blankLine()]});
 const purchDebt=()=>S.purchases.filter(p=>p.pay==="nisyə"&&!p.paid).reduce((a,p)=>a+p.total,0);
 const saleItems=()=>S.items.filter(i=>!i.group).map(i=>({id:i.id,label:pathOf(i)+" › "+i.name})).sort((a,b)=>a.label.localeCompare(b.label,"az"));
 function renderDebtBadge(){const d=purchDebt();$("debtBadge").hidden=!d;$("debtBadge").textContent="borc "+m2(d)+" ₼"}
@@ -2617,7 +2623,7 @@ function renderExp(){
       <label class="f">Tarix<input type="date" id="p_day" value="${pd.day}"></label>
       <label class="f grow">Təchizatçı (haradan aldınız)<input id="p_sup" list="supList" value="${esc(pd.supplier)}" placeholder="məs. Kağız mağazası"></label>
       <datalist id="supList">${[...new Set(S.purchases.map(p=>p.supplier).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join("")}</datalist>
-      <div class="f"><span class="sub">Ödəniş</span><div class="frow">${[["nağd","💵 Nağd (kassadan)"],["cib","👛 Öz cibimdən"],["kart","💳 Kart"],["nisyə","📝 Nisyə (borc)"]].map(([k,l])=>`<button class="tab sm ${pd.pay===k?"on":""}" data-x="pay" data-p="${k}">${l}</button>`).join("")}</div></div>
+      <div class="f"><span class="sub">Ödəniş</span><div class="frow">${[["alver","🏪 Ümumi alverdən"],["nağd","💵 Nağd (kassadan)"],["kart","💳 Kart"],["nisyə","📝 Nisyə (borc)"]].map(([k,l])=>`<button class="tab sm ${pd.pay===k?"on":""}" data-x="pay" data-p="${k}">${l}</button>`).join("")}</div></div>
     </div>
     <div class="buylines">${pd.lines.map((l,i)=>{const c=lineCalc(l),M=mat(l.mat);return `<div class="bline">
       <label class="f grow">Mal<select id="l_mat_${i}" data-li="${i}" data-x="matsel"><option value="">— seçin —</option>${mats.map(m=>`<option value="${m.id}" ${m.id===l.mat?"selected":""}>${esc(m.name)} (qalıq ${fmtN(m.stock)} ${esc(m.unit||"ədəd")})</option>`).join("")}<option value="__new" ${l.mat==="__new"?"selected":""}>➕ Yeni mal (siyahıda yoxdur)</option></select></label>
@@ -2653,7 +2659,7 @@ function renderExp(){
     h=open.length?`<div class="kpis"><div class="kpi"><span>Ümumi borc</span><b style="color:var(--warn)">${m2(d)} ₼</b></div><div class="kpi"><span>Təchizatçı sayı</span><b>${Object.keys(by).length}</b></div></div>
       ${Object.entries(by).map(([k,ps])=>`<h4>${esc(k)} — ${m2(ps.reduce((a,p)=>a+p.total,0))} ₼</h4><div class="tw"><table class="hist">
         ${ps.map(p=>`<tr><td><b>${fmtDate(p.ts)}</b></td><td class="wrap">${p.lines.map(l=>esc(l.name)).join(", ")}</td><td class="n"><b>${m2(p.total)} ₼</b></td>
-          <td><span class="sub">Ödədim:</span> <button class="btn sm" data-x="paydebt" data-id="${p.id}" data-by="nağd">💵 Nağd</button> <button class="btn ghost sm" data-x="paydebt" data-id="${p.id}" data-by="kart">💳 Kart</button></td></tr>`).join("")}</table></div>`).join("")}`
+          <td><span class="sub">Ödədim:</span> <button class="btn sm" data-x="paydebt" data-id="${p.id}" data-by="alver">🏪 Alverdən</button> <button class="btn ghost sm" data-x="paydebt" data-id="${p.id}" data-by="nağd">💵 Nağd</button> <button class="btn ghost sm" data-x="paydebt" data-id="${p.id}" data-by="kart">💳 Kart</button></td></tr>`).join("")}</table></div>`).join("")}`
       :`<p class="sub empty-grp">Borcunuz yoxdur ✓ Nisyə alış edəndə burada görünəcək.</p>`;
   }
   if(etab==="other"){
@@ -2668,7 +2674,7 @@ function renderExp(){
         <div class="f" style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)">Növ<select id="x_cat">${S.expCats.map(c=>`<option value="${esc(c)}" ${c===ed.cat?"selected":""}>${esc(c)}</option>`).join("")}</select>
           <span class="frow" id="x_catlinks" style="gap:12px;margin-top:2px">${catLinks()}</span></div>
         <label class="f xs">Məbləğ ₼<input id="x_amt" type="number" min="0" step="0.01" value="${ed.amount}" placeholder="0.00"></label>
-        <div class="f"><span class="sub">Ödəniş</span><div class="frow">${[["nağd","💵 Nağd (kassadan)"],["cib","👛 Öz cibimdən"],["kart","💳 Kart"]].map(([k,l])=>`<button class="tab sm ${ed.pay===k?"on":""}" data-x="xpay" data-p="${k}">${l}</button>`).join("")}</div></div>
+        <div class="f"><span class="sub">Ödəniş</span><div class="frow">${[["alver","🏪 Ümumi alverdən"],["nağd","💵 Nağd (kassadan)"],["kart","💳 Kart"]].map(([k,l])=>`<button class="tab sm ${ed.pay===k?"on":""}" data-x="xpay" data-p="${k}">${l}</button>`).join("")}</div></div>
         <label class="f grow">Qeyd (istəyə görə)<input id="x_note" value="${esc(ed.note)}" placeholder="məs. Leylanın noyabr maaşı"></label>
       </div>
       ${catNew?`<div class="frow newcat"><label class="f grow">${catNew==="ren"?`"${esc(ed.cat)}" növünün yeni adı`:"Yeni xərc növünün adı"}<input id="x_newcat" value="${catNew==="ren"?esc(ed.cat):""}" placeholder="məs. Sifarişli çərçivə, Nəqliyyat"></label>
@@ -2679,8 +2685,8 @@ function renderExp(){
     <h4>🔁 Aylıq təkrarlanan xərclər — ${monName(cur)}</h4>
     ${S.recurring.length?`<div class="tw"><table class="hist">${S.recurring.map(r=>{const done=S.expenses.find(x=>x.rec===r.id&&monKey(x.ts)===cur);return `<tr>
       <td><b>${esc(r.cat)}</b>${r.note?` <span class="sub">${esc(r.note)}</span>`:""}</td><td class="n"><b>${m2(r.amount)} ₼</b></td>
-      <td>${done?`<span class="pill ok">✓ ödənilib ${fmtDate(done.ts)} (${done.pay==="nağd"?"nağd":done.pay==="cib"?"cibdən":"kart"})</span>`
-        :`<span class="sub">Bu ay:</span> <button class="btn sm" data-x="rpay" data-id="${r.id}" data-by="nağd">💵 Nağd ödədim</button> <button class="btn ghost sm" data-x="rpay" data-id="${r.id}" data-by="kart">💳 Kart</button>`}</td>
+      <td>${done?`<span class="pill ok">✓ ödənilib ${fmtDate(done.ts)} (${done.pay==="nağd"?"nağd":done.pay==="alver"?"alverdən":"kart"})</span>`
+        :`<span class="sub">Bu ay:</span> <button class="btn sm" data-x="rpay" data-id="${r.id}" data-by="alver">🏪 Alverdən ödədim</button> <button class="btn ghost sm" data-x="rpay" data-id="${r.id}" data-by="nağd">💵 Nağd</button> <button class="btn ghost sm" data-x="rpay" data-id="${r.id}" data-by="kart">💳 Kart</button>`}</td>
       <td><button class="btn ghost sm del" data-x="rdel" data-id="${r.id}">${eDel==="r"+r.id?"Əminsiniz?":"Siyahıdan çıxar"}</button></td></tr>`}).join("")}</table></div>`
       :`<p class="sub">Hələ yoxdur. Xərci yazanda "Hər ay təkrarlanır" işarələsəniz, burada görünəcək və hər ay bir kliklə ödəyəcəksiniz.</p>`}
     <div class="frow"><h4 style="margin:0">Xərclər:</h4><select id="x_mon" aria-label="ay">${months.map(k=>`<option value="${k}" ${k===eMon?"selected":""}>${monName(k)}</option>`).join("")}</select></div>
@@ -2697,7 +2703,7 @@ function renderExp(){
   }
   $("expBody").innerHTML=h;
 }
-const payPill=p=>p.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':p.pay==="cib"?'<span class="pill card">👛 Öz cibimdən</span>':p.pay==="kart"?'<span class="pill card">💳 Kart</span>'
+const payPill=p=>p.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':p.pay==="alver"?'<span class="pill ok">🏪 Ümumi alverdən</span>':p.pay==="kart"?'<span class="pill card">💳 Kart</span>'
   :p.paid?`<span class="pill ok">📝 Nisyə → ödənildi ${fmtDate(p.paidTs)}</span>`:'<span class="pill warn">📝 Nisyə (borc)</span>';
 function syncPd(){
   if(!pd||!$("p_day"))return;
@@ -2907,8 +2913,8 @@ const suppTabs=()=>[["add","🚚 Alışı yaz","expOther"],["rep","📊 Aylıq h
 const suppRecs=()=>S.expenses.filter(x=>x.supp);
 // v0.92.0 (sahibinin istəyi): tədarükçüdən (məs. Samir Foto) hazır alınıb satılan mal satış anında həmin tədarükçüyə NİSYƏ borc kimi yazılır.
 // Tədarükçüdə autoDebt (admin ⚙️ Tədarükçülər-də dəyişir); təyin edilməyibsə Samir Foto (sp1) üçün açıqdır.
-// v0.93.0: sp.auto = "nisyə" (borca) | "nağd" (kassadan nağd ödənir, xərc) | "cib" (v0.94.0: sahibi öz cibindən ödəyir — xərcdir, kassaya toxunmur) | "" (heç nə).
-const autoMode=sp=>!sp?"":sp.auto!=null?sp.auto:sp.autoDebt!=null?(sp.autoDebt?"nisyə":""):sp.id==="sp1"?"nisyə":sp.id==="sp2"||sp.id==="sp4"?"cib":"";
+// v0.93.0: sp.auto = "nisyə" (borca) | "nağd" (kassadan nağd ödənir, xərc) | "alver" (v1.11.0, əvvəl "cib": ümumi alverdən — xərcdir, kassaya toxunmur) | "" (heç nə).
+const autoMode=sp=>!sp?"":sp.auto!=null?sp.auto:sp.autoDebt!=null?(sp.autoDebt?"nisyə":""):sp.id==="sp1"?"nisyə":sp.id==="sp2"||sp.id==="sp4"?"alver":"";
 const autoDebt=sp=>autoMode(sp)==="nisyə";
 function suppAutoDebt(sale){
   const by={};sale.lines.filter(l=>l.from&&!l.ret&&(l.scost||0)>0).forEach(l=>{(by[l.from]=by[l.from]||[]).push(l)});
@@ -2924,7 +2930,7 @@ const suppIds=()=>[...new Set([...S.suppliers.map(x=>x.id),...suppRecs().map(x=>
 const suppDebtAll=()=>suppIds().reduce((a,id)=>a+Math.max(0,suppOwed(id)),0);
 function renderSuppBadge(){const b=$("suppBadge");if(!b)return;const d=me&&can("suppDebt")?suppDebtAll():0;b.hidden=!(d>0.004);b.textContent="biz "+m2(d)+" ₼"}
 const suppLabel=id=>suppName(id)||suppRecs().find(x=>x.supp===id)?.cat||S.suppPays.find(y=>y.supp===id)?.name||"?";
-const payTag=x=>x.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':x.pay==="cib"?'<span class="pill card">👛 Öz cibimdən</span>':x.pay==="kart"?'<span class="pill card">💳 Kart</span>':'<span class="pill warn">📝 Nisyə</span>';
+const payTag=x=>x.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':x.pay==="alver"?'<span class="pill ok">🏪 Ümumi alverdən</span>':x.pay==="kart"?'<span class="pill card">💳 Kart</span>':'<span class="pill warn">📝 Nisyə</span>';
 function openSupp(){const T=suppTabs();if(!T.length)return;if(!T.some(t=>t[0]===stab))stab=T[0][0];sSel=null;sDel=null;renderSupp();$("ovSupp").hidden=false}
 const canDelSupp=x=>isAdmin()||(x.worker===curName()&&isToday(x.ts));
 function suppRows(list,showWho=true){
@@ -2947,10 +2953,10 @@ function suppDebtHtml(){
       return `<div class="sform">
         <div class="frow"><h4>🚚 ${esc(suppLabel(id))}</h4><span class="grow"></span>${o>0.004?`<span class="pill warn">Borc: ${m2(o)} ₼</span>`:o<-0.004?`<span class="pill card">Artıq ödənilib: ${m2(-o)} ₼</span>`:'<span class="pill ok">✓ Borc yoxdur</span>'}</div>
         ${o>0.004?`<div class="frow"><label class="f xs">Ödənən ₼<input id="dp_${id}" type="number" min="0" step="0.01" value="${m2(o)}"></label>
-          <button class="btn" data-s="dpay" data-id="${id}" data-by="nağd">💵 Nağd ödədim</button><button class="btn ghost" data-s="dpay" data-id="${id}" data-by="kart">💳 Kartla ödədim</button></div>`:""}
+          <button class="btn" data-s="dpay" data-id="${id}" data-by="alver">🏪 Alverdən ödədim</button><button class="btn ghost" data-s="dpay" data-id="${id}" data-by="nağd">💵 Nağd ödədim</button><button class="btn ghost" data-s="dpay" data-id="${id}" data-by="kart">💳 Kartla ödədim</button></div>`:""}
         <div class="tw"><table class="hist"><tr><th>Tarix</th><th>Nə</th><th>Kim</th><th class="n">Məbləğ</th><th></th></tr>
         ${mv.slice(0,15).map(m=>m.t==="buy"?`<tr><td>${fmtDate(m.ts)} <span class="sub">${fmtTime(m.ts)}</span></td><td>📝 Nisyə alış${m.x.note?` <span class="sub">${esc(m.x.note)}</span>`:""}</td><td>${esc(m.x.worker||"")}</td><td class="n" style="color:var(--warn)"><b>+${m2(m.x.amount)} ₼</b></td><td></td></tr>`
-          :`<tr class="${sDel==="p"+m.y.id?"confirm":""}"><td>${fmtDate(m.ts)} <span class="sub">${fmtTime(m.ts)}</span></td><td>${m.y.by==="nağd"?"💵 Nağd ödəniş":"💳 Kartla ödəniş"}</td><td>${esc(m.y.worker||"")}</td><td class="n" style="color:var(--ok)"><b>−${m2(m.y.amount)} ₼</b></td>
+          :`<tr class="${sDel==="p"+m.y.id?"confirm":""}"><td>${fmtDate(m.ts)} <span class="sub">${fmtTime(m.ts)}</span></td><td>${m.y.by==="nağd"?"💵 Nağd ödəniş":m.y.by==="alver"?"🏪 Alverdən ödəniş":"💳 Kartla ödəniş"}</td><td>${esc(m.y.worker||"")}</td><td class="n" style="color:var(--ok)"><b>−${m2(m.y.amount)} ₼</b></td>
             <td>${!isAdmin()?"":sDel==="p"+m.y.id?`<button class="btn red sm" data-s="pdel" data-id="${m.y.id}">Bəli, sil</button>`:`<button class="btn ghost sm del" data-s="pask" data-id="${m.y.id}">Sil</button>`}</td></tr>`).join("")}</table></div>
         ${mv.length>15?`<p class="sub">Son 15 hərəkət göstərilir.</p>`:""}
       </div>`}).join(""):`<p class="sub empty-grp">Nisyə alış yoxdur. Alışı yazanda “📝 Nisyə (borc)” seçsəniz, borc burada görünəcək.</p>`}`;
@@ -2960,7 +2966,7 @@ function suppListHtml(){return `<p class="sub"><b>Satılanda</b>: hazır alınan
   📝 borca (sonra 💳 Borclar-da ödəyirsiniz) və ya 💵 nağd (kassadan ödənmiş xərc). Alış qiyməti 💲 Qiymətlər-dədir.</p>`+`<p class="sub">Tədarükçünün adını dəyişsəniz, keçmiş alışları da yeni adla görünür. Silsəniz, keçmiş alışları hesabatda qalır.</p>
     <div class="tw"><table>${S.suppliers.map(x=>`<tr><td><input data-sn="${x.id}" value="${esc(x.name)}" class="wide" aria-label="Tədarükçünün adı"></td>
       <td class="n sub">${suppRecs().filter(r=>r.supp===x.id).length} alış</td>
-      <td><label class="sub" title="Bu tədarükçüdən hazır alınan mal satılanda alış qiyməti nə olsun">Satılanda:<select data-sad="${x.id}">${[["nisyə","📝 Borca yaz"],["cib","👛 Öz cibimdən ödəyirəm"],["nağd","💵 Kassadan nağd"],["","— heç nə yazma"]].map(([v,l])=>`<option value="${v}" ${autoMode(x)===v?"selected":""}>${l}</option>`).join("")}</select></label></td>
+      <td><label class="sub" title="Bu tədarükçüdən hazır alınan mal satılanda alış qiyməti nə olsun">Satılanda:<select data-sad="${x.id}">${[["nisyə","📝 Borca yaz"],["alver","🏪 Ümumi alverdən ödəyirəm"],["nağd","💵 Kassadan nağd"],["","— heç nə yazma"]].map(([v,l])=>`<option value="${v}" ${autoMode(x)===v?"selected":""}>${l}</option>`).join("")}</select></label></td>
       <td><button class="btn ghost sm" data-s="pled" data-id="${x.id}">${sPL===x.id?"▲ Qiymətlər":"💲 Qiymətlər ("+(x.items?.length||0)+")"}</button></td>
       <td><button class="btn ghost sm" data-s="sdel" data-id="${x.id}">${sDel==="t"+x.id?"Əminsiniz? Sil":"🗑 Sil"}</button></td></tr>
       ${sPL===x.id?`<tr><td colspan="5"><div class="sform"><p class="sub" style="margin:0">${esc(x.name)}: alış qiymətləri (1 ədəd üçün). Bu tədarükçü seçilib satılanda bu qiymətlə yazılır (0 olsa, heç nə yazılmır).</p>
@@ -3101,7 +3107,7 @@ document.addEventListener("change",e=>{
     if(e.target.dataset.pn){const n=e.target.value.trim();if(n)it.name=n}else{const v=+e.target.value;if(v>0)it.price=v}
     save();renderSupp();toast("Qiymət siyahısı yeniləndi");return}
   {const ad=e.target.dataset?.sad;if(ad&&isAdmin()){const sp=S.suppliers.find(x=>x.id===ad);if(!sp)return;sp.auto=e.target.value;delete sp.autoDebt;save();renderSupp();
-    toast(sp.auto==="nisyə"?`${sp.name}: satılan hazır mal avtomatik borca yazılacaq`:sp.auto==="nağd"?`${sp.name}: satılanda alış qiyməti kassadan nağd xərc kimi yazılacaq`:sp.auto==="cib"?`${sp.name}: satılanda alış qiyməti "öz cibimdən" xərc kimi yazılacaq (kassaya toxunmur)`:`${sp.name}: avtomatik yazma bağlandı`);return}}
+    toast(sp.auto==="nisyə"?`${sp.name}: satılan hazır mal avtomatik borca yazılacaq`:sp.auto==="nağd"?`${sp.name}: satılanda alış qiyməti kassadan nağd xərc kimi yazılacaq`:sp.auto==="alver"?`${sp.name}: satılanda alış qiyməti "ümumi alverdən" xərc kimi yazılacaq (kassaya toxunmur)`:`${sp.name}: avtomatik yazma bağlandı`);return}}
   const id=e.target.dataset?.sn;if(!id||!isAdmin())return;
   const sp=S.suppliers.find(x=>x.id===id),n=e.target.value.trim();if(!sp)return;
   if(!n||S.suppliers.some(x=>x!==sp&&norm(x.name)===norm(n))){toast(n?`"${n}" artıq var`:"Ad boş ola bilməz");renderSupp();return}
@@ -3146,7 +3152,7 @@ document.addEventListener("click",e=>{const t=e.target.closest("[data-rr],[data-
 // v1.5.0: dövr — yalnız Bu gün, Dünən, Gün seç, Tarix aralığı (sahibinin istəyi). rrSet testlər üçün qalır.
 window.rrSet=k=>{[rFrom,rTo]=rrPreset(k);renderRep()};
 document.addEventListener("change",e=>{if(e.target.id==="r_day"){if(e.target.value){rFrom=rTo=e.target.value;renderRep()}return}if(e.target.id==="r_from"){rFrom=e.target.value;renderRep()}else if(e.target.id==="r_to"){rTo=e.target.value;renderRep()}});
-const RT_REP=[["kassa","📊 Ümumi Satış"],["artiq","🪙 Artıq ödəmə"],["suppdebt","🚚 Bizim borclarımız"],["zay","🗑️ Zay olan pul"],["xerc","🧾 Xərclər"],["anbarpul","📦 Anbarda qalan pul"],["menfeet","📈 Xalis Gəlir"],["faiz","👥 İşçi faizi"]];
+const RT_REP=[["kassa","📊 Ümumi Satış"],["artiq","🪙 Artıq ödəmə"],["suppdebt","🚚 Bizim borclarımız"],["zay","🗑️ Zay olan pul"],["xerc","🧾 Xərclər"],["anbarpul","📦 Anbarda qalan pul"],["menfeet","📈 Xalis Gəlir"],["alver","🏪 Alver və xərclər"],["faiz","👥 İşçi faizi"]];
 // 📦 Anbar (v0.38.0: Hesabatdan və Ayarlardan ayrıca düyməyə köçdü)
 const RT_STOCK=[["anbar","Qalıq / Sayım"],["mat","Materiallar"],["low","⚠ Az qalanlar"]];
 const stockTabs=()=>RT_STOCK.filter(([k])=>can(k==="mat"?"stockMat":"stock"));
@@ -3206,6 +3212,13 @@ function renderRep(){
       <h4>📦 Nə satılıb</h4>${tbl(prodHead(),prodRows(pure),"Bu dövrdə satış yoxdur.")}${mix.length?`<p class="sub">Qarışıq (nağd + kart) ödənişli ${mix.length} satış bu cədvələ daxil deyil — aşağıdakı siyahıda var.</p>`:""}
       <h4>🧾 Satışlar</h4>${tbl(["Vaxt","Kassir"].concat(p==="borc"?["Müəssisə"]:[]).concat(["Nə satılıb","#Məbləğ"]),saleRows(list,p))}`;
   }
+  // v1.11.0 (sahibinin istəyi): 🏪 Alver və xərclər — dövrdə satışdan gələn pul (nağd + kart + borcludan alınan + artıq ödəmə) və ondan nə xərclənib
+  // (nağd/kart/ümumi alverdən ödənən xərc, mal alışı, borc ödənişi). Nisyə alış/xərc ödənəndə sayılır. Sahibə verilən (təhvil) xərc deyil.
+  const ALV=()=>{const P=["nağd","kart","alver"],okP=p=>P.includes(p||"nağd");
+    const inc={sale:sales.reduce((a,s)=>a+payPart(s,"nağd")+payPart(s,"kart"),0),cust:(S.custPays||[]).filter(y=>y.by!=="borc"&&inR(y.ts)).reduce((a,y)=>a+y.amount,0),tip:sales.reduce((a,s)=>a+(+s.tip>0?+s.tip:0),0)};
+    const ex=S.expenses.filter(x=>inR(x.ts)&&okP(x.pay)),pu=S.purchases.filter(p=>(inR(p.ts)&&okP(p.pay))||(p.pay==="nisyə"&&p.paid&&okP(p.paidBy)&&p.paidTs&&inR(p.paidTs))),
+      sp=(S.suppPays||[]).filter(y=>inR(y.ts)&&okP(y.by));
+    const I=inc.sale+inc.cust+inc.tip,O=ex.reduce((a,x)=>a+x.amount,0)+pu.reduce((a,p)=>a+(p.total||0),0)+sp.reduce((a,y)=>a+y.amount,0);return{inc,I,ex,pu,sp,O,left:I-O}};
   // v1.7.0: digər bölmələrin qutuları (icazəyə görə) — qutuda əsas rəqəm, basanda təfərrüat (kSub = bölmənin açarı).
   let BOX="";if(rt==="kassa"&&mode==="rep"){
     const CCx=can("cost"),sumE=S.expenses.filter(x=>inR(x.ts)).reduce((a,x)=>a+x.amount,0),wc=waste.reduce((a,w)=>a+(w.cost||0),0);
@@ -3215,12 +3228,13 @@ function renderRep(){
       xerc:()=>m2(sumE)+" ₼",
       anbarpul:()=>m2(S.materials.reduce((a,m)=>a+Math.max(0,+m.stock||0)*(+m.cost||0),0))+" ₼",
       menfeet:()=>m2(sales.reduce((a,s)=>a+s.total-s.lines.reduce((b,l)=>b+(l.cost||0),0),0)-wc-sumE)+" ₼",
+      alver:()=>m2(ALV().left)+" ₼",
       faiz:()=>{const C=S.comm||{},rate=cid=>C.rates&&C.rates[cid]!=null?+C.rates[cid]:(cid==="studiya"?10:5);let p=0;
         sales.forEach(s=>{const f=s.sub&&s.disc?s.total/s.sub:1;s.lines.forEach(l=>{if(!l.from)p+=l.sum*f*rate(item(l.id)?.cat||"?")/100})});return m2(p)+" ₼"}};
     V.kassapul=()=>m2(cashDay(one?rFrom:(rTo||dayKey(Date.now()))).should)+" ₼";
-    const NOTE={suppdebt:"indi",anbarpul:"indi",kassapul:one?"":"son gün"};
+    const NOTE={alver:"qalıb",suppdebt:"indi",anbarpul:"indi",kassapul:one?"":"son gün"};
     const bx=(can("rb_kassapul")?[["kassapul","💰 Kassadakı pul"]]:[]).concat(TABS.filter(([k])=>k!=="kassa"));
-    if(bx.length)BOX=`<div class="kpis kboxes">${bx.map(([k,l])=>`<button class="kpi kbtn${kSub===k?" on":""}" data-ks="${k}" title="Təfərrüatı aç / bağla"><span>${l} ${kSub===k?"▾":"▸"}</span><b>${V[k]?V[k]():""}</b><span class="sub">${NOTE[k]?NOTE[k]+" · ":""}${kSub===k?"bağlamaq üçün basın":"təfərrüat üçün basın"}</span></button>`).join("")}</div>`;
+    if(bx.length)BOX=`<div class="kpis kboxes${bx.length%3===0&&bx.length%4!==0?" k3":""}">${bx.map(([k,l])=>`<button class="kpi kbtn${kSub===k?" on":""}" data-ks="${k}" title="Təfərrüatı aç / bağla"><span>${l} ${kSub===k?"▾":"▸"}</span><b>${V[k]?V[k]():""}</b><span class="sub">${NOTE[k]?NOTE[k]+" · ":""}${kSub===k?"bağlamaq üçün basın":"təfərrüat üçün basın"}</span></button>`).join("")}</div>`;
   }
   if((rt==="kassa"&&mode==="rep")||(rt==="kassapul"&&can("rb_kassapul"))){
     const kd=one?rFrom:(rTo||dayKey(Date.now())),K=cashDay(kd);
@@ -3297,7 +3311,7 @@ function renderRep(){
       <p class="sub">Faiz müştərinin real ödədiyi puldan hesablanır: endirim çıxılır, qaytarma azaldır. Samir / Vəfa / Banner kimi <b>hazır alınıb satılanlar</b> sayılmır. Şöbənin ümumi faizi seçilmiş işçilər arasında bərabər bölünür. Bu bölməni yalnız admin görür.</p>
       <h4>👥 İşçilər</h4>${U.length?tbl(["İşçi","#Faiz payı","#Ödənilib (dövrdə)","#Qalır","Ödə"],U.map(id=>{const u=userById(id),pd=paid(id).reduce((a,x)=>a+x.amount,0),rest=share-pd;
         return `<tr><td><b>${esc(u.name)}</b></td><td class="n">${m2(share)} ₼</td><td class="n">${m2(pd)} ₼</td><td class="n"><b style="color:${rest>0.004?"var(--warn)":"var(--ok)"}">${m2(rest)} ₼</b></td>
-        <td>${rest>0.004?`<span class="frow"><button class="btn sm" data-cp="${id}|nağd" data-amt="${rest}">💵 Kassadan</button><button class="btn ghost sm" data-cp="${id}|cib" data-amt="${rest}">👛 Cibdən</button><button class="btn ghost sm" data-cp="${id}|kart" data-amt="${rest}">💳 Kart</button></span>`:'<span class="pill ok">✓ ödənilib</span>'}</td></tr>`}))
+        <td>${rest>0.004?`<span class="frow"><button class="btn sm" data-cp="${id}|nağd" data-amt="${rest}">💵 Kassadan</button><button class="btn ghost sm" data-cp="${id}|alver" data-amt="${rest}">🏪 Alverdən</button><button class="btn ghost sm" data-cp="${id}|kart" data-amt="${rest}">💳 Kart</button></span>`:'<span class="pill ok">✓ ödənilib</span>'}</td></tr>`}))
         :`<p class="sub" style="color:var(--warn)">Hələ heç bir işçi seçilməyib — aşağıda "⚙️ Faiz ayarları"-nda faiz alan işçiləri işarələyin.</p>`}
       <p class="sub">"Ödə" basanda qalan məbləğ <b>💸 Xərclər</b>-ə "İşçi faizi" kimi yazılır və mənfəətdən çıxılır (💵 Kassadan seçsəniz, kassa hesabından da). Maaş ayrıca, əvvəlki kimi Xərclər-də "Maaş" kimi yazılır${sal.length?` — bu dövrdə yazılan maaş: <b>${m2(sal.reduce((a,x)=>a+x.amount,0))} ₼</b>`:""}.</p>
       <h4>📂 Bölmələr üzrə</h4>${tbl(["Bölmə","#Faiz","#Satış","#Faiz məbləği"],Object.entries(bc).sort((a,b)=>b[1].v-a[1].v).map(([cid,x])=>`<tr><td>${esc(cname(cid))}</td><td class="n">${fmtN(rate(cid))}%</td><td class="n">${m2(x.v)}</td><td class="n"><b>${m2(x.c)} ₼</b></td></tr>`),"Bu dövrdə satış yoxdur.")}
@@ -3315,7 +3329,7 @@ function renderRep(){
       paid:S.suppPays.filter(y=>y.supp===id&&inR(y.ts)).reduce((a,y)=>a+y.amount,0)})).filter(x=>Math.abs(x.owed)>0.004||x.buy||x.paid).sort((a,b)=>b.owed-a.owed);
     const T=sup.reduce((a,x)=>({buy:a.buy+x.buy,paid:a.paid+x.paid}),{buy:0,paid:0});
     const mv=[...suppRecs().filter(x=>x.pay==="nisyə"&&inR(x.ts)).map(x=>({ts:x.ts,who:suppLabel(x.supp),what:x.auto?"🧾 Satışdan (avtomatik)":"📝 Nisyə alış",note:x.note||"",by:x.worker||"",v:x.amount})),
-      ...S.suppPays.filter(y=>inR(y.ts)).map(y=>({ts:y.ts,who:suppLabel(y.supp),what:y.by==="nağd"?"💵 Nağd ödədik":"💳 Kartla ödədik",note:"",by:y.worker||"",v:-y.amount}))].sort((a,b)=>b.ts-a.ts);
+      ...S.suppPays.filter(y=>inR(y.ts)).map(y=>({ts:y.ts,who:suppLabel(y.supp),what:y.by==="nağd"?"💵 Nağd ödədik":y.by==="alver"?"🏪 Alverdən ödədik":"💳 Kartla ödədik",note:"",by:y.worker||"",v:-y.amount}))].sort((a,b)=>b.ts-a.ts);
     h+=`<div class="kpis"><div class="kpi hero"><span>🚚 Bizim borcumuz (indi)</span><b style="color:${now>0.004?"var(--bad)":"var(--ok)"}">${m2(now)} ₼</b>${pd>0.004?`<span>o cümlədən mal alışından ${m2(pd)} ₼</span>`:""}</div>
       <div class="kpi"><span>Dövrdə borc yazılıb</span><b>${m2(T.buy)} ₼</b></div><div class="kpi"><span>Dövrdə ödənib</span><b style="color:var(--ok)">${m2(T.paid)} ₼</b></div></div>
       <h4>Tədarükçülər üzrə</h4>${tbl(["Tədarükçü","#Dövrdə borc yazılıb","#o cümlədən satışdan","#Dövrdə ödənib","#İndiki borc"],sup.map(x=>`<tr><td>${esc(x.name)}</td><td class="n">${m2(x.buy)}</td><td class="n">${m2(x.auto)}</td><td class="n">${m2(x.paid)}</td><td class="n"><b style="color:${x.owed>0.004?"var(--bad)":"var(--ok)"}">${m2(x.owed)} ₼</b></td></tr>`),"Tədarükçülərə borc yoxdur.")}
@@ -3335,17 +3349,35 @@ function renderRep(){
   if(rt==="xerc"){
     const ex=S.expenses.filter(x=>inR(x.ts)),tot=ex.reduce((a,x)=>a+x.amount,0),pu=S.purchases.filter(p=>inR(p.ts)),put=pu.reduce((a,p)=>a+(p.total||0),0);
     const cats={};ex.forEach(x=>cats[x.cat]=(cats[x.cat]||0)+x.amount);
-    const pill=x=>x.pay==="nisyə"?"📝 Nisyə":x.pay==="kart"?"💳 Kart":x.pay==="cib"?"👛 Öz cibimdən":"💵 Nağd";
+    const pill=x=>x.pay==="nisyə"?"📝 Nisyə":x.pay==="kart"?"💳 Kart":x.pay==="alver"?"🏪 Ümumi alverdən":"💵 Nağd";
     const mk=monKey(new Date((rTo||dayKey(Date.now()))+"T12:00").getTime()),ms=monthStats().find(r=>r.k===mk);
     const unpaid=(S.recurring||[]).filter(r=>!S.expenses.some(x=>x.rec===r.id&&monKey(x.ts)===monKey(Date.now())));
     h+=`<div class="kpis"><div class="kpi hero"><span>🧾 Xərclər — cəmi</span><b style="color:var(--bad)">${m2(tot)} ₼</b></div>
-      <div class="kpi"><span>Nağd / Kart / Nisyə / Cibdən</span><b>${["nağd","kart","nisyə","cib"].map(p=>m2(ex.filter(x=>(x.pay||"nağd")===p).reduce((a,x)=>a+x.amount,0))).join(" / ")}</b></div>
+      <div class="kpi"><span>Nağd / Kart / Nisyə / Alverdən</span><b>${["nağd","kart","nisyə","alver"].map(p=>m2(ex.filter(x=>(x.pay||"nağd")===p).reduce((a,x)=>a+x.amount,0))).join(" / ")}</b></div>
       <div class="kpi"><span>📦 Mal alışı (anbara)</span><b>${m2(put)} ₼</b><span>xərc sayılmır — mal anbardadır</span></div></div>
       ${unpaid.length?`<p class="sub" style="color:var(--warn)">⚠ Bu ay hələ yazılmayan aylıq xərclər: ${unpaid.map(r=>`<b>${esc(r.cat)}</b> ${m2(r.amount)} ₼`).join(", ")}</p>`:""}
       <h4>Növlərə görə</h4>${tbl(["Növ","#Məbləğ","#%"],Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<tr><td>${esc(c)}</td><td class="n">${m2(v)} ₼</td><td class="n sub">${tot?(v/tot*100).toFixed(0):0}%</td></tr>`),"Bu dövrdə xərc yazılmayıb.")}
       <h4>Xərclər bir-bir</h4>${tbl(["Tarix","Növ","Nə üçün","Ödəniş","#Məbləğ"],ex.slice().sort((a,b)=>b.ts-a.ts).map(x=>`<tr><td>${fmtDate(x.ts)}</td><td>${esc(x.cat||"")}</td><td class="wrap">${esc(x.note||"")}</td><td>${pill(x)}</td><td class="n"><b>${m2(x.amount)} ₼</b></td></tr>`),"Bu dövrdə xərc yazılmayıb.")}
       <h4>📦 Mal alışları (anbara)</h4>${tbl(["Tarix","Təchizatçı","Nə alınıb","Ödəniş","#Məbləğ"],pu.slice().sort((a,b)=>b.ts-a.ts).map(p=>`<tr><td>${fmtDate(p.ts)}</td><td>${esc(p.supplier||"—")}</td><td class="wrap">${p.lines.map(l=>`${esc(l.name)} ${fmtN(l.qty)} ${esc(l.unit||"")}`).join(", ")}</td><td>${pill(p)}</td><td class="n">${m2(p.total)} ₼</td></tr>`),"Bu dövrdə mal alışı yoxdur.")}
       ${ms?srcSection(ms):""}`;
+  }
+  if(rt==="alver"){
+    const A=ALV(),pp=x=>x==="kart"?"💳 Kart":x==="alver"?"🏪 Ümumi alverdən":"💵 Nağd";
+    const cats={};A.ex.forEach(x=>cats[x.cat||"Digər"]=(cats[x.cat||"Digər"]||0)+x.amount);
+    const put=A.pu.reduce((a,p)=>a+(p.total||0),0),spt=A.sp.reduce((a,y)=>a+y.amount,0),ext=A.ex.reduce((a,x)=>a+x.amount,0);
+    const where=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,v])=>[`🧾 ${esc(c)}`,v]);if(put)where.push(["📦 Mal alışı (anbara)",put]);if(spt)where.push(["🚚 Tədarükçü borcu ödənişi",spt]);where.sort((a,b)=>b[1]-a[1]);
+    const byP={};A.ex.forEach(x=>byP[x.pay||"nağd"]=(byP[x.pay||"nağd"]||0)+x.amount);A.pu.forEach(p=>{const k=p.pay==="nisyə"?p.paidBy:p.pay;byP[k]=(byP[k]||0)+(p.total||0)});A.sp.forEach(y=>byP[y.by]=(byP[y.by]||0)+y.amount);
+    const rows=[...A.ex.map(x=>({ts:x.ts,w:"🧾 "+esc(x.cat||""),n:esc(x.note||""),p:x.pay,v:x.amount})),
+      ...A.pu.map(p=>({ts:p.pay==="nisyə"?p.paidTs:p.ts,w:"📦 Mal alışı"+(p.pay==="nisyə"?" (nisyə borcu ödəndi)":""),n:esc(p.supplier||"")+": "+p.lines.map(l=>`${esc(l.name)} ${fmtN(l.qty)}`).join(", "),p:p.pay==="nisyə"?p.paidBy:p.pay,v:p.total||0})),
+      ...A.sp.map(y=>({ts:y.ts,w:"🚚 Borc ödənişi",n:esc(y.name||suppName(y.supp)||""),p:y.by,v:y.amount}))].sort((a,b)=>b.ts-a.ts);
+    h+=`<div class="kpis"><div class="kpi hero"><span>🏪 Alver (satışdan gələn pul)</span><b style="color:var(--ok)">${m2(A.I)} ₼</b><span>nağd + kart${A.inc.cust?" + borcludan":""}${A.inc.tip?" + artıq ödəmə":""}</span></div>
+      <div class="kpi"><span>💸 Alverdən xərclənib</span><b style="color:var(--bad)">${m2(A.O)} ₼</b><span>${A.I?(A.O/A.I*100).toFixed(0):0}% alverin</span></div>
+      <div class="kpi"><span>✅ Alverdən qalıb</span><b style="color:${A.left<0?"var(--bad)":"var(--ok)"}">${m2(A.left)} ₼</b></div></div>
+      <p class="sub">Bu, <b>pul hərəkətidir</b>: alverdən gələn pul və ondan verilən pullar. Mal alışı da burada çıxılır (pul verilib), amma mal anbardadır — xalis qazancı "📈 Xalis Gəlir" qutusu göstərir. Sahibə verilən pul (kassa təhvili) xərc deyil. Nisyə alış ödənəndə, ödədiyiniz gün sayılır.</p>
+      <h4>💰 Alver nədən yığılıb</h4>${tbl(["Haradan","#Məbləğ"],[["💵 Nağd satış",sales.reduce((a,s)=>a+payPart(s,"nağd"),0)],["💳 Kart satış",sales.reduce((a,s)=>a+payPart(s,"kart"),0)],["🏢 Borclulardan alınan",A.inc.cust],["🪙 Artıq ödəmə",A.inc.tip]].filter(r=>r[1]).map(([l,v])=>`<tr><td>${l}</td><td class="n">${m2(v)} ₼</td></tr>`),"Bu dövrdə satış yoxdur.")}
+      <h4>💸 Pullar hara verilib</h4>${tbl(["Hara","#Məbləğ","#% alverin"],where.map(([l,v])=>`<tr><td>${l}</td><td class="n"><b>${m2(v)} ₼</b></td><td class="n sub">${A.I?(v/A.I*100).toFixed(0):0}%</td></tr>`),"Bu dövrdə xərc yoxdur.")}
+      <h4>💳 Necə ödənilib</h4>${tbl(["Ödəniş","#Məbləğ"],Object.entries(byP).filter(([,v])=>v).map(([k,v])=>`<tr><td>${pp(k)}</td><td class="n">${m2(v)} ₼</td></tr>`),"—")}
+      <h4>🧾 Hamısı bir-bir</h4>${tbl(["Tarix","Nə","Təfərrüat","Ödəniş","#Məbləğ"],rows.map(r=>`<tr><td>${fmtDate(r.ts)}</td><td>${r.w}</td><td class="wrap">${r.n}</td><td>${pp(r.p)}</td><td class="n"><b>${m2(r.v)} ₼</b></td></tr>`),"Bu dövrdə xərc yoxdur.")}`;
   }
   if(rt==="anbarpul"){
     const rows=S.materials.map(m=>({m,v:Math.max(0,+m.stock||0)*(+m.cost||0)})).sort((a,b)=>b.v-a.v),tot=rows.reduce((a,r)=>a+r.v,0);

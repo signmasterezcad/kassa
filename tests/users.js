@@ -277,8 +277,8 @@ let n = 0;
   ok((await p.textContent('#srcBody')).includes('Vəfa Foto') && (await p.textContent('#srcBody')).includes('klaviatura: 3'), 'seçim pəncərəsində 3 düymə: Özümüz / Samir / Vəfa');
   await p.keyboard.press('3'); await p.click('#btnDone');
   { const D = JSON.parse(fs.data), sl = D.sales.at(-1), vx = D.expenses.find(x => x.auto && x.sale === sl.id);
-    ok(sl.lines[0].from === 'sp2' && vx && vx.pay === 'cib' && Math.abs(vx.amount - 0.4) < 1e-9, 'Vəfa Foto satışı: alış 0.40 ₼ "öz cibimdən" xərc kimi yazıldı (borca da, kassaya da yox)'); }
-  ok(await p.evaluate(() => { const d = dayKey(Date.now()), e1 = cashDay(d).exp; return S.expenses.some(x => x.pay === 'cib') && e1 === S.expenses.filter(x => dayKey(x.ts) === d && x.pay === 'nağd').reduce((a, x) => a + x.amount, 0); }), 'cibdən ödənən xərc kassa hesabından çıxılmır');
+    ok(sl.lines[0].from === 'sp2' && vx && vx.pay === 'alver' && Math.abs(vx.amount - 0.4) < 1e-9, 'Vəfa Foto satışı: alış 0.40 ₼ "öz cibimdən" xərc kimi yazıldı (borca da, kassaya da yox)'); }
+  ok(await p.evaluate(() => { const d = dayKey(Date.now()), e1 = cashDay(d).exp; return S.expenses.some(x => x.pay === 'alver') && e1 === S.expenses.filter(x => dayKey(x.ts) === d && x.pay === 'nağd').reduce((a, x) => a + x.amount, 0); }), 'cibdən ödənən xərc kassa hesabından çıxılmır');
   await p.click('#btnRep'); await p.evaluate(() => repGo('suppdebt'));
   ok((await p.textContent('#rbody')).includes('Satışdan (avtomatik)'), 'Hesabat → 🚚 Bizim borclarımız: satışdan yazılan borc görünür');
   await p.click('#ovRep [data-close]');
@@ -291,7 +291,7 @@ let n = 0;
 
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
   await p.click('#btnSet'); await p.click('[data-rt=supp]');
-  ok((await p.textContent('#rbody')).includes('Samir Banner') && await p.locator('#rbody [data-sad=sp2]').inputValue() === 'cib' && await p.locator('#rbody [data-sad=sp4]').inputValue() === 'cib' && await p.locator('#rbody [data-sad=sp1]').inputValue() === 'nisyə', 'Ayarlar → 🚚 Tədarükçülər: Samir Foto borca, Vəfa və Samir Banner öz cibimdən');
+  ok((await p.textContent('#rbody')).includes('Samir Banner') && await p.locator('#rbody [data-sad=sp2]').inputValue() === 'alver' && await p.locator('#rbody [data-sad=sp4]').inputValue() === 'alver' && await p.locator('#rbody [data-sad=sp1]').inputValue() === 'nisyə', 'Ayarlar → 🚚 Tədarükçülər: Samir Foto borca, Vəfa və Samir Banner öz cibimdən');
   await p.click('#rbody [data-s=pled][data-id=sp2]');
   ok((await p.textContent('#rbody')).includes('alış qiymətləri'), 'Ayarlar-da 💲 Qiymətlər açılır');
   await p.click('#ovRep [data-close]');
@@ -396,6 +396,25 @@ let n = 0;
     S.expenses = S.expenses.filter(x => x.id !== 'xWs'); S.expCats = S.expCats.filter(c => c !== 'Test İki Boşluq'); document.querySelectorAll('.ov').forEach(o => o.hidden = true);
     return shown && clean; });
   ok(r, 'v1.10.6: artıq boşluqlu növ siyahıda düz seçilir; köhnə adlar bir dəfə təmizlənir');}
+
+  // v1.11.0: "👛 Öz cibimdən" → "🏪 Ümumi alverdən" (pay:"alver"), Hesabat qutusu 🏪 Alver və xərclər
+  {const r = await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true);
+    const bak = JSON.stringify({sales: S.sales, expenses: S.expenses, purchases: S.purchases, suppPays: S.suppPays, custPays: S.custPays});
+    S.expenses.push({ id: 'xCib', ts: Date.now(), cat: 'Digər', amount: 7, pay: 'cib', note: 'köhnə', rec: null });
+    delete S.mig.cibToAlver; upgrade(); const mig = S.expenses.find(x => x.id === 'xCib').pay === 'alver';
+    openExp(); etab = 'other'; ed = null; renderExp(); const defAlver = ed.pay === 'alver';
+    const btn = !!document.querySelector('#ovExp [data-x][data-v="alver"], #ovExp [data-p="alver"], #ovExp [data-pay="alver"]') || /Ümumi alverdən/.test($('ovExp').textContent);
+    const noCib = !/Öz cibimdən/.test($('ovExp').textContent);
+    document.querySelectorAll('.ov').forEach(o => o.hidden = true);
+    const now = Date.now(); S.sales = [{ id: 'sA', ts: now, pay: 'nağd', total: 100, sub: 100, lines: [] }, { id: 'sB', ts: now, pay: 'kart', total: 50, sub: 50, lines: [] }];
+    S.expenses = [{ id: 'e1', ts: now, cat: 'İcarə', amount: 30, pay: 'alver' }, { id: 'e2', ts: now, cat: 'Digər', amount: 5, pay: 'nisyə' }];
+    S.purchases = [{ id: 'p1', ts: now, supplier: 'X', pay: 'alver', total: 20, lines: [{ name: 'Çərçivə', qty: 2 }] }]; S.suppPays = [{ id: 'y1', supp: 'sp1', ts: now, amount: 10, by: 'alver' }]; S.custPays = [];
+    mode = 'rep'; rtab = 'kassa'; kSub = ''; $('ovRep').hidden = false; rrSet('today'); repGo('alver'); const txt = $('rbody').textContent;
+    const ok2 = /150[.,]00 ₼/.test(txt) && /60[.,]00 ₼/.test(txt) && /90[.,]00 ₼/.test(txt) && /İcarə/.test(txt) && /Mal alışı/.test(txt);
+    const cashOk = cashDay(dayKey(now)).exp === 0 && cashDay(dayKey(now)).purch === 0;
+    repGo(''); document.querySelectorAll('.ov').forEach(o => o.hidden = true);
+    Object.assign(S, JSON.parse(bak)); return [mig, btn, noCib, defAlver, ok2, cashOk]; });
+  ok(r.every(Boolean), 'v1.11.0: cib→alver köçürmə, düymə, Alver və xərclər hesabatı (150 alver − 60 = 90), kassaya toxunmur ' + JSON.stringify(r));}
 
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();

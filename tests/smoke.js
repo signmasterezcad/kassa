@@ -441,7 +441,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   const inMonth = await p.evaluate(() => new Date(Date.now() - 3 * 864e5).getMonth() === new Date().getMonth());
   ok(!inMonth || (rb.includes('Günü seçin') && rb.includes('Kassa hər gün ayrıca')), 'Bu ay: Kassadakı Pul — günlər siyahısı, kassa bir gün üçün');
   await p.evaluate(() => repGo(''));
-  ok(await p.isHidden('#rtabs') && await p.locator('#rbody [data-ks]').evaluateAll(b => b.map(x => x.dataset.ks).join('|')) === 'nağd|kart|borc|kassapul|artiq|suppdebt|zay|xerc|anbarpul|menfeet|faiz', 'Hesabatda tab yoxdur — 10 qutu (admin)');
+  ok(await p.isHidden('#rtabs') && await p.locator('#rbody [data-ks]').evaluateAll(b => b.map(x => x.dataset.ks).join('|')) === 'nağd|kart|borc|kassapul|artiq|suppdebt|zay|xerc|anbarpul|menfeet|alver|faiz', 'Hesabatda tab yoxdur — 11 qutu (admin)');
   await p.evaluate(() => repGo('')); await p.evaluate(() => rrSet('all')); ok(!(await p.$('.kback')), 'Ümumi Satış: təfərrüat əvvəl bağlıdır'); await p.click('[data-ks=kart]');
   ok(await p.isVisible('.kback') && (await p.textContent('.kback h3')).includes('Kart satış') && !(await p.$('.kboxes')) && !(await p.$('#k_open')), 'Kart qutusuna basanda tam səhifə: yalnız təfərrüat, qutular və kassa yoxdur');
   await p.click('.kback [data-ks=""]'); ok(!(await p.$('.kback')) && await p.isVisible('.kboxes'), '← Geri: əsas səhifə');
@@ -517,7 +517,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.selectOption('#l_ln_1', 'fk_1015');
   await p.fill('#p_sup', 'Kağız mağazası');
   ok((await p.textContent('#p_grand')).startsWith('52.00'), 'qəbzin cəmi 27 + 25 = 52.00');
-  await p.click('[data-x=psave]'); await p.waitForTimeout(50);
+  await p.click('[data-x=pay][data-p=nağd]'); await p.click('[data-x=psave]'); await p.waitForTimeout(50);
   const kag = await M('A4 ofis kağızı'), cer = await M('Çərçivə 10x15');
   ok(kag && kag.stock === 1500 && Math.abs(kag.cost - 0.018) < 1e-9 && kag.unit === 'vərəq', 'anbar: A4 ofis kağızı 1500 vərəq, maya 0.018');
   ok(cer && cer.stock === 10 && Math.abs(cer.cost - 2.5) < 1e-9, 'anbar: Çərçivə 10 ədəd, maya 2.50');
@@ -555,14 +555,14 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   ok((await p.textContent('#x_cat')).includes('İcarə') && (await p.textContent('#x_cat')).includes('Çay-su'), 'hazır xərc növləri var');
   await p.click('[data-x=xsave]');
   ok((await p.textContent('#toast')).includes('Məbləği yazın'), 'məbləğsiz xərc yazılmır');
-  await p.selectOption('#x_cat', 'Çay-su'); await p.fill('#x_amt', '4.50'); await p.fill('#x_note', 'çay, şəkər');
+  await p.selectOption('#x_cat', 'Çay-su'); await p.fill('#x_amt', '4.50'); await p.fill('#x_note', 'çay, şəkər'); await p.click('[data-x=xpay][data-p=nağd]');
   await p.click('[data-x=xsave]');
   ok((await p.textContent('#expBody')).includes('çay, şəkər') && (await p.textContent('#expBody')).includes('4.50'), 'Çay-su 4.50 nağd yazıldı');
   await p.selectOption('#x_cat', 'İcarə'); await p.fill('#x_amt', '300'); await p.click('[data-x=xpay][data-p=kart]'); await p.check('#x_rec');
   await p.click('[data-x=xsave]');
   ok((await p.textContent('#expBody')).includes('ödənilib') && await p.evaluate(() => S.recurring.length) === 1, 'İcarə 300 kartla + aylıq siyahıya düşdü, bu ay ödənilib görünür');
   ok((await p.textContent('#expBody')).includes('304.50'), 'ayın xərc cəmi 304.50');
-  await p.fill('#x_newcat', 'Nəqliyyat'); await p.click('[data-x=xcat]');
+  await p.click('[data-x=xcatnew]'); await p.fill('#x_newcat', 'Nəqliyyat'); await p.click('[data-x=xcat]');
   ok((await p.textContent('#x_cat')).includes('Nəqliyyat') && (await p.inputValue('#x_cat')) === 'Nəqliyyat', 'yeni xərc növü əlavə olundu və seçildi');
   // keçən ayın icarəsi kimi: təkrarlananı ödəmək
   await p.evaluate(() => { S.expenses = S.expenses.filter(x => !x.rec); });
@@ -572,7 +572,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   const xid = await p.evaluate(() => S.expenses.find(x => x.cat === 'Çay-su').id);
   await p.click(`[data-x=xask][data-id="${xid}"]`); await p.click('[data-x=xdel]');
   ok(!(await p.evaluate(() => S.expenses.some(x => x.cat === 'Çay-su'))), 'xərc silindi (təsdiqlə)');
-  await p.selectOption('#x_cat', 'Çay-su'); await p.fill('#x_amt', '4.50'); await p.click('[data-x=xsave]');
+  await p.selectOption('#x_cat', 'Çay-su'); await p.fill('#x_amt', '4.50'); await p.click('[data-x=xpay][data-p=nağd]'); await p.click('[data-x=xsave]');
   await p.click('#ovExp [data-close]');
   // 💰 Kassa
   await p.click('#btnRep'); await p.evaluate(() => repGo('kassapul'));
@@ -751,8 +751,8 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   ok((await p.textContent('#rbody .kpi.hero')).length > 0 && await p.evaluate(e => { const t = document.querySelector('#rbody .kpi.hero b').textContent; return t.includes(m2(e)) || parseFloat(t) >= e - 0.01; }, exp), 'İşçi faizi: fotosessiya 10% + çap 5%, endirim çıxılır, Samir sayılmır');
   ok((await p.textContent('#rbody')).includes('Hər işçiyə (2 nəfər'), 'ümumi faiz 2 işçiyə bərabər bölünür');
   const nx = await p.evaluate(() => S.expenses.length);
-  await p.click(`[data-cp="${fu[0]}|cib"]`);
-  ok(await p.evaluate(n => { const x = S.expenses.at(-1); return S.expenses.length === n + 1 && x.cat === 'İşçi faizi' && x.pay === 'cib' && x.comm; }, nx), 'Ödə (cibdən) → Xərclərə "İşçi faizi" yazıldı');
+  await p.click(`[data-cp="${fu[0]}|alver"]`);
+  ok(await p.evaluate(n => { const x = S.expenses.at(-1); return S.expenses.length === n + 1 && x.cat === 'İşçi faizi' && x.pay === 'alver' && x.comm; }, nx), 'Ödə (alverdən) → Xərclərə "İşçi faizi" yazıldı');
   await p.click('#ovRep [data-close]');
   // v1.2.0: Ayarlar → Kassirlər: "Kassa açılışı məcburidir" seçimi
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
@@ -762,7 +762,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   ok(await p.evaluate(() => S.kzReq === false) && (await p.textContent('#rbody')).includes('Söndürülüb'), 'söndürüldü (S.kzReq=false)');
   await p.check('#kzReqChk'); await p.click('#ovRep [data-close]');
   // v1.2.1: Mal alışı "👛 Öz cibimdən" — kassa hesabından çıxılmır
-  ok(await p.evaluate(() => { const d = dayKey(Date.now()), k0 = cashDay(d).purch; S.purchases.push({ id: 'puCib', ts: Date.now(), supplier: 'Test', pay: 'cib', paid: false, lines: [], total: 16 }); const k1 = cashDay(d).purch; S.purchases = S.purchases.filter(p => p.id !== 'puCib'); return k0 === k1 && /cibimdən/.test(payPill({ pay: 'cib' })); }), 'Mal alışı "Öz cibimdən": kassadan çıxılmır, etiketi görünür');
+  ok(await p.evaluate(() => { const d = dayKey(Date.now()), k0 = cashDay(d).purch; S.purchases.push({ id: 'puCib', ts: Date.now(), supplier: 'Test', pay: 'alver', paid: false, lines: [], total: 16 }); const k1 = cashDay(d).purch; S.purchases = S.purchases.filter(p => p.id !== 'puCib'); return k0 === k1 && /Ümumi alverdən/.test(payPill({ pay: 'alver' })); }), 'Mal alışı "Ümumi alverdən": kassadan çıxılmır, etiketi görünür');
   // v1.3.0: 💼 Xidmət — adı və qiyməti satanda
   await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); order = []; renderOrder(); });
   ok(await p.evaluate(() => { const x = item('pq_xidmet'); return x && x.name === 'Xidmət' && x.free === 1 && x.noteReq === 1 && !x.recipe.length; }), 'Poliqrafiya → 💼 Xidmət düyməsi (material yoxdur)');
