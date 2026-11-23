@@ -433,22 +433,28 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.click('#ovHist [data-close]');
   await p.evaluate(() => { S.sales.push({ id: 'rr1', ts: Date.now() - 3 * 864e5, worker: 'Admin', pay: 'kart', lines: [{ id: 'x', name: 'Dövr satışı', q: 2, price: 5, sum: 10, cost: 2 }], total: 10 }); });
   await p.click('#btnRep');
-  ok((await p.textContent('#rbody')).includes('Bu gün,') && (await p.textContent('#rbody')).includes('Kassa (yalnız nağd pul)'), 'Hesabat açılır: bu gün, kassa görünür');
+  ok((await p.textContent('#rbody')).includes('Bu gün,') && (await p.textContent('#rbody')).includes('Kassadakı pul') && !(await p.textContent('#rbody')).includes('Kassa (yalnız nağd pul)'), 'Hesabat açılır: bu gün, əsas səhifədə yalnız qutular');
+  await p.evaluate(() => repGo('kassapul')); ok((await p.textContent('#rbody')).includes('Kassa (yalnız nağd pul)'), 'Kassadakı pul səhifəsi');
   await p.evaluate(() => rrSet('week'));
   await p.evaluate(() => rrSet('month'));
   const rb = await p.textContent('#rbody');
   const inMonth = await p.evaluate(() => new Date(Date.now() - 3 * 864e5).getMonth() === new Date().getMonth());
   ok(!inMonth || (rb.includes('Günü seçin') && rb.includes('Kassa hər gün ayrıca')), 'Bu ay: Kassadakı Pul — günlər siyahısı, kassa bir gün üçün');
-  ok(await p.isHidden('#rtabs') && await p.locator('#rbody [data-ks]').evaluateAll(b => b.map(x => x.dataset.ks).join('|')) === 'nağd|kart|borc|artiq|suppdebt|zay|xerc|anbarpul|menfeet|faiz', 'Hesabatda tab yoxdur — 10 qutu (admin)');
-  await p.evaluate(() => rrSet('all')); ok(!(await p.$('.ksub')), 'Ümumi Satış: təfərrüat əvvəl bağlıdır'); await p.click('[data-ks=kart]');
-  ok(await p.isVisible('.ksub') && (await p.textContent('.ksub')).includes('Kart — təfərrüat') && await p.isVisible('[data-ks=kart].on'), 'Kart qutusuna basanda təfərrüat açılır');
+  await p.evaluate(() => repGo(''));
+  ok(await p.isHidden('#rtabs') && await p.locator('#rbody [data-ks]').evaluateAll(b => b.map(x => x.dataset.ks).join('|')) === 'nağd|kart|borc|kassapul|artiq|suppdebt|zay|xerc|anbarpul|menfeet|faiz', 'Hesabatda tab yoxdur — 10 qutu (admin)');
+  await p.evaluate(() => repGo('')); await p.evaluate(() => rrSet('all')); ok(!(await p.$('.kback')), 'Ümumi Satış: təfərrüat əvvəl bağlıdır'); await p.click('[data-ks=kart]');
+  ok(await p.isVisible('.kback') && (await p.textContent('.kback h3')).includes('Kart satış') && !(await p.$('.kboxes')) && !(await p.$('#k_open')), 'Kart qutusuna basanda tam səhifə: yalnız təfərrüat, qutular və kassa yoxdur');
+  await p.click('.kback [data-ks=""]'); ok(!(await p.$('.kback')) && await p.isVisible('.kboxes'), '← Geri: əsas səhifə');
+  await p.click('[data-ks=xerc]'); await p.keyboard.press('Escape'); ok(!(await p.$('.kback')) && await p.isVisible('#ovRep'), 'Esc: geri, Hesabat bağlanmır');
+  await p.click('[data-ks=kassapul]'); ok(await p.isVisible('#k_open'), 'Kassadakı pul qutusu: kassa səhifəsi');
+  await p.evaluate(() => repGo('kart'));
   ok((await p.textContent('#rbody')).includes('Dövr satışı'), 'Kart Satış: bütün dövrdə köhnə satış var');
   await p.click('[data-rr=today]');
   ok(!(await p.textContent('#rbody')).includes('Dövr satışı'), 'Kart Satış: bu gün seçiləndə köhnə satış yoxdur');
-  await p.click('[data-ks="nağd"]');
-  ok(!(await p.textContent('.ksub')).includes('Dövr satışı') && (await p.textContent('.ksub')).includes('Nağd — təfərrüat'), 'Nağd qutusu: kart satışı görünmür');
-  await p.click('[data-ks=borc]'); ok((await p.textContent('.ksub')).includes('Bizə borclular'), 'Nisyə qutusu: müəssisə borcları da görünür');
-  await p.click('[data-ks=borc]'); ok(!(await p.$('.ksub')), 'yenidən basanda təfərrüat bağlanır');
+  await p.evaluate(() => repGo('nağd'));
+  ok(!(await p.textContent('#rbody')).includes('Dövr satışı') && (await p.textContent('#rbody')).includes('Nağd satış — cəmi'), 'Nağd qutusu: kart satışı görünmür');
+  await p.evaluate(() => repGo('borc')); ok((await p.textContent('#rbody')).includes('Bizə borclular'), 'Nisyə qutusu: müəssisə borcları da görünür');
+  await p.evaluate(() => repGo('')); ok(!(await p.$('.kback')), 'repGo("") — əsas səhifə');
   await p.click('#ovRep [data-close]');
   await p.evaluate(() => { S.sales = S.sales.filter(s => s.id !== 'rr1'); });
   await p.click('#btnHist');
@@ -569,7 +575,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.selectOption('#x_cat', 'Çay-su'); await p.fill('#x_amt', '4.50'); await p.click('[data-x=xsave]');
   await p.click('#ovExp [data-close]');
   // 💰 Kassa
-  await p.click('#btnRep'); await p.evaluate(() => { kSub = ''; renderRep(); });
+  await p.click('#btnRep'); await p.evaluate(() => repGo('kassapul'));
   const K = await p.evaluate(() => cashDay(dayKey(Date.now())));
   const expSales = await p.evaluate(() => S.sales.filter(s => s.pay === 'nağd' && new Date(s.ts).toDateString() === new Date().toDateString()).reduce((a, s) => a + s.total, 0));
   ok(Math.abs(K.sales - expSales) < 1e-9 && Math.abs(K.exp - 304.5) < 1e-9 && Math.abs(K.purch - 52) < 1e-9, `kassa: nağd satış ${expSales.toFixed(2)}, nağd alış 52.00 (silinmiş 10 ₼ alış sayılmır), nağd xərc 304.50 (çay 4.50 + icarə 300)`);
@@ -589,20 +595,20 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
     S.waste.push({ ts: prev, mat: 'a4', q: 5, reason: 'Test', worker: 'Admin', cost: 30 });
     S.expenses.push({ id: 'oldx', ts: prev, cat: 'İcarə', amount: 500, pay: 'kart', note: '', rec: null });
   });
-  await p.click('#btnRep'); await p.click('[data-ks=menfeet]'); await p.evaluate(() => rrSet('all'));
+  await p.click('#btnRep'); await p.evaluate(() => repGo('menfeet')); await p.evaluate(() => rrSet('all'));
   const cur = await p.evaluate(() => monthStats()[0]), prv = await p.evaluate(() => monthStats()[1]);
   ok(Math.abs(prv.net - (1000 - 200 - 30 - 500)) < 1e-9, 'keçən ay: 1000 − 200 − 30 − 500 = 270 xalis');
   ok(Math.abs(cur.net - (cur.sales - cur.cost - cur.waste - cur.exp)) < 1e-9 && cur.exp > 0, `bu ay: ${cur.sales.toFixed(2)} − ${cur.cost.toFixed(2)} − ${cur.waste.toFixed(2)} − ${cur.exp.toFixed(2)} = ${cur.net.toFixed(2)}`);
   ok(await p.evaluate(() => monthStats()[0].sales === S.sales.filter(s => monKey(s.ts) === monKey(Date.now())).reduce((a, s) => a + s.total, 0)), 'bu ayın satışı satışların cəmi ilə üst-üstə düşür');
   ok(await p.locator('.mchart rect.s1').count() === 2 && await p.locator('.legend').count() === 1, 'Mənfəət (bütün dövr): qrafik 2 ay, legend var');
   const allNet = await p.evaluate(() => monthStats().reduce((a, m) => a + m.net, 0));
-  ok((await p.textContent('.ksub .kpi.hero')).includes(m2v(allNet)) && (await p.textContent('#rbody')).includes('270.00'), `Mənfəət: ümumi ${allNet.toFixed(2)}, keçən ay 270.00 cədvəldə`);
-  await p.click('[data-ks=xerc]');
+  ok((await p.textContent('#rbody .kpi.hero')).includes(m2v(allNet)) && (await p.textContent('#rbody')).includes('270.00'), `Mənfəət: ümumi ${allNet.toFixed(2)}, keçən ay 270.00 cədvəldə`);
+  await p.evaluate(() => repGo('xerc'));
   ok((await p.textContent('#rbody')).includes('İcarə') && (await p.textContent('#rbody')).includes('500.00'), 'Xərclər tabı: növlər və xərclər bir-bir');
-  await p.click('[data-ks=anbarpul]');
+  await p.evaluate(() => repGo('anbarpul'));
   const stockV = await p.evaluate(() => S.materials.reduce((a, m) => a + Math.max(0, m.stock) * (m.cost || 0), 0));
-  ok((await p.textContent('.ksub .kpi.hero')).includes(m2v(stockV)), `Anbarda qalan pul: ${stockV.toFixed(2)} ₼`);
-  await p.click('[data-ks=zay]');
+  ok((await p.textContent('#rbody .kpi.hero')).includes(m2v(stockV)), `Anbarda qalan pul: ${stockV.toFixed(2)} ₼`);
+  await p.evaluate(() => repGo('zay'));
   ok((await p.textContent('#rbody')).includes('Zay olan pul') && (await p.textContent('#rbody')).includes('Test'), 'Zay olan pul tabı: səbəb üzrə');
   await p.click('#ovRep [data-close]');
 
@@ -708,9 +714,9 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   const k0 = await p.evaluate(() => cashDay(dayKey(Date.now())).should);
   await p.click('#btnDone');
   ok(await p.evaluate(k => { const s = S.sales.at(-1), K = cashDay(dayKey(Date.now())); return s.tip === 1 && s.total === 2 && Math.abs(K.should - k - 3) < 1e-9 && K.tips >= 1; }, k0), 'satışda tip 1.00; kassa +3 (2 satış + 1 çay pulu), satış 2.00');
-  await p.click('#btnRep'); await p.evaluate(() => { kSub = ''; renderRep(); }); await p.click('[data-rr=today]');
+  await p.click('#btnRep'); await p.evaluate(() => repGo('kassapul')); await p.click('[data-rr=today]');
   ok((await p.textContent('.kassa')).includes('Artıq ödəmə'), 'kassa hesabında + 🪙 Artıq ödəmə sətri');
-  await p.click('[data-ks=artiq]');
+  await p.evaluate(() => repGo('artiq'));
   { const t = await p.textContent('#rbody'); ok(t.includes('Kassirlər üzrə') && t.includes('Günlər üzrə') && t.includes('Aylar üzrə') && t.includes('Vafli') && t.includes('1.00'), 'Hesabat → 🪙 Artıq ödəmə: kassir, gün, ay, xidmət (Vafli) üzrə'); }
   { const b0 = await p.evaluate(() => { const r = document.querySelector('#ovRep .modal').getBoundingClientRect(); return [r.x, r.y]; });
     const hb = await p.locator('#ovRep .mh h3').boundingBox(); await p.mouse.move(hb.x + 5, hb.y + 5); await p.mouse.down(); await p.mouse.move(hb.x - 95, hb.y + 45, { steps: 5 }); await p.mouse.up();
@@ -737,12 +743,12 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
     const k = S.users.filter(u => u.role !== 'admin'); if (k.length < 2) { S.users.push({ id: 'uF1', name: 'Fərid', role: 'kassir', perms: {} }, { id: 'uF2', name: 'Aysel', role: 'kassir', perms: {} }); }
     const now = Date.now(); S.sales.push({ id: 'fz1', ts: now, worker: 'Admin', pay: 'nağd', total: 90, sub: 100, disc: 10, lines: [{ id: 'ss_1', name: 'Fotosessiya', q: 1, sum: 50, cost: 0 }, { id: 'a4s_bw', name: 'A4', q: 500, sum: 50, cost: 0 }] },
       { id: 'fz2', ts: now, worker: 'Admin', pay: 'nağd', total: 20, lines: [{ id: 'fk_1521', name: 'Foto 15x21', q: 20, sum: 20, cost: 0, from: 'sp1', scost: 9 }] }); save(); });
-  await p.click('#btnRep'); await p.click('[data-ks=faiz]'); await p.click('[data-rr=today]');
+  await p.click('#btnRep'); await p.evaluate(() => repGo('faiz')); await p.click('[data-rr=today]');
   const fu = await p.evaluate(() => S.users.filter(u => u.role !== 'admin').slice(0, 2).map(u => u.id));
   for (const id of fu) await p.check(`[data-cu="${id}"]`);
   const fz = await p.evaluate(() => { const st = item('ss_1').cat, a4 = item('a4s_bw').cat; return { st, a4 }; });
   const exp = (fz.st === 'studiya' ? 50 * 0.9 * 0.10 : 50 * 0.9 * 0.05) + 50 * 0.9 * 0.05;
-  ok((await p.textContent('.ksub .kpi.hero')).length > 0 && await p.evaluate(e => { const t = document.querySelector('.ksub .kpi.hero b').textContent; return t.includes(m2(e)) || parseFloat(t) >= e - 0.01; }, exp), 'İşçi faizi: fotosessiya 10% + çap 5%, endirim çıxılır, Samir sayılmır');
+  ok((await p.textContent('#rbody .kpi.hero')).length > 0 && await p.evaluate(e => { const t = document.querySelector('#rbody .kpi.hero b').textContent; return t.includes(m2(e)) || parseFloat(t) >= e - 0.01; }, exp), 'İşçi faizi: fotosessiya 10% + çap 5%, endirim çıxılır, Samir sayılmır');
   ok((await p.textContent('#rbody')).includes('Hər işçiyə (2 nəfər'), 'ümumi faiz 2 işçiyə bərabər bölünür');
   const nx = await p.evaluate(() => S.expenses.length);
   await p.click(`[data-cp="${fu[0]}|cib"]`);
@@ -772,7 +778,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.click('#ovM2 [data-close], #ovM2 [data-m2x]').catch(() => {}); await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); order = []; renderOrder(); });
   // v1.5.0: Hesabat bölmələri bağlı, ▸ ilə açılır; dövr: Bu gün / Dünən / Gün seç / Tarix aralığı
   await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); window.REP_FORCE_CLOSED = 1; });
-  await p.click('#btnRep'); await p.click('[data-ks=zay]');
+  await p.click('#btnRep'); await p.evaluate(() => repGo('zay'));
   ok(await p.evaluate(() => { const d = [...document.querySelectorAll('#rbody details.rsec')]; return d.length >= 2 && d.every(x => !x.open); }), 'Hesabat bölmələri bağlı gəlir (▸)');
   await p.click('#rbody details.rsec > summary');
   ok(await p.evaluate(() => document.querySelector('#rbody details.rsec').open), 'başlığa basanda açılır');
@@ -782,8 +788,8 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.evaluate(() => { window.REP_FORCE_CLOSED = 0; document.querySelectorAll('.ov').forEach(o => o.hidden = true); });
   // v0.74.0: 💰 Mənfəət tabı
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
-  await p.click('#btnRep'); await p.click('[data-ks=menfeet]'); await p.evaluate(() => rrSet('month'));
-  ok(await p.evaluate(() => { const m = monthStats()[0]; return document.querySelector('.ksub .kpi.hero').textContent.includes(m2(m.net)); }), 'Mənfəət tabı (bu ay) = monthStats net');
+  await p.click('#btnRep'); await p.evaluate(() => repGo('menfeet')); await p.evaluate(() => rrSet('month'));
+  ok(await p.evaluate(() => { const m = monthStats()[0]; return document.querySelector('#rbody .kpi.hero').textContent.includes(m2(m.net)); }), 'Mənfəət tabı (bu ay) = monthStats net');
   await p.click('#ovRep [data-close]');
 
   // v0.73.0: ☀️/🌙 mövzu
@@ -825,7 +831,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.fill('#kz_cnt', m2v(sh - 25));
   ok((await p.textContent('#kzLive')).includes('Düzdür'), 'eyni məbləğ sayılanda: ✓ Düzdür');
   await p.click('[data-kz=open]');
-  await p.click('#btnRep'); await p.evaluate(() => { kSub = ''; renderRep(); }); await p.click('[data-rr=today]');
+  await p.click('#btnRep'); await p.evaluate(() => repGo('kassapul')); await p.click('[data-rr=today]');
   const kb = await p.textContent('#rbody');
   ok(kb.includes('Təhvil-təslim') && kb.includes('xırda pul') && kb.includes('Sahibə verilən'), 'Hesabat → Kassadakı Pul: təhvil-təslim jurnalı');
   const kn0 = await p.evaluate(() => kzLog().length), kcid = await p.evaluate(() => kzLog().find(x => x.t === 'close').id);
@@ -842,7 +848,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.click('#ovKassa [data-max]');
   await p.fill('#kz_cnt', '50'); await p.click('[data-kz=open]');
   ok(await p.evaluate(() => kzOpen() && kzLast().from === 'Leyla' && kzLast().diff === 0), 'Leyladan 50 ₼ təhvil alındı, fərq yoxdur');
-  await p.click('#btnRep'); await p.evaluate(() => { kSub = ''; renderRep(); });
+  await p.click('#btnRep'); await p.evaluate(() => repGo('kassapul'));
   await p.click('#ovRep [data-close]');
   ok(errs.length === 0, 'JS xətası yoxdur ' + (errs.join('; ') || ''));
   await b.close();

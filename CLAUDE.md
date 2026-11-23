@@ -204,6 +204,10 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   `.kboxes` (4 sütun, son sıra ortada): Artıq ödəmə, Bizim borclarımız, Zay, Xərclər, Anbarda qalan pul, Xalis Gəlir, İşçi faizi — icazəyə görə (`repTabs()`/`TAB_PERM` hələ işləyir), qutuda əsas rəqəm.
   Qutuya basanda (`data-ks`=bölmə açarı, `kSub`) köhnə tab kodu `rt=kSub` ilə işləyir (`if(rt==="xerc")`…), nəticə `.ksub`-a qoyulur (`hk` + `%%KSUB%%`). `reports` icazəsi yoxdursa yalnız qutular.
   Testlər: `[data-ks=xerc]` ilə; "kassa"-ya qayıtmaq `kSub="";renderRep()`.
+- **v1.8.0 (sahibinin istəyi: "aşağı sürüşdürməyim, bölmə açılan kimi tam səhifə olsun"):** qutuya basanda (`repGo(k)`, `data-ks`) Hesabat **tam səhifə** — yalnız o bölmə
+  (`rt=kSub`), yuxarıda `.kback` "← Geri" (`data-ks=""`) + ad + dövr çubuğu (anbarpul-da yox); Esc əsas səhifəyə qaytarır (Hesabat bağlanmır); səhifə yuxarıdan açılır.
+  Əsas səhifədə yalnız qutular (bir ekrana sığır): kassa hissəsi ayrıca qutu **💰 Kassadakı pul** `kassapul` (icazə `reports`; dəyər `cashDay(gün).should`). Admin 4+4+4.
+  Testlər `repGo('xerc')` / `repGo('')` çağırır. `.ksub`, `%%KSUB%%` artıq yoxdur.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
