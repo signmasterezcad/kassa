@@ -365,6 +365,21 @@ let n = 0;
   ok(await p.evaluate(() => S.expCats.includes('Sifarişli çərçivə') && $('x_cat').value === 'Sifarişli çərçivə' && !$('x_newcat')), 'v1.10.2: "＋ Yeni növ" ilə əlavə olunur və seçilir');
   await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
 
+  // v1.10.3: xərc növünün adını dəyişmək / silmək (admin)
+  await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); S.expCats.splice(S.expCats.length - 1, 0, '50x70 Sadə Yastı Qara');
+    S.expenses.push({ id: 'xRen', ts: Date.now(), cat: '50x70 Sadə Yastı Qara', amount: 7, pay: 'nağd', note: '', rec: null, worker: curName() });
+    openExp(); etab = 'other'; ed.cat = '50x70 Sadə Yastı Qara'; renderExp(); });
+  await p.click('[data-x=xcatren]'); await p.fill('#x_newcat', 'Sifarişli çərçivə 2'); await p.keyboard.press('Enter');
+  ok(await p.evaluate(() => S.expCats.includes('Sifarişli çərçivə 2') && !S.expCats.includes('50x70 Sadə Yastı Qara') && S.expenses.find(x => x.id === 'xRen').cat === 'Sifarişli çərçivə 2'), 'v1.10.3: növün adı dəyişdi, köhnə xərc də yeni adla');
+  await p.click('[data-x=xcatdel]');
+  ok(await p.evaluate(() => S.expCats.includes('Sifarişli çərçivə 2')) && (await p.textContent('#toast')).includes('silmək olmaz'), 'v1.10.3: xərc yazılmış növ silinmir');
+  await p.evaluate(() => { S.expCats.splice(S.expCats.length - 1, 0, 'Boş növ'); ed.cat = 'Boş növ'; renderExp(); });
+  await p.click('[data-x=xcatdel]'); await p.click('[data-x=xcatdel]');
+  ok(await p.evaluate(() => !S.expCats.includes('Boş növ')), 'v1.10.3: boş növ iki kliklə silinir');
+  await p.evaluate(() => { ed.cat = 'Digər'; renderExp(); });
+  ok(!(await p.$('[data-x=xcatren]')), 'v1.10.3: "Digər" növünü dəyişmək olmur');
+  await p.evaluate(() => { S.expenses = S.expenses.filter(x => x.id !== 'xRen'); S.expCats = S.expCats.filter(c => c !== 'Sifarişli çərçivə 2'); document.querySelectorAll('.ov').forEach(o => o.hidden = true); });
+
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();

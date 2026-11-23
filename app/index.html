@@ -737,7 +737,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.10.2";
+const APP_VERSION="1.10.3";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2589,7 +2589,9 @@ const saleItems=()=>S.items.filter(i=>!i.group).map(i=>({id:i.id,label:pathOf(i)
 function renderDebtBadge(){const d=purchDebt();$("debtBadge").hidden=!d;$("debtBadge").textContent="borc "+m2(d)+" ₼"}
 function openExp(){if(!pd)pd=newPd();etab="buy";pDel=null;renderExp();$("ovExp").hidden=false}
 function lineCalc(l){const qty=(+l.packs||0)*(+l.perPack||0),tot=+l.total||0;return{qty,tot,unit:qty?tot/qty:0}}
-let catNew=false;
+let catNew=false,catDelAsk=null;
+// Bu növləri dəyişmək / silmək olmaz: proqram onları adla tanıyır (İşçi faizi, Maaş) və "Digər" həmişə qalmalıdır
+const CAT_LOCK=["Digər","Maaş","İşçi faizi"];
 document.addEventListener("keydown",e=>{if(e.target.id==="x_newcat"&&e.key==="Enter"){e.preventDefault();document.querySelector('[data-x="xcat"]')?.click()}});
 const EXP_PERM={buy:"expBuy",phist:"expBuy",debt:"expDebt",other:"expOther"};
 function renderExp(){
@@ -2656,13 +2658,13 @@ function renderExp(){
       <div class="frow">
         <label class="f">Tarix<input type="date" id="x_day" value="${ed.day}"></label>
         <div class="f" style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)">Növ<select id="x_cat">${S.expCats.map(c=>`<option ${c===ed.cat?"selected":""}>${esc(c)}</option>`).join("")}</select>
-          <button class="link sm" data-x="xcatnew" style="align-self:flex-start;margin-top:2px">＋ Yeni növ</button></div>
+          <span class="frow" style="gap:12px;margin-top:2px"><button class="link sm" data-x="xcatnew">＋ Yeni növ</button>${isAdmin()&&!CAT_LOCK.includes(ed.cat)?`<button class="link sm" data-x="xcatren">✏️ Adını dəyiş</button><button class="link sm" data-x="xcatdel">${catDelAsk===ed.cat?"Bəli, sil?":"🗑 Sil"}</button>`:""}</span></div>
         <label class="f xs">Məbləğ ₼<input id="x_amt" type="number" min="0" step="0.01" value="${ed.amount}" placeholder="0.00"></label>
         <div class="f"><span class="sub">Ödəniş</span><div class="frow">${[["nağd","💵 Nağd (kassadan)"],["cib","👛 Öz cibimdən"],["kart","💳 Kart"]].map(([k,l])=>`<button class="tab sm ${ed.pay===k?"on":""}" data-x="xpay" data-p="${k}">${l}</button>`).join("")}</div></div>
         <label class="f grow">Qeyd (istəyə görə)<input id="x_note" value="${esc(ed.note)}" placeholder="məs. Leylanın noyabr maaşı"></label>
       </div>
-      ${catNew?`<div class="frow newcat"><label class="f grow">Yeni xərc növünün adı<input id="x_newcat" placeholder="məs. Sifarişli çərçivə, Nəqliyyat"></label>
-        <button class="btn sm" data-x="xcat">✓ Əlavə et</button><button class="btn ghost sm" data-x="xcatx">Ləğv</button></div>`:""}
+      ${catNew?`<div class="frow newcat"><label class="f grow">${catNew==="ren"?`"${esc(ed.cat)}" növünün yeni adı`:"Yeni xərc növünün adı"}<input id="x_newcat" value="${catNew==="ren"?esc(ed.cat):""}" placeholder="məs. Sifarişli çərçivə, Nəqliyyat"></label>
+        <button class="btn sm" data-x="xcat">✓ ${catNew==="ren"?"Yadda saxla":"Əlavə et"}</button><button class="btn ghost sm" data-x="xcatx">Ləğv</button></div>`:""}
       <div class="frow"><label class="chk"><input type="checkbox" id="x_rec" ${ed.rec?"checked":""}> Hər ay təkrarlanır (icarə, maaş kimi) — siyahıya əlavə et</label>
         <span class="grow"></span><button class="btn" data-x="xsave">✓ Xərci yaz</button></div>
     </div>
@@ -2771,8 +2773,15 @@ document.addEventListener("click",e=>{
   else if(a==="xdel"){const x=S.expenses.find(y=>y.id===t.dataset.id);if(!canDelRec(x))return;if(x?.supp&&x.pay==="nisyə"&&suppOwed(x.supp)-x.amount<-0.004){toast("Bu nisyə alış üçün artıq ödəniş edilib. Əvvəlcə 🚚 Tədarükçü → 💳 Borclar-da ödənişi silin");return}S.expenses=S.expenses.filter(y=>y.id!==t.dataset.id);eDel=null;save();toast(`Xərc silindi: ${x?.cat} ${m2(x?.amount||0)} ₼`)}
   else if(a==="rpay"){if(!can("expOther"))return;const r=S.recurring.find(y=>y.id===t.dataset.id);if(r){S.expenses.push({id:newId("x"),ts:Date.now(),cat:r.cat,amount:r.amount,pay:t.dataset.by,note:r.note,rec:r.id,worker:curName()});save();toast(`${r.cat}: ${m2(r.amount)} ₼ ödənildi ✓`)}}
   else if(a==="rdel"){if(!can("expOther"))return;syncEd();const k="r"+t.dataset.id;if(eDel!==k)eDel=k;else{S.recurring=S.recurring.filter(y=>y.id!==t.dataset.id);eDel=null;save();toast("Aylıq siyahıdan çıxarıldı (keçmiş ödənişlər qalır)")}}
-  else if(a==="xcatnew"){syncEd();catNew=true;renderExp();setTimeout(()=>$("x_newcat")?.focus(),0);return}
+  else if(a==="xcatnew"||a==="xcatren"){syncEd();catNew=a==="xcatren"?"ren":"new";catDelAsk=null;renderExp();setTimeout(()=>{const i=$("x_newcat");if(i){i.focus();i.select()}},0);return}
+  else if(a==="xcatdel"){syncEd();const c=ed.cat;if(!isAdmin()||CAT_LOCK.includes(c))return;const n=S.expenses.filter(x=>x.cat===c).length+(S.recurring||[]).filter(r=>r.cat===c).length;
+    if(n){toast(`"${c}" növündə ${n} xərc yazılıb — silmək olmaz. Adını dəyişə bilərsiniz.`);catDelAsk=null}
+    else if(catDelAsk!==c){catDelAsk=c}else{S.expCats=S.expCats.filter(x=>x!==c);ed.cat=S.expCats[0];catDelAsk=null;save();toast(`"${c}" növü silindi`)}}
   else if(a==="xcatx"){syncEd();catNew=false}
+  else if(a==="xcat"&&catNew==="ren"){syncEd();const old=ed.cat,n=($("x_newcat")?.value||"").trim();if(!n){toast("Növün adını yazın");$("x_newcat")?.focus();return}
+    if(!isAdmin()||CAT_LOCK.includes(old)){catNew=false}else if(n===old){catNew=false}else if(S.expCats.includes(n)){toast(`"${n}" adlı növ artıq var — başqa ad yazın`);return}
+    else{S.expCats=S.expCats.map(x=>x===old?n:x);let k=0;S.expenses.forEach(x=>{if(x.cat===old){x.cat=n;k++}});(S.recurring||[]).forEach(r=>{if(r.cat===old)r.cat=n});
+      ed.cat=n;catNew=false;save();toast(`✓ "${old}" → "${n}"`+(k?` (${k} köhnə xərc də dəyişdi)`:""))}}
   else if(a==="xcat"){syncEd();const n=($("x_newcat")?.value||"").trim();if(!n){toast("Növün adını yazın");$("x_newcat")?.focus();return}
     if(S.expCats.includes(n)){ed.cat=n;catNew=false;toast(`"${n}" artıq var — seçildi`)}else{S.expCats.splice(S.expCats.length-1,0,n);ed.cat=n;catNew=false;save();toast(`"${n}" növü əlavə olundu və seçildi`)}}
   else if(a==="paydebt"){if(!can("expDebt"))return;const p=S.purchases.find(x=>x.id===t.dataset.id);if(p){p.paid=true;p.paidTs=Date.now();p.paidBy=t.dataset.by;save();renderDebtBadge();toast(`Borc ödənildi ✓ ${m2(p.total)} ₼`)}}
@@ -2781,7 +2790,8 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("input",e=>{if(etab==="buy"&&$("expBody").contains(e.target)&&e.target.dataset.li!==undefined)updCalc()});
 document.addEventListener("change",e=>{if(etab==="buy"&&(e.target.dataset?.x==="matsel"||/^l_un_/.test(e.target.id))){syncPd();renderExp()}
-  if(e.target.id==="x_mon"){syncEd();eMon=e.target.value;eDel=null;renderExp()}});
+  if(e.target.id==="x_mon"){syncEd();eMon=e.target.value;eDel=null;renderExp()}
+  if(e.target.id==="x_cat"){syncEd();catDelAsk=null;if(catNew==="ren")catNew=false;renderExp()}});
 
 // ---------- 🏢 Borclular: daimi müştərilər (müəssisələr) borca alır ----------
 // Satış pay:"borc", cust: müştəri id. Satış həmin gün satış/mənfəət sayılır, kassaya pul alınanda düşür (S.custPays).
