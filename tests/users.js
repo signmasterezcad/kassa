@@ -388,6 +388,15 @@ let n = 0;
   ok(await p.evaluate(() => S.expenses.some(x => x.cat === '50x70 Çərçivə (Sadə Yastı Qara)' && x.amount === 105)), 'v1.10.5: xərc seçilən növlə yazılır');
   await p.evaluate(() => { S.expenses = S.expenses.filter(x => x.cat !== '50x70 Çərçivə (Sadə Yastı Qara)'); S.expCats = S.expCats.filter(c => c !== '50x70 Çərçivə (Sadə Yastı Qara)'); document.querySelectorAll('.ov').forEach(o => o.hidden = true); });
 
+  // v1.10.6: adında iki boşluq olan növ (sahibinin videosu: Sil basanda siyahı "Maaş"a qayıdırdı)
+  {const r = await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true);
+    S.expCats.splice(S.expCats.length - 1, 0, 'Test  İki Boşluq '); S.expenses.push({ id: 'xWs', ts: Date.now(), cat: 'Test  İki Boşluq ', amount: 1, pay: 'nağd', note: '', rec: null });
+    openExp(); etab = 'other'; ed.cat = 'Test  İki Boşluq '; renderExp(); const shown = $('x_cat').value === ed.cat;
+    delete S.mig.expCatWs; upgrade(); const clean = S.expCats.includes('Test İki Boşluq') && S.expenses.find(x => x.id === 'xWs').cat === 'Test İki Boşluq';
+    S.expenses = S.expenses.filter(x => x.id !== 'xWs'); S.expCats = S.expCats.filter(c => c !== 'Test İki Boşluq'); document.querySelectorAll('.ov').forEach(o => o.hidden = true);
+    return shown && clean; });
+  ok(r, 'v1.10.6: artıq boşluqlu növ siyahıda düz seçilir; köhnə adlar bir dəfə təmizlənir');}
+
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();

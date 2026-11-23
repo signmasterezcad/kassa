@@ -737,7 +737,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.10.5";
+const APP_VERSION="1.10.6";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1089,6 +1089,9 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   if(!S.shopId)S.shopId=CLOUD_SHOP;
   if(!S.mig.branches){S.mig.branches=1;if(!S.branches?.length)S.branches=[{id:"main",name:"Hövsan"},{id:"mida1",name:"Mida"}]}
   // v0.97.0: yeni satış düyməsi icazələri — mövcud kassirlərə açıq verilir (əvvəlki kimi işləsin), admin bağlaya bilər
+  // v1.10.6: xərc növlərinin adında artıq boşluq (iki boşluq, sonda boşluq) siyahıda seçimi pozurdu — bir dəfə təmizlə (xərclərin və aylıqların adı da)
+  if(!S.mig.expCatWs&&S.expCats){S.mig.expCatWs=1;const N=c=>String(c).replace(/\s+/g," ").trim();
+    S.expCats=[...new Set(S.expCats.map(N))];(S.expenses||[]).forEach(x=>{if(typeof x.cat==="string")x.cat=N(x.cat)});(S.recurring||[]).forEach(r=>{if(typeof r.cat==="string")r.cat=N(r.cat)})}
   if(!S.mig.payPerms&&S.users){S.mig.payPerms=1;S.users.forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};["tip","payCard","paySplit","clearOrder"].forEach(k=>{if(u.perms[k]===undefined)u.perms[k]=1})}})}
   // v1.9.0 (sahibinin istəyi): icazələr ayrıca qutulara bölündü — köhnə kassir heç nə itirmir (hər kassirdə bir dəfə, _v2 işarəsi; şöbələr ayrı olduğu üçün mig bayrağı yox)
   (S.users||[]).forEach(u=>{if(u.role==="admin")return;const P=u.perms=u.perms||{};if(P._v2)return;P._v2=1;
@@ -2662,7 +2665,7 @@ function renderExp(){
     <div class="editor">
       <div class="frow">
         <label class="f">Tarix<input type="date" id="x_day" value="${ed.day}"></label>
-        <div class="f" style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)">Növ<select id="x_cat">${S.expCats.map(c=>`<option ${c===ed.cat?"selected":""}>${esc(c)}</option>`).join("")}</select>
+        <div class="f" style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)">Növ<select id="x_cat">${S.expCats.map(c=>`<option value="${esc(c)}" ${c===ed.cat?"selected":""}>${esc(c)}</option>`).join("")}</select>
           <span class="frow" id="x_catlinks" style="gap:12px;margin-top:2px">${catLinks()}</span></div>
         <label class="f xs">Məbləğ ₼<input id="x_amt" type="number" min="0" step="0.01" value="${ed.amount}" placeholder="0.00"></label>
         <div class="f"><span class="sub">Ödəniş</span><div class="frow">${[["nağd","💵 Nağd (kassadan)"],["cib","👛 Öz cibimdən"],["kart","💳 Kart"]].map(([k,l])=>`<button class="tab sm ${ed.pay===k?"on":""}" data-x="xpay" data-p="${k}">${l}</button>`).join("")}</div></div>
@@ -2784,11 +2787,11 @@ document.addEventListener("click",e=>{
     if(n){toast(`"${c}" növündə ${n} xərc yazılıb — silmək olmaz. Adını dəyişə bilərsiniz.`);catDelAsk=null}
     else if(catDelAsk!==c){catDelAsk=c}else{S.expCats=S.expCats.filter(x=>x!==c);ed.cat=S.expCats[0];catDelAsk=null;save();toast(`"${c}" növü silindi`)}}
   else if(a==="xcatx"){syncEd();catNew=false}
-  else if(a==="xcat"&&catNew==="ren"){syncEd();const old=ed.cat,n=($("x_newcat")?.value||"").trim();if(!n){toast("Növün adını yazın");$("x_newcat")?.focus();return}
+  else if(a==="xcat"&&catNew==="ren"){syncEd();const old=ed.cat,n=($("x_newcat")?.value||"").replace(/\s+/g," ").trim();if(!n){toast("Növün adını yazın");$("x_newcat")?.focus();return}
     if(!isAdmin()||CAT_LOCK.includes(old)){catNew=false}else if(n===old){catNew=false}else if(S.expCats.includes(n)){toast(`"${n}" adlı növ artıq var — başqa ad yazın`);return}
     else{S.expCats=S.expCats.map(x=>x===old?n:x);let k=0;S.expenses.forEach(x=>{if(x.cat===old){x.cat=n;k++}});(S.recurring||[]).forEach(r=>{if(r.cat===old)r.cat=n});
       ed.cat=n;catNew=false;save();toast(`✓ "${old}" → "${n}"`+(k?` (${k} köhnə xərc də dəyişdi)`:""))}}
-  else if(a==="xcat"){syncEd();const n=($("x_newcat")?.value||"").trim();if(!n){toast("Növün adını yazın");$("x_newcat")?.focus();return}
+  else if(a==="xcat"){syncEd();const n=($("x_newcat")?.value||"").replace(/\s+/g," ").trim();if(!n){toast("Növün adını yazın");$("x_newcat")?.focus();return}
     if(S.expCats.includes(n)){ed.cat=n;catNew=false;toast(`"${n}" artıq var — seçildi`)}else{S.expCats.splice(S.expCats.length-1,0,n);ed.cat=n;catNew=false;save();toast(`"${n}" növü əlavə olundu və seçildi`)}}
   else if(a==="paydebt"){if(!can("expDebt"))return;const p=S.purchases.find(x=>x.id===t.dataset.id);if(p){p.paid=true;p.paidTs=Date.now();p.paidBy=t.dataset.by;save();renderDebtBadge();toast(`Borc ödənildi ✓ ${m2(p.total)} ₼`)}}
   renderExp();
