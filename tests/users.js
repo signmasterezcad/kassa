@@ -359,6 +359,12 @@ let n = 0;
   ok(r.empty, 'v1.10.1: boş sifarişdə satış yazılmır');
   ok(r.cost, 'v1.10.1: köhnə alış (əvvəlki maya yazılmayıb) silinəndə maya pozulmur');}
 
+  // v1.10.2: yeni xərc növü "Növ" siyahısının yanında
+  await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); openExp(); etab = 'other'; renderExp(); });
+  await p.click('[data-x=xcatnew]'); await p.fill('#x_newcat', 'Sifarişli çərçivə'); await p.keyboard.press('Enter');
+  ok(await p.evaluate(() => S.expCats.includes('Sifarişli çərçivə') && $('x_cat').value === 'Sifarişli çərçivə' && !$('x_newcat')), 'v1.10.2: "＋ Yeni növ" ilə əlavə olunur və seçilir');
+  await p.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.hidden = true));
+
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();
