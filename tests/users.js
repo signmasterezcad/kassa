@@ -380,6 +380,14 @@ let n = 0;
   ok(!(await p.$('[data-x=xcatren]')), 'v1.10.3: "Digər" növünü dəyişmək olmur');
   await p.evaluate(() => { S.expenses = S.expenses.filter(x => x.id !== 'xRen'); S.expCats = S.expCats.filter(c => c !== 'Sifarişli çərçivə 2'); document.querySelectorAll('.ov').forEach(o => o.hidden = true); });
 
+  // v1.10.5: növ seçiləndə siyahı yenidən çəkilmir (Windows-da açıq siyahıda seçim itirdi)
+  await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); S.expCats.splice(S.expCats.length - 1, 0, '50x70 Çərçivə (Sadə Yastı Qara)'); openExp(); etab = 'other'; ed.cat = 'Maaş'; renderExp(); $('x_cat').dataset.mark = '1'; });
+  await p.selectOption('#x_cat', '50x70 Çərçivə (Sadə Yastı Qara)');
+  ok(await p.evaluate(() => ed.cat === '50x70 Çərçivə (Sadə Yastı Qara)' && $('x_cat').dataset.mark === '1' && !!document.querySelector('[data-x=xcatren]')), 'v1.10.5: növ seçilir, siyahı yerində qalır, Adını dəyiş düyməsi görünür');
+  await p.fill('#x_amt', '105'); await p.click('[data-x=xsave]');
+  ok(await p.evaluate(() => S.expenses.some(x => x.cat === '50x70 Çərçivə (Sadə Yastı Qara)' && x.amount === 105)), 'v1.10.5: xərc seçilən növlə yazılır');
+  await p.evaluate(() => { S.expenses = S.expenses.filter(x => x.cat !== '50x70 Çərçivə (Sadə Yastı Qara)'); S.expCats = S.expCats.filter(c => c !== '50x70 Çərçivə (Sadə Yastı Qara)'); document.querySelectorAll('.ov').forEach(o => o.hidden = true); });
+
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();

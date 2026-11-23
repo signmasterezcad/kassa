@@ -737,7 +737,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.10.4";
+const APP_VERSION="1.10.5";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2590,6 +2590,7 @@ function renderDebtBadge(){const d=purchDebt();$("debtBadge").hidden=!d;$("debtB
 function openExp(){if(!pd)pd=newPd();etab="buy";pDel=null;renderExp();$("ovExp").hidden=false}
 function lineCalc(l){const qty=(+l.packs||0)*(+l.perPack||0),tot=+l.total||0;return{qty,tot,unit:qty?tot/qty:0}}
 let catNew=false,catDelAsk=null;
+const catLinks=()=>`<button class="link sm" data-x="xcatnew">＋ Yeni növ</button>${isAdmin()&&!CAT_LOCK.includes(ed.cat)?`<button class="link sm" data-x="xcatren">✏️ Adını dəyiş</button><button class="link sm" data-x="xcatdel">${catDelAsk===ed.cat?"Bəli, sil?":"🗑 Sil"}</button>`:""}`;
 // v1.10.4 (sahibinin istəyi): Digər xərclər-də siyahı və növlər bağlı gəlir, ▸ ilə açılır; açıq qalan yadda saxlanır
 let expOpen=new Set();try{expOpen=new Set(JSON.parse(localStorage.getItem("kassa.expOpen")||"[]"))}catch(e){}
 const expOpenAttr=k=>(navigator.webdriver&&!window.REP_FORCE_CLOSED)||expOpen.has(k)?"open":"";
@@ -2662,7 +2663,7 @@ function renderExp(){
       <div class="frow">
         <label class="f">Tarix<input type="date" id="x_day" value="${ed.day}"></label>
         <div class="f" style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)">Növ<select id="x_cat">${S.expCats.map(c=>`<option ${c===ed.cat?"selected":""}>${esc(c)}</option>`).join("")}</select>
-          <span class="frow" style="gap:12px;margin-top:2px"><button class="link sm" data-x="xcatnew">＋ Yeni növ</button>${isAdmin()&&!CAT_LOCK.includes(ed.cat)?`<button class="link sm" data-x="xcatren">✏️ Adını dəyiş</button><button class="link sm" data-x="xcatdel">${catDelAsk===ed.cat?"Bəli, sil?":"🗑 Sil"}</button>`:""}</span></div>
+          <span class="frow" id="x_catlinks" style="gap:12px;margin-top:2px">${catLinks()}</span></div>
         <label class="f xs">Məbləğ ₼<input id="x_amt" type="number" min="0" step="0.01" value="${ed.amount}" placeholder="0.00"></label>
         <div class="f"><span class="sub">Ödəniş</span><div class="frow">${[["nağd","💵 Nağd (kassadan)"],["cib","👛 Öz cibimdən"],["kart","💳 Kart"]].map(([k,l])=>`<button class="tab sm ${ed.pay===k?"on":""}" data-x="xpay" data-p="${k}">${l}</button>`).join("")}</div></div>
         <label class="f grow">Qeyd (istəyə görə)<input id="x_note" value="${esc(ed.note)}" placeholder="məs. Leylanın noyabr maaşı"></label>
@@ -2796,7 +2797,7 @@ document.addEventListener("click",e=>{
 document.addEventListener("input",e=>{if(etab==="buy"&&$("expBody").contains(e.target)&&e.target.dataset.li!==undefined)updCalc()});
 document.addEventListener("change",e=>{if(etab==="buy"&&(e.target.dataset?.x==="matsel"||/^l_un_/.test(e.target.id))){syncPd();renderExp()}
   if(e.target.id==="x_mon"){syncEd();eMon=e.target.value;eDel=null;renderExp()}
-  if(e.target.id==="x_cat"){syncEd();catDelAsk=null;if(catNew==="ren")catNew=false;renderExp()}});
+  if(e.target.id==="x_cat"){ed.cat=e.target.value;catDelAsk=null;if(catNew==="ren"){catNew=false;document.querySelector("#expBody .newcat")?.remove()}const L=$("x_catlinks");if(L)L.innerHTML=catLinks()}});
 
 // ---------- 🏢 Borclular: daimi müştərilər (müəssisələr) borca alır ----------
 // Satış pay:"borc", cust: müştəri id. Satış həmin gün satış/mənfəət sayılır, kassaya pul alınanda düşür (S.custPays).
