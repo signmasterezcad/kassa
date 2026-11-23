@@ -34,17 +34,17 @@ details.rsec[open]{padding-bottom:10px}
 <style>
 /* Layout: kassir ekranı — solda kateqoriya + böyük düymələr, sağda cari sifariş; modal pəncərələr zay və hesabat üçün */
 :root{
-  --bg:#0f141b; --panel:#171e28; --panel2:#1e2733; --line:#2b3644; --fg:#e8edf3; --muted:#8d9aab;
+  --bg:#0f141b; --panel:#171e28; --panel2:#1e2733; --line:#2b3644; --fg:#e8edf3; --muted:#8d9aab; --pmix:30%; --pbase:#1e2733; --ptext:#fff; --ptmix:45%;
   --ok:#22a35a; --ok-soft:#173a28; --warn:#e0a22b; --bad:#e0524a; --accent:#3d7ef0;
   --series-1:#3987e5; --series-2:#d95926; --grid:#2b3644;
   --font:"Noto Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   color-scheme:dark;
 }
 @media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
-  --bg:#eef1f5; --panel:#ffffff; --panel2:#f4f6f9; --line:#d6dce4; --fg:#16202c; --muted:#5d6b7c;
+  --bg:#eef1f5; --panel:#ffffff; --panel2:#f4f6f9; --line:#d6dce4; --fg:#16202c; --muted:#5d6b7c; --pmix:24%; --pbase:#fff; --ptext:#000; --ptmix:62%;
   --ok:#1b8a4b; --ok-soft:#dcf2e4; --warn:#b37a0c; --bad:#c63c35; --accent:#2b67d6; --series-1:#2a78d6; --series-2:#eb6834; --grid:#e3e7ed; color-scheme:light}}
 :root[data-theme="light"]{
-  --bg:#eef1f5; --panel:#ffffff; --panel2:#f4f6f9; --line:#d6dce4; --fg:#16202c; --muted:#5d6b7c;
+  --bg:#eef1f5; --panel:#ffffff; --panel2:#f4f6f9; --line:#d6dce4; --fg:#16202c; --muted:#5d6b7c; --pmix:24%; --pbase:#fff; --ptext:#000; --ptmix:62%;
   --ok:#1b8a4b; --ok-soft:#dcf2e4; --warn:#b37a0c; --bad:#c63c35; --accent:#2b67d6; --series-1:#2a78d6; --series-2:#eb6834; --grid:#e3e7ed; color-scheme:light}
 html,body{height:100%}
 [hidden]{display:none!important}
@@ -385,6 +385,13 @@ table.hist .pill{font-size:12px;padding:3px 10px}
 .crumb .mini{font-size:15px;padding:6px 12px}
 .svc.grpt{box-shadow:inset 0 -6px 0 rgba(0,0,0,.18)}
 .svc.grpt .pr{background:rgba(0,0,0,.22);border-radius:999px;padding:1px 10px}
+/* v1.10.0 (sahibinin istəyi): rəngli düymələr pastel tonda — rəng eyni, fon açıq (qara rejimdə sönük), yazı həmin rəngin tünd çaları */
+#tabs .tab,.side .hbtn,.svc:not(.addtile){background:color-mix(in srgb,var(--c,#475569) var(--pmix),var(--pbase))!important;color:color-mix(in srgb,var(--c,#475569) var(--ptmix),var(--ptext))!important;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c,#475569) 35%,transparent)}
+#tabs .tab:hover,.side .hbtn:hover{filter:none;background:color-mix(in srgb,var(--c,#475569) calc(var(--pmix) + 12%),var(--pbase))!important}
+#tabs .tab.on{outline:3px solid color-mix(in srgb,var(--c,#475569) 70%,var(--ptext));outline-offset:2px}
+.svc.grpt .pr,.svc .pr.noprice{background:color-mix(in srgb,var(--c,#475569) 20%,transparent)}
+.svc .cnt{background:color-mix(in srgb,var(--c,#475569) 75%,#000);color:#fff}
 .empty-grp{grid-column:1/-1;padding:18px 0}
 tr.child td{background:color-mix(in srgb,var(--panel2) 55%,transparent)}
 tr.confirm td{background:color-mix(in srgb,var(--bad) 10%,var(--panel));border-bottom:1px solid var(--bad)}
@@ -730,7 +737,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.9.0";
+const APP_VERSION="1.10.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1879,10 +1886,10 @@ function renderGrid(){
   $("grid").innerHTML=(g&&!list.length&&!editMode?`<p class="sub empty-grp">“${esc(g.name)}” qrupunda hələ düymə yoxdur. Yuxarıda ✏️ Düzəliş basın və “+ Yeni düymə” ilə əlavə edin.</p>`:"")+list.map(it=>{
     const ed=editMode?`<span class="ed"><span role="button" data-act="qedit" data-id="${it.id}" title="Dəyiş">✏️</span><span role="button" data-act="qdel" data-id="${it.id}" title="Sil">${delLabel(it,"Sil?","🗑")}</span></span>`:"";
     if(isGroup(it)){const n=kids(it.id).length;
-      return `<button class="svc grpt" style="background:${esc(it.color)}" data-grp="${it.id}">${ed}
+      return `<button class="svc grpt" style="--c:${esc(it.color)}" data-grp="${it.id}">${ed}
       <span class="ic">${esc(it.icon)}</span><span class="nm">${esc(it.name)}</span><span class="pr">📂 ${n?n+" düymə":"boşdur"}</span></button>`}
     const inQ=order.filter(o=>o.id===it.id&&!o.ret).reduce((a,o)=>a+o.q,0);
-    return `<button class="svc" style="background:${esc(it.color)}" data-add="${it.id}">
+    return `<button class="svc" style="--c:${esc(it.color)}" data-add="${it.id}">
       ${ed}
       ${inQ&&!editMode?`<span class="cnt">${inQ}</span>`:""}
       <span class="ic">${esc(it.icon||"")}</span><span class="nm">${esc(it.name)}</span>${S_?`<span class="tier path">${esc(pathOf(it))}</span>`:""}
@@ -3403,7 +3410,7 @@ function renderAdmin(){
         <div class="swatches">${SWATCHES.map(c=>`<button class="sw ${c===d.color?"on":""}" style="background:${c}" data-act="sw" data-c="${c}" aria-label="rəng ${c}"></button>`).join("")}</div>
         ${d.group?"":`<label class="f sm">Mürəkkəb / əlavə xərc<input id="e_ink" type="number" step="0.01" min="0" value="${d.ink}"></label>`}
       </div>
-      <div class="frow"><span class="sub">Satış ekranında belə görünəcək:</span><span class="svc preview" style="background:${esc(d.color)}"><span class="ic">${esc(d.icon)}</span><span class="nm">${esc(d.name||"Düymənin adı")}</span><span class="pr">${d.group?"📂 qrup":m2(+(d.tiers[0]?.[1])||0)+" ₼"}</span></span></div>
+      <div class="frow"><span class="sub">Satış ekranında belə görünəcək:</span><span class="svc preview" style="--c:${esc(d.color)}"><span class="ic">${esc(d.icon)}</span><span class="nm">${esc(d.name||"Düymənin adı")}</span><span class="pr">${d.group?"📂 qrup":m2(+(d.tiers[0]?.[1])||0)+" ₼"}</span></span></div>
       ${d.group?`<p class="sub">Qrupun qiyməti və resepti olmur. Satış qrupun içindəki düymələrdən olur. Yadda saxlayandan sonra satış ekranında qrupu açın və ✏️ Düzəliş → “+ Yeni düymə” ilə içinə düymə əlavə edin.</p>`:`
       <div class="frow"><label class="chk"><input type="checkbox" id="e_area" ${d.area?"checked":""}> 📐 Kvadrat metrlə satılır: qiymət hər sifarişdə yazılır (banner, vinil kimi)</label></div>
       <div class="frow"><label class="chk"><input type="checkbox" id="e_free" ${d.free?"checked":""}> 💬 Qiyməti razılaşma ilə: hər satışda yerində yazılır</label></div>
