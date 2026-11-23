@@ -416,6 +416,9 @@ let n = 0;
     Object.assign(S, JSON.parse(bak)); return [mig, btn, noCib, defAlver, ok2, cashOk]; });
   ok(r.every(Boolean), 'v1.11.0: cib→alver köçürmə, düymə, Alver və xərclər hesabatı (150 alver − 60 = 90), kassaya toxunmur ' + JSON.stringify(r));}
 
+  // v1.11.1: Vəfa Foto qiymətləri, 30x40/30x42/30x45 Vəfa-ya qoşulur
+  ok(await p.evaluate(() => { const vf = S.suppliers.find(x => x.id === 'sp2'); if (!vf) return true; const pr = n => vf.items.find(y => y.name.includes(n))?.price;
+    const b = S.items.find(i => i.parent === 'g_foto' && i.name.includes('30x42')); return pr('10x15') === 0.4 && pr('25x38') === 3 && pr('30x45') === 5 && (!b || srcFind(b, vf.id)?.si?.price === 4.5); }), 'v1.11.1: Vəfa Foto qiymətləri yazıldı, 30x42 düyməsi Vəfa-ya qoşuldu');
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();

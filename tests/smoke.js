@@ -260,7 +260,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   await p.click('[data-add=fk_1015]');
   ok(await p.isVisible('#ovSrc') && (await p.textContent('#srcBody')).includes('Samir Foto'), '10x15: "Özümüz / Samir Foto" seçimi çıxır');
   await p.click('[data-src=own]'); await p.click('[data-add=fk_3045]');
-  ok(await p.isHidden('#ovSrc'), '30x45: Samir-də yoxdur — seçim çıxmır');
+  ok(await p.isVisible('#ovSrc') && !(await p.textContent('#srcBody')).includes('Samir Foto') && (await p.textContent('#srcBody')).includes('Vəfa Foto'), '30x45: Samir-də yoxdur, yalnız Vəfa Foto seçimi (v1.11.1)'); await p.click('[data-src=own]');
   await p.click('[data-add=fk_2538]'); await p.keyboard.press('2');
   ok((await p.textContent('#total')).startsWith('23.40'), '10x15 (0.40) + 30x45 (15) + 25x38 (8) = 23.40');
   ok((await p.textContent('#lines')).includes('🖨 Özümüz') && (await p.textContent('#lines')).includes('🚚 Samir Foto'), 'sifarişdə mənbə görünür: Özümüz / Samir Foto');

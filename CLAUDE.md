@@ -236,6 +236,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Hesabatda yeni qutu **🏪 Alver və xərclər** `alver` (icazə `rb_alver`; köhnə kassirə `cost` varsa bir dəfə, `perms._alv`): `ALV()` — alver = nağd + kart satış (`payPart`) + borclulardan alınan + artıq ödəmə;
   xərclənib = nağd/kart/alver ilə ödənən xərclər + mal alışı (nisyə alış ödənən gün, `paidTs/paidBy`) + tədarükçü borc ödənişi; qalıb = fərq. Təfərrüat: nədən yığılıb, hara verilib (növ üzrə, % alverin), necə ödənilib, hamısı bir-bir.
   Bu **pul hərəkətidir** (mal alışı da çıxılır); xalis qazanc yenə 📈 Xalis Gəlir-dədir. Admin: kassapul + 8 qutu = 9 → `.kboxes.k3` (3+3+3, sayı 3-ə bölünüb 4-ə bölünmürsə).
+- **v1.11.1 (sahibi Vəfa Foto qiymətlərini göndərdi):** `S.mig.vefaQiymet` (sp2 tapılmasa bayraq qoyulmur) — 10x15 0.40, 13x18 0.50, 15x21 0.60, 20x25 2, 21x30 2, 25x38 3, 30x40 4, 30x42 4.5, 30x45 5
+  (ölçü adla tapılır; yoxdursa `pv_<ölçü>` "Foto NxM" əlavə olunur və `g_foto`-dakı eyni ölçülü düyməyə `src2`). 25x30 (Samirdən gələn ad) 0 qalır — sahibi deməyib.
+  Qeyd: sahibi istəmədi — Xərclərdə Nağd/Kart düymələri qalır (nə adminə, nə kassirə dəyişiklik).
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
