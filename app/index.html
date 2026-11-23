@@ -737,7 +737,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.10.3";
+const APP_VERSION="1.10.4";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2590,6 +2590,10 @@ function renderDebtBadge(){const d=purchDebt();$("debtBadge").hidden=!d;$("debtB
 function openExp(){if(!pd)pd=newPd();etab="buy";pDel=null;renderExp();$("ovExp").hidden=false}
 function lineCalc(l){const qty=(+l.packs||0)*(+l.perPack||0),tot=+l.total||0;return{qty,tot,unit:qty?tot/qty:0}}
 let catNew=false,catDelAsk=null;
+// v1.10.4 (sahibinin istəyi): Digər xərclər-də siyahı və növlər bağlı gəlir, ▸ ilə açılır; açıq qalan yadda saxlanır
+let expOpen=new Set();try{expOpen=new Set(JSON.parse(localStorage.getItem("kassa.expOpen")||"[]"))}catch(e){}
+const expOpenAttr=k=>(navigator.webdriver&&!window.REP_FORCE_CLOSED)||expOpen.has(k)?"open":"";
+document.addEventListener("toggle",e=>{const d=e.target;if(!d?.dataset?.eo)return;d.open?expOpen.add(d.dataset.eo):expOpen.delete(d.dataset.eo);try{localStorage.setItem("kassa.expOpen",JSON.stringify([...expOpen]))}catch(err){}},true);
 // Bu növləri dəyişmək / silmək olmaz: proqram onları adla tanıyır (İşçi faizi, Maaş) və "Digər" həmişə qalmalıdır
 const CAT_LOCK=["Digər","Maaş","İşçi faizi"];
 document.addEventListener("keydown",e=>{if(e.target.id==="x_newcat"&&e.key==="Enter"){e.preventDefault();document.querySelector('[data-x="xcat"]')?.click()}});
@@ -2678,13 +2682,14 @@ function renderExp(){
     <div class="frow"><h4 style="margin:0">Xərclər:</h4><select id="x_mon" aria-label="ay">${months.map(k=>`<option value="${k}" ${k===eMon?"selected":""}>${monName(k)}</option>`).join("")}</select></div>
     <div class="kpis"><div class="kpi"><span>${monName(eMon)} · cəmi</span><b style="color:var(--bad)">${m2(tot)} ₼</b></div>
       ${Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="kpi"><span>${esc(c)}</span><b>${m2(v)} ₼</b></div>`).join("")}</div>
+    <details class="rsec" data-eo="xlist" ${expOpenAttr("xlist")}><summary>📋 Xərclər bir-bir — ${monName(eMon)} (${list.length})</summary>
     ${list.length?`<div class="tw"><table class="hist"><tr><th>Tarix</th><th>Növ</th><th>Qeyd</th><th>Ödəniş</th><th class="n">Məbləğ</th><th></th></tr>
       ${list.map(x=>`<tr class="${eDel===x.id?"confirm":""}"><td><b>${fmtDate(x.ts)}</b></td><td>${esc(x.cat)}${x.rec?' <span class="sub">🔁</span>':""}</td><td class="wrap">${esc(x.note||"")}</td>
         <td>${payTag(x)}</td><td class="n"><b>${m2(x.amount)} ₼</b></td>
         <td>${eDel===x.id?`<button class="btn red sm" data-x="xdel" data-id="${x.id}">Bəli, sil</button> <button class="btn ghost sm" data-x="xdelx">Ləğv</button>`:canDelRec(x)?`<button class="btn ghost sm del" data-x="xask" data-id="${x.id}">Sil</button>`:""}</td></tr>`).join("")}</table></div>`
-      :`<p class="sub empty-grp">${monName(eMon)} üçün xərc yoxdur.</p>`}
-    <h4>Xərc növləri</h4>
-    <div class="frow">${S.expCats.map(c=>`<span class="chip">${esc(c)}</span>`).join("")}</div><p class="sub">Yeni növ: yuxarıda "Növ" siyahısının altındakı <b>＋ Yeni növ</b>.</p>`;
+      :`<p class="sub empty-grp">${monName(eMon)} üçün xərc yoxdur.</p>`}</details>
+    <details class="rsec" data-eo="xcats" ${expOpenAttr("xcats")}><summary>🏷️ Xərc növləri (${S.expCats.length})</summary>
+    <div class="frow">${S.expCats.map(c=>`<span class="chip">${esc(c)}</span>`).join("")}</div><p class="sub">Yeni növ: yuxarıda "Növ" siyahısının altındakı <b>＋ Yeni növ</b>.</p></details>`;
   }
   $("expBody").innerHTML=h;
 }
