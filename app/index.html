@@ -737,7 +737,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.11.2";
+const APP_VERSION="1.11.3";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1137,6 +1137,13 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   // v1.11.2 (sahibinin dediyi): Vəfa Foto 25x30 — 3 ₼
   if(!S.mig.vefa2530){const vf=(S.suppliers||[]).find(x=>x.id==="sp2")||(S.suppliers||[]).find(x=>/v[eə]fa/.test(norm(x.name)));
     if(vf){S.mig.vefa2530=1;vf.items=vf.items||[];const vi=vf.items.find(y=>/25\s*[x×]\s*30/.test(y.name));if(vi)vi.price=3;else vf.items.push({id:"pv_25x30",name:"Foto 25x30",price:3})}}
+  // v1.11.3 (sahibinin istəyi): Foto Kağızlar-a 25x30 — 6 ₼ (21x30-dan sonra); Samir Foto və Vəfa Foto-nun 25x30 alışına qoşulur
+  if(!S.mig.foto2530&&S.items.some(i=>i.id==="g_foto")){S.mig.foto2530=1;
+    if(!S.items.some(i=>i.parent==="g_foto"&&/25\s*[x×]\s*30/.test(i.name))){const nb=S.items.find(i=>i.id==="fk_2130")||S.items.find(i=>i.parent==="g_foto");
+      const it={id:"fk_2530",name:"25x30",cat:nb?.cat||"cap",parent:"g_foto",icon:"🖼️",color:"#4f46e5",fav:0,ink:0,recipe:[],tiers:[[1,6]]};
+      const f=(sid,re)=>{const sp=(S.suppliers||[]).find(x=>x.id===sid);const si=sp?.items?.find(y=>re.test(y.name));return si?{supp:sid,item:si.id}:null};
+      const a=f("sp1",/25\s*[x×]\s*30/),b=f("sp2",/25\s*[x×]\s*30/);if(a)it.src=a;if(b){if(it.src)it.src2=[b];else it.src=b}
+      const ix=nb?S.items.indexOf(nb)+1:S.items.length;S.items.splice(ix,0,it)}}
   // v0.94.0 (sahibinin dediyi): Samir Banner və Vəfa Foto-ya pulu yerindəcə öz cibindən verir → "cib"; v0.93-də yazılmış avtomatik qeydlər də düzəlir
   if(!S.mig.cibPay){S.mig.cibPay=1;["sp2","sp4"].forEach(id=>{const sp=(S.suppliers||[]).find(x=>x.id===id);if(sp)sp.auto="cib";
     const ax=(S.expenses||[]).filter(x=>x.auto&&x.supp===id&&(x.pay==="nağd"||x.pay==="nisyə"));
