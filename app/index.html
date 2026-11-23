@@ -62,6 +62,8 @@ header h1{font-size:18px;margin:0;font-weight:800;flex:1 1 auto}
 .hbtn:hover{border-color:var(--muted)}
 .today{color:var(--muted);font-size:13px}
 .today b{color:var(--fg)}
+.today .myfz{display:inline-block;margin-left:8px;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--fg);font-weight:600}
+.today .myfz b{color:var(--ok)}
 .hbtn.user{display:inline-flex;gap:6px;align-items:center}
 .hbtn.user .un{max-width:16ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Giriş ekranı: arxadakı satış ekranı görünmür */
@@ -737,7 +739,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.11.3";
+const APP_VERSION="1.12.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1739,6 +1741,7 @@ const PERMS=[
   ["free","💬 Qiyməti satanda yazılan düymələr (Vitrin malı, Xidmət, Digər, Banner m²…)"],
   ["kassa","💰 Kassa açılışı / təhvil-təslim"],
   ["upd","🔄 Proqramı yeniləmək (Yenilə düyməsi)"],
+  ["myComm","👥 % Öz faizini görmək (başlıqda bu ayın faizi; yalnız Hesabat → İşçi faizi-də seçilən işçi)"],
   ["#","🧾 Satış tarixçəsi"],
   ["hist","🧾 Satış tarixçəsinə baxmaq"],
   ["payEdit","✏️ Ödənişi Karta / Nağda dəyişmək"],
@@ -1795,7 +1798,7 @@ const setTabs=()=>RT_SET.filter(([k])=>k==="users"||k==="supp"||k==="phone"||k==
 function applyPerms(){
   const show=(id,on)=>{const el=$(id);if(el)el.hidden=!on};
   show("btnZay",can("zay"));show("btnRep",repAny());show("btnExp",can("exp"));show("btnEdit",false); // v0.37.0: Düzəliş Ayarların içindədir
-  show("btnSet",setTabs().length>0);show("btnHist",can("hist"));show("btnSupp",false);show("btnStock",can("stock")||can("stockMat"));renderSuppBadge();show("btnCust",can("custDebt")||can("suppDebt"));renderCustBadge();show("today",can("reports"));
+  show("btnSet",setTabs().length>0);show("btnHist",can("hist"));show("btnSupp",false);show("btnStock",can("stock")||can("stockMat"));renderSuppBadge();show("btnCust",can("custDebt")||can("suppDebt"));renderCustBadge();show("today",can("reports")||!!myCommMonth());
   $("userName").textContent=curName()+(isAdmin()?" (admin)":"");
   if(editMode&&!can("edit"))setEdit(false);
   if(typeof renderUpd==="function"&&CAN_UPD)renderUpd();renderKzBtn&&renderKzBtn();
@@ -1860,11 +1863,18 @@ document.addEventListener("keydown",e=>{
   else if(e.key==="Escape"){loginSel=null;pinBuf="";pinErr="";showLogin()}
 },true);
 
+// v1.12.0 (sahibinin istəyi): faiz alan kassir (S.comm.users, icazə myComm — standart bağlı, admin Kassirlər-də açır) başlıqda bu ayın 1-indən indiyədək öz faiz payını görür — hər satışda artır.
+// Hesab Hesabat → 👥 İşçi faizi ilə eynidir: sətir sum × endirim nisbəti × bölmə faizi, hazır alınan (from) yox, qaytarma azaldır, işçilər arasında bərabər.
+function myCommMonth(){const C=S.comm||{},U=(C.users||[]).filter(id=>userById(id));if(!me||!U.includes(me.id)||!can("myComm"))return null;
+  const rate=cid=>C.rates&&C.rates[cid]!=null?+C.rates[cid]:(cid==="studiya"?10:5),mk=monKey(Date.now());let pool=0;
+  S.sales.forEach(s=>{if(monKey(s.ts)!==mk)return;const f=s.sub&&s.disc?s.total/s.sub:1;s.lines.forEach(l=>{if(!l.from)pool+=l.sum*f*rate(item(l.id)?.cat||"?")/100})});
+  return{v:pool/U.length,mon:monName(mk).split(" ")[0]}}
 function renderHeader(){renderShop();renderKzBtn();
   if(me)$("userName").textContent=curName()+(isAdmin()?" (admin)":"");
   renderSuppBadge();renderCustBadge();renderCloudBadge();
   const ts=S.sales.filter(s=>isToday(s.ts));
-  $("today").innerHTML=`Bu gün: <b>${ts.length}</b> satış · <b>${m2(ts.reduce((a,s)=>a+s.total,0))} ₼</b>`;
+  const fz=myCommMonth();
+  $("today").innerHTML=(can("reports")?`Bu gün: <b>${ts.length}</b> satış · <b>${m2(ts.reduce((a,s)=>a+s.total,0))} ₼</b>`:"")+(fz?` <span class="myfz" title="Bu ayın 1-indən bu günədək sizin faiz payınız (şöbənin faizi işçilər arasında bərabər bölünür)">👥 % Faizim · ${esc(fz.mon)}: <b>${m2(fz.v)} ₼</b></span>`:"");
   $("chips").innerHTML=S.materials.map(m=>`<span class="chip ${m.stock<=m.min?"low":""}">${esc(m.name)}: <b>${fmtN(m.stock)}</b>${m.stock<=m.min?" ⚠":""}</span>`).join("");
 }
 function renderTabs(){

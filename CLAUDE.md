@@ -239,6 +239,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **v1.11.1 (sahibi Vəfa Foto qiymətlərini göndərdi):** `S.mig.vefaQiymet` (sp2 tapılmasa bayraq qoyulmur) — 10x15 0.40, 13x18 0.50, 15x21 0.60, 20x25 2, 21x30 2, 25x38 3, 30x40 4, 30x42 4.5, 30x45 5
   (ölçü adla tapılır; yoxdursa `pv_<ölçü>` "Foto NxM" əlavə olunur və `g_foto`-dakı eyni ölçülü düyməyə `src2`). v1.11.2 `S.mig.vefa2530`: 25x30 — 3 ₼. v1.11.3 `S.mig.foto2530`: Foto Kağızlar-a **25x30 — 6 ₼** (`fk_2530`, 21x30-dan sonra; src Samir pi6 4 ₼, src2 Vəfa 3 ₼).
   Qeyd: sahibi istəmədi — Xərclərdə Nağd/Kart düymələri qalır (nə adminə, nə kassirə dəyişiklik).
+- **v1.12.0 (sahibinin istəyi, Mida kassirləri faiz alır):** başlıqda `#today`-də yaşıl nişan **"👥 % Faizim · <Ay>: X ₼"** (`myCommMonth()`, `.myfz`) — bu ayın 1-indən indiyədək öz payı, hər satışda artır.
+  Hesab Hesabat → İşçi faizi ilə eyni (sətir sum × endirim nisbəti × bölmə faizi, `from` yox, qaytarma azaldır, `S.comm.users` arasında bərabər; ödənilən çıxılmır).
+  Görünür: kassir `S.comm.users`-dədirsə **və** icazə `myComm` (🛒 Satış ekranı qrupunda; KASSIR_DEFAULT-da yox — admin özü açır). `#today` indi `reports || myCommMonth()` ilə görünür; "Bu gün: … satış" hissəsi yalnız `reports`.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

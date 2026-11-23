@@ -420,6 +420,16 @@ let n = 0;
   ok(await p.evaluate(() => { const vf = S.suppliers.find(x => x.id === 'sp2'); if (!vf) return true; const pr = n => vf.items.find(y => y.name.includes(n))?.price;
     const b = S.items.find(i => i.parent === 'g_foto' && i.name.includes('30x42')); return pr('10x15') === 0.4 && pr('25x38') === 3 && pr('30x45') === 5 && pr('25x30') === 3 && (!b || srcFind(b, vf.id)?.si?.price === 4.5); }), 'v1.11.1: Vəfa Foto qiymətləri yazıldı, 30x42 düyməsi Vəfa-ya qoşuldu');
   ok(await p.evaluate(() => { const it = S.items.find(i => i.parent === 'g_foto' && i.name === '25x30'); return !S.items.some(i => i.id === 'g_foto') || (it && it.tiers[0][1] === 6 && srcList(it).map(x => x.sp.id + ':' + x.si?.price).join(',') === 'sp1:4,sp2:3'); }), 'v1.11.3: Foto Kağızlar-da 25x30 — 6 ₼, Samir 4 / Vəfa 3');
+  // v1.12.0: kassir başlıqda öz faizini görür (icazə myComm + İşçi faizi siyahısında)
+  {const r = await p.evaluate(() => { const bakU = JSON.stringify(S.users), bakC = JSON.stringify(S.comm || null), bakS = S.sales.length, meB = me;
+    S.users.push({ id: 'kF1', name: 'Faiz1', role: 'kassir', perms: { ...KASSIR_DEFAULT } }, { id: 'kF2', name: 'Faiz2', role: 'kassir', perms: { ...KASSIR_DEFAULT } });
+    S.comm = { users: ['kF1', 'kF2'], rates: {} }; S.kzReq = false; me = S.users.find(u => u.id === 'kF1');
+    const off = myCommMonth() === null; me.perms.myComm = 1; const v0 = myCommMonth().v;
+    S.sales.push({ id: 'sF', ts: Date.now(), pay: 'nağd', total: 20, sub: 20, lines: [{ id: 'a4s_100', q: 40, sum: 20 }] });
+    const v1 = myCommMonth().v; applyPerms(); renderAll(); const shown = /Faizim/.test($('today').textContent) && !$('today').hidden;
+    S.sales = S.sales.filter(x => x.id !== 'sF'); S.users = JSON.parse(bakU); S.comm = JSON.parse(bakC); me = meB; applyPerms(); renderAll();
+    return [off, Math.abs(v1 - v0 - 0.5) < 1e-9, shown]; });
+  ok(r.every(Boolean), 'v1.12.0: icazəsiz görünmür; 20 ₼ × 5% / 2 işçi = +0.50 ₼; başlıqda görünür ' + JSON.stringify(r));}
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();
