@@ -737,7 +737,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.11.1";
+const APP_VERSION="1.11.2";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1134,6 +1134,9 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
       [["10x15",0.40],["13x18",0.50],["15x21",0.60],["20x25",2],["21x30",2],["25x38",3],["30x40",4],["30x42",4.5],["30x45",5]].forEach(([n,pr])=>{
         let vi=vf.items.find(y=>sz(y.name)===n);if(!vi){vi={id:"pv_"+n,name:"Foto "+n,price:pr};vf.items.push(vi)}else vi.price=pr;
         S.items.filter(it=>it.parent==="g_foto"&&!it.group&&sz(it.name)===n).forEach(it=>{if(it.src?.supp===vf.id||(it.src2||[]).some(x=>x.supp===vf.id))return;it.src2=(it.src2||[]).concat([{supp:vf.id,item:vi.id}])})})}}
+  // v1.11.2 (sahibinin dediyi): Vəfa Foto 25x30 — 3 ₼
+  if(!S.mig.vefa2530){const vf=(S.suppliers||[]).find(x=>x.id==="sp2")||(S.suppliers||[]).find(x=>/v[eə]fa/.test(norm(x.name)));
+    if(vf){S.mig.vefa2530=1;vf.items=vf.items||[];const vi=vf.items.find(y=>/25\s*[x×]\s*30/.test(y.name));if(vi)vi.price=3;else vf.items.push({id:"pv_25x30",name:"Foto 25x30",price:3})}}
   // v0.94.0 (sahibinin dediyi): Samir Banner və Vəfa Foto-ya pulu yerindəcə öz cibindən verir → "cib"; v0.93-də yazılmış avtomatik qeydlər də düzəlir
   if(!S.mig.cibPay){S.mig.cibPay=1;["sp2","sp4"].forEach(id=>{const sp=(S.suppliers||[]).find(x=>x.id===id);if(sp)sp.auto="cib";
     const ax=(S.expenses||[]).filter(x=>x.auto&&x.supp===id&&(x.pay==="nağd"||x.pay==="nisyə"));
