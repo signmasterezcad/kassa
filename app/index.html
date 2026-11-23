@@ -737,7 +737,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.10.0";
+const APP_VERSION="1.10.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2152,6 +2152,7 @@ const isTyping=el=>!!el&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isCon
 const noModal=()=>$("ovRep").hidden&&$("ovKassa").hidden&&$("ovZay").hidden&&$("ovHist").hidden&&$("ovExp").hidden&&$("ovLogin").hidden&&$("ovSupp").hidden&&$("ovCust").hidden&&$("ovCDebt").hidden&&$("ovSrc").hidden&&$("ovM2").hidden&&$("ovCloud").hidden&&$("ovIcon").hidden&&$("ovShop").hidden&&$("ovDisc").hidden&&$("ovTip").hidden&&$("ovRet").hidden&&$("ovReset").hidden;
 function finishSale(){
   disarmPay();
+  if(!order.length)return;
   if(kzLocked()){kzLockMsg();return}
   if(pay==="qarış"){const t=ordTotal(),c=Math.round((+ordSplit||0)*100)/100;
     if(order.some(o=>o.ret)||t<=0){toast("Qaytarmada Nağd + Kart olmaz — Nağd və ya Kart seçin");return}
@@ -2737,7 +2738,7 @@ async function deletePurchase(id){
   const p=S.purchases[i];
   p.lines.forEach(l=>{const M=mat(l.mat);if(!M)return;
     const rest=M.stock-l.qty;
-    M.cost=rest>0?Math.max(0,(M.stock*M.cost-l.total)/rest):l.prevCost;   // orta mayanı geri hesabla
+    M.cost=rest>0?Math.max(0,(M.stock*M.cost-l.total)/rest):(l.prevCost??M.cost);   // orta mayanı geri hesabla
     M.stock=rest});
   S.purchases.splice(i,1);pDel=null;save();renderHeader();renderDebtBadge();renderExp();toast(`${fmtDate(p.ts)} alışı silindi, mal anbardan çıxıldı`);
 }
@@ -2752,19 +2753,21 @@ document.addEventListener("click",e=>{
   else if(a==="ladd")pd.lines.push(blankLine());
   else if(a==="ldel")pd.lines.splice(+t.dataset.li,1);
   else if(a==="pclear")pd=newPd();
-  else if(a==="psave"){savePurchase();return}
+  else if(a==="psave"){if(!can("expBuy"))return;savePurchase();return}
   else if(a==="pask")pDel=t.dataset.id;
   else if(a==="pdelx")pDel=null;
-  else if(a==="pdel"){if(!canDelRec(S.purchases.find(p=>p.id===t.dataset.id)))return;deletePurchase(t.dataset.id);return}
+  else if(a==="pdel"){const P=S.purchases.find(p=>p.id===t.dataset.id);if(!canDelRec(P))return;
+    if(P?.pay==="nisyə"&&P.paid&&!isAdmin()){toast("Bu nisyə alışın borcu artıq ödənib — silmək kassa hesabını pozar. Lazımdırsa admin silsin.");pDel=null;renderExp();return}
+    deletePurchase(t.dataset.id);return}
   else if(a==="xpay"){syncEd();ed.pay=t.dataset.p}
-  else if(a==="xsave"){saveExpense();return}
+  else if(a==="xsave"){if(!can("expOther"))return;saveExpense();return}
   else if(a==="xask"){syncEd();eDel=t.dataset.id}
   else if(a==="xdelx"){syncEd();eDel=null}
   else if(a==="xdel"){const x=S.expenses.find(y=>y.id===t.dataset.id);if(!canDelRec(x))return;if(x?.supp&&x.pay==="nisyə"&&suppOwed(x.supp)-x.amount<-0.004){toast("Bu nisyə alış üçün artıq ödəniş edilib. Əvvəlcə 🚚 Tədarükçü → 💳 Borclar-da ödənişi silin");return}S.expenses=S.expenses.filter(y=>y.id!==t.dataset.id);eDel=null;save();toast(`Xərc silindi: ${x?.cat} ${m2(x?.amount||0)} ₼`)}
-  else if(a==="rpay"){const r=S.recurring.find(y=>y.id===t.dataset.id);if(r){S.expenses.push({id:newId("x"),ts:Date.now(),cat:r.cat,amount:r.amount,pay:t.dataset.by,note:r.note,rec:r.id,worker:curName()});save();toast(`${r.cat}: ${m2(r.amount)} ₼ ödənildi ✓`)}}
-  else if(a==="rdel"){syncEd();const k="r"+t.dataset.id;if(eDel!==k)eDel=k;else{S.recurring=S.recurring.filter(y=>y.id!==t.dataset.id);eDel=null;save();toast("Aylıq siyahıdan çıxarıldı (keçmiş ödənişlər qalır)")}}
+  else if(a==="rpay"){if(!can("expOther"))return;const r=S.recurring.find(y=>y.id===t.dataset.id);if(r){S.expenses.push({id:newId("x"),ts:Date.now(),cat:r.cat,amount:r.amount,pay:t.dataset.by,note:r.note,rec:r.id,worker:curName()});save();toast(`${r.cat}: ${m2(r.amount)} ₼ ödənildi ✓`)}}
+  else if(a==="rdel"){if(!can("expOther"))return;syncEd();const k="r"+t.dataset.id;if(eDel!==k)eDel=k;else{S.recurring=S.recurring.filter(y=>y.id!==t.dataset.id);eDel=null;save();toast("Aylıq siyahıdan çıxarıldı (keçmiş ödənişlər qalır)")}}
   else if(a==="xcat"){syncEd();const n=$("x_newcat").value.trim();if(n&&!S.expCats.includes(n)){S.expCats.splice(S.expCats.length-1,0,n);ed.cat=n;save();toast(`"${n}" növü əlavə olundu`)}}
-  else if(a==="paydebt"){const p=S.purchases.find(x=>x.id===t.dataset.id);if(p){p.paid=true;p.paidTs=Date.now();p.paidBy=t.dataset.by;save();renderDebtBadge();toast(`Borc ödənildi ✓ ${m2(p.total)} ₼`)}}
+  else if(a==="paydebt"){if(!can("expDebt"))return;const p=S.purchases.find(x=>x.id===t.dataset.id);if(p){p.paid=true;p.paidTs=Date.now();p.paidBy=t.dataset.by;save();renderDebtBadge();toast(`Borc ödənildi ✓ ${m2(p.total)} ₼`)}}
   renderExp();
   if(a==="ladd")$("l_mat_"+(pd.lines.length-1))?.focus();
 });
@@ -3779,7 +3782,7 @@ document.addEventListener("click",e=>{
   else if(t.id==="paySplit"){if(!can("paySplit"))return;if(!order.length){toast("Əvvəl sifarişə məhsul əlavə edin");return}pay="qarış";ordCust=null;renderOrder();setTimeout(()=>$("sp_cash")?.focus(),0)}
   else if(t.id==="btnCust"){openCDebt()}
   else if(t.id==="btnDone")finishSale();
-  else if(t.id==="btnClear"){if(!can("clearOrder"))return;order=[];ordDisc=null;ordTip=0;renderGrid();renderOrder()}
+  else if(t.id==="btnClear"){if(!can("clearOrder"))return;order=[];ordDisc=null;ordTip=0;pay="nağd";ordCust=null;ordSplit="";renderGrid();renderOrder()} // v1.10.1: ödəniş növü və nisyə müştərisi də sıfırlanır
   else if(t.dataset.rx){order=order.filter(o=>okey(o)!==t.dataset.rx);renderGrid();renderOrder()}
   else if(t.id==="btnUser")logout();
   else if(t.id==="btnCloud"){mode="set";rtab="cloud";draft=null;renderRep();$("ovRep").hidden=false}

@@ -220,6 +220,11 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Köçürmə `upgrade()`-də hər kassirə bir dəfə (`perms._v2`, bayraqsız — şöbələr ayrı): reports→6 rb_, cost→3 rb_, delSale→payEdit, exp→4 exp*, stock→stockMat, free/kassa/upd=1.
 - **v1.10.0 (sahibinin istəyi: rənglər gözə girir → pastel, əvvəl nümunə göstərildi, sahibi BAŞLA dedi):** sol menyu (`.side .hbtn`), bölmələr (`#tabs .tab`) və məhsul düymələri (`.svc`, inline `--c:` — əvvəl `background:`)
   fonu `color-mix(--c, --pmix, --pbase)`, yazı `color-mix(--c, --ptmix, --ptext)` (`!important`, köhnə `color:#fff`-i üstələsin); dəyişənlər üç `:root` blokunda (qara: 30%/#1e2733/ağ 45%, ağ: 24%/#fff/qara 62%). Ödəniş düymələri dəyişmədi.
+- **🔍 Audit 3 (v1.10.1, sahibinin istəyi "başdan ayağa audit")** — yoxlandı: sintaksis, təkrarlanan funksiya/const/id (yoxdur), TypeScript `--checkJs` (elan olunmamış ad yoxdur; qalan xəbərdarlıqlar tip səs-küyüdür),
+  `$("id")` → HTML-də olmayan id yoxdur (dinamik `sl_n_0`, `t_p_0` istisna), `esc` (tək dırnaqlı atribut yoxdur, toast `textContent`), Playwright ilə admin + 14 təsadüfi icazə dəsti ilə bütün pəncərə/tab/qutu/düymə — xəta yoxdur; Go `vet`/`test` OK.
+  Düzəldilən: (1) "Sifarişi ləğv et" `pay`/`ordCust`/`ordSplit`-i sıfırlamırdı → növbəti satış əvvəlki müştərinin nisyəsinə / Karta düşə bilirdi; (2) borcu ödənmiş nisyə mal alışını kassir silə bilirdi (kassa hesabı pozulurdu) → yalnız admin;
+  (3) köhnə alışda `prevCost` yoxdursa silinəndə maya `undefined` → `??M.cost`; (4) Xərclər əməliyyatlarında icazə yoxlaması (psave/xsave/rpay/rdel/paydebt); (5) `finishSale` boş sifarişdə çıxır.
+  Qeyd (dəyişdirilmədi, sahibi deyəndə): kassa açılışı yalnız **bu gün** sayılır — gecə yarısından sonra işləyən kassir yenidən açmalıdır; 🪙 Artıq ödəmə həmişə nağd sayılır (kart satışında da kassaya əlavə olunur).
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

@@ -345,6 +345,20 @@ let n = 0;
   ok(r.exp && r.stock, 'v1.9.0: Xərclər yalnız icazəli tab (Digər xərclər), Anbar: Materiallar tabı ayrıca icazə ilə');
   ok(r.rep && r.repBoxes, 'v1.9.0: yalnız "Xərclər" qutusu icazəlidirsə Hesabatda yalnız o qutu görünür');}
 
+  // v1.10.1 audit
+  {const r = await p.evaluate(() => {
+    const out = {}, it = S.items.find(i => !i.group && !i.free && !i.area && i.tiers.some(t => +t[1]));
+    order = []; addItem(it.id, 1); const c = S.customers[0] || addCust('Audit MMC'); ordCust = c.id; pay = 'borc'; renderOrder();
+    document.getElementById('btnClear').click(); out.clear = pay === 'nağd' && ordCust === null && !order.length;
+    const n = S.sales.length; order = []; finishSale(); out.empty = S.sales.length === n;
+    const M = S.materials[0], st = M.stock, co = M.cost; S.purchases.push({ id: 'puA', ts: Date.now(), supplier: '', pay: 'nağd', paid: false, worker: curName(), lines: [{ mat: M.id, name: M.name, qty: M.stock + 5, total: 10 }], total: 10 });
+    M.stock += 0; deletePurchase('puA'); out.cost = Number.isFinite(M.cost); M.stock = st; M.cost = co;
+    return out;
+  });
+  ok(r.clear, 'v1.10.1: "Sifarişi ləğv et" Nisyə müştərisini və ödəniş növünü də sıfırlayır');
+  ok(r.empty, 'v1.10.1: boş sifarişdə satış yazılmır');
+  ok(r.cost, 'v1.10.1: köhnə alış (əvvəlki maya yazılmayıb) silinəndə maya pozulmur');}
+
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();
