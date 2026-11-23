@@ -61,6 +61,8 @@ let n = 0;
   ok(nigar && nigar.role === 'kassir' && nigar.perms.zay && nigar.perms.hist && !nigar.perms.cost, 'Nigar əlavə olundu: standart icazələr (zay, tarixçə)');
   await p.check(`[data-up="${nigar.id}"][data-k=reports]`);
   ok(JSON.parse(fs.data).users.find(u => u.id === nigar.id).perms.reports === 1, 'Nigar-a "günlük hesabat" icazəsi verildi');
+  ok(await p.evaluate(() => [...document.querySelectorAll('.permh')].map(x => x.textContent).join('|').startsWith('🛒 Satış ekranı|🧾 Satış tarixçəsi|🗑️ Zay|📊 Hesabat')) && !(await p.$('[data-k=supp]')) && !(await p.$('[data-k=suppRep]')), 'v1.9.0: icazələr qruplara bölünüb, işləməyən 2 tədarükçü qutusu yoxdur');
+  for (const k of ['rb_nagd', 'rb_kart', 'rb_nisye', 'rb_kassapul', 'rb_artiq', 'rb_zay']) await p.check(`[data-up="${nigar.id}"][data-k=${k}]`);
   ok(await p.locator(`[data-ur="${adminId}"]`).isDisabled() && !(await p.locator(`[data-act=udel][data-id="${adminId}"]`).count()), 'admin özünü silə və vəzifəsini dəyişə bilməz');
   await p.click('#ovRep [data-close]');
 
@@ -319,6 +321,29 @@ let n = 0;
   const br = await p.textContent('#rbody');
   ok(br.includes('Samir Banner: satış') && br.includes('110.00') && br.includes('47.00') && br.includes('Banner (m²)'), 'aylıq: Samir Banner satış 110, qazanc 47, Banner (m²) sətri');
   await p.click('#ovRep [data-close]');
+
+  // v1.9.0: bütün funksiyalar ayrıca icazə ilə
+  {const r = await p.evaluate(() => {
+    const sv = me, out = {};
+    S.users.push({ id: 'uMig', name: 'Köhnə Kassir', role: 'kassir', perms: { reports: 1, cost: 1, delSale: 1, exp: 1, stock: 1 } }); upgrade();
+    const P = S.users.find(u => u.id === 'uMig').perms;
+    out.mig = ['rb_nagd', 'rb_kart', 'rb_nisye', 'rb_kassapul', 'rb_artiq', 'rb_zay', 'rb_xerc', 'rb_anbarpul', 'rb_menfeet', 'payEdit', 'expBuy', 'expOther', 'expDebt', 'expDel', 'stockMat', 'free', 'kassa', 'upd'].every(k => P[k] === 1) && P._v2 === 1 && !P.exp;
+    S.users = S.users.filter(u => u.id !== 'uMig');
+    me = { id: 'kz', name: 'Boş Kassir', role: 'kassir', perms: {} }; applyPerms();
+    order = []; tapItem('vit_mal'); out.free = !order.length && $('ovM2').hidden && $('toast').textContent.includes('icazəniz yoxdur');
+    out.kassa = !kzLocked() && $('btnKassa').hidden;
+    out.btns = $('btnExp').hidden && $('btnStock').hidden && $('btnRep').hidden;
+    me = { id: 'kz', name: 'Boş Kassir', role: 'kassir', perms: { expOther: 1 } }; applyPerms(); openExp();
+    out.exp = etab === 'other' && document.querySelectorAll('#etabs .tab').length === 1; $('ovExp').hidden = true;
+    me.perms = { stock: 1 }; out.stock = stockTabs().map(x => x[0]).join() === 'anbar,low';
+    me.perms = { rb_xerc: 1 }; applyPerms(); out.rep = !$('btnRep').hidden; mode = 'rep'; kSub = ''; renderRep();
+    out.repBoxes = [...document.querySelectorAll('#rbody [data-ks]')].map(x => x.dataset.ks).join() === 'xerc' && !document.querySelector('#rbody .kpi.hero');
+    me = sv; applyPerms(); return out;
+  });
+  ok(r.mig, 'v1.9.0: köhnə kassirin icazələri yeni qutulara köçür (heç nə itmir), köhnə "exp" silinir');
+  ok(r.free && r.kassa && r.btns, 'v1.9.0: icazəsi olmayan kassir: sərbəst qiymətli düymə satılmır, Kassa düyməsi yox və kilidlənmir, Xərclər/Anbar/Hesabat yox');
+  ok(r.exp && r.stock, 'v1.9.0: Xərclər yalnız icazəli tab (Digər xərclər), Anbar: Materiallar tabı ayrıca icazə ilə');
+  ok(r.rep && r.repBoxes, 'v1.9.0: yalnız "Xərclər" qutusu icazəlidirsə Hesabatda yalnız o qutu görünür');}
 
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();

@@ -89,6 +89,7 @@ header h1{font-size:18px;margin:0;font-weight:800;flex:1 1 auto}
 .uhead input,.uhead select{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 9px;color:var(--fg)}
 .uhead input{font-weight:800;min-width:0;flex:0 1 220px}
 .perms{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:6px 16px}
+.permh{grid-column:1/-1;font-weight:700;font-size:14px;margin:10px 0 2px;padding-bottom:3px;border-bottom:1px solid var(--line)}.permh:first-child{margin-top:0}
 .perm{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.4}
 .perm input{margin-top:2px;width:16px;height:16px;flex:0 0 auto}
 .stiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
@@ -729,7 +730,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.8.2";
+const APP_VERSION="1.9.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1082,6 +1083,14 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   if(!S.mig.branches){S.mig.branches=1;if(!S.branches?.length)S.branches=[{id:"main",name:"Hövsan"},{id:"mida1",name:"Mida"}]}
   // v0.97.0: yeni satış düyməsi icazələri — mövcud kassirlərə açıq verilir (əvvəlki kimi işləsin), admin bağlaya bilər
   if(!S.mig.payPerms&&S.users){S.mig.payPerms=1;S.users.forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};["tip","payCard","paySplit","clearOrder"].forEach(k=>{if(u.perms[k]===undefined)u.perms[k]=1})}})}
+  // v1.9.0 (sahibinin istəyi): icazələr ayrıca qutulara bölündü — köhnə kassir heç nə itirmir (hər kassirdə bir dəfə, _v2 işarəsi; şöbələr ayrı olduğu üçün mig bayrağı yox)
+  (S.users||[]).forEach(u=>{if(u.role==="admin")return;const P=u.perms=u.perms||{};if(P._v2)return;P._v2=1;
+    if(P.reports)["rb_nagd","rb_kart","rb_nisye","rb_kassapul","rb_artiq","rb_zay"].forEach(k=>P[k]=1);
+    if(P.cost)["rb_xerc","rb_anbarpul","rb_menfeet"].forEach(k=>P[k]=1);
+    if(P.delSale)P.payEdit=1;
+    if(P.exp)["expBuy","expOther","expDebt","expDel"].forEach(k=>P[k]=1);
+    if(P.stock)P.stockMat=1;
+    P.free=1;P.kassa=1;P.upd=1;delete P.exp;delete P.supp;delete P.suppRep});
   if(!S.mig.discPerm&&S.users){S.mig.discPerm=1;S.users.forEach(u=>{if(u.role!=="admin"){u.perms=u.perms||{};if(u.perms.disc===undefined)u.perms.disc=1}})}
   if(!S.mig.fotoSrc){S.mig.fotoSrc=1;const sf=(S.suppliers||[]).find(x=>x.id==="sp1");
     if(sf)S.items.filter(i=>i.parent==="g_foto"&&!i.group).forEach(i=>{const m=(i.name.match(/(\d+)\s*[x×]\s*(\d+)/)||[])[0];if(!m)return;
@@ -1680,41 +1689,67 @@ const unitCost=it=>it.recipe.reduce((s,[m,q])=>s+(mat(m)?.cost||0)*q,0)+(it.ink|
 const tierText=it=>it.tiers.length>1?it.tiers.slice(1).map(([t,v])=>`${t}+: ${m2(v)}`).join(" · "):"";
 const isToday=ts=>new Date(ts).toDateString()===new Date().toDateString();
 // v0.88.0 (audit): kassir xərc / mal alışını yalnız bu gün özü yazmışsa silə bilər, admin hamısını
-const canDelRec=r=>isAdmin()||(!!r&&isToday(r.ts)&&r.worker===curName());
+const canDelRec=r=>isAdmin()||(can("expDel")&&!!r&&isToday(r.ts)&&r.worker===curName());
 function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,1800)}
 
 // ---------- Vəziyyət ----------
 let editMode=false, grp=null, q="", cat="search", order=[], pay="nağd", ordSplit="", zReason=REASONS[0], rtab="kassa", kSub="", mode="rep", setCat="all";
 
 // ---------- 👥 İstifadəçilər: Admin və kassirlər, PIN ilə giriş, icazələr ----------
+// v1.9.0 (sahibinin istəyi): bütün funksiyalar kassir üçün ayrıca qutu ilə; "#" = qrup başlığı (Ayarlar → Kassirlər-də)
 const PERMS=[
-  ["zay","🗑️ Zay yazmaq"],
-  ["hist","🧾 Satış tarixçəsinə baxmaq"],
-  ["delSale","❌ Satışı silmək"],
-  ["reports","📊 Günlük hesabat, kassa və zay hesabatı"],
-  ["cost","💰 Maya və mənfəəti görmək (aylıq hesabat da)"],
-  ["stock","📦 Anbar sayımı və materiallar"],
-  ["exp","💸 Xərclər: mal alışı, digər xərclər, borclar"],
-  ["edit","✏️ Düymələri, qiymətləri və bölmələri dəyişmək"],
-  ["backup","💾 Ehtiyat nüsxə və bərpa"],
-  ["supp","🚚 Tədarükçüdən alışı yazmaq"],
-  ["suppRep","🚚 Tədarükçülərin aylıq hesabatı"],
-  ["suppDebt","🚚 Tədarükçü borclarını görmək və ödəmək"],
-  ["custSale","📝 Müştəriyə borca satmaq"],
-  ["custDebt","🏢 Müştəri borclarını görmək və pulunu almaq"],
-  ["disc","🏷️ Endirim etmək"],
-  ["refund","↩️ Malı qaytarmaq / əvəzləmək"],
-  // v0.97.0 (sahibinin istəyi): satış ekranındakı düymələr də icazə ilə
-  ["tip","🪙 Artıq ödəmə yazmaq"],
+  ["#","🛒 Satış ekranı"],
   ["payCard","💳 Kartla satış"],
   ["paySplit","💵+💳 Nağd + Kart satış"],
+  ["custSale","📝 Müştəriyə nisyə (borca) satmaq"],
+  ["disc","🏷️ Endirim etmək"],
+  ["tip","🪙 Artıq ödəmə yazmaq"],
   ["clearOrder","✕ Sifarişi ləğv etmək"],
+  ["free","💬 Qiyməti satanda yazılan düymələr (Vitrin malı, Xidmət, Digər, Banner m²…)"],
+  ["kassa","💰 Kassa açılışı / təhvil-təslim"],
+  ["upd","🔄 Proqramı yeniləmək (Yenilə düyməsi)"],
+  ["#","🧾 Satış tarixçəsi"],
+  ["hist","🧾 Satış tarixçəsinə baxmaq"],
+  ["payEdit","✏️ Ödənişi Karta / Nağda dəyişmək"],
+  ["refund","↩️ Malı qaytarmaq / əvəzləmək"],
+  ["delSale","❌ Satışı silmək"],
+  ["#","🗑️ Zay"],
+  ["zay","🗑️ Zay yazmaq"],
+  ["#","📊 Hesabat — hər qutu ayrıca"],
+  ["reports","📊 Ümumi satış (və başlıqda bu günün cəmi)"],
+  ["rb_nagd","💵 Nağd satış"],
+  ["rb_kart","💳 Kart satış"],
+  ["rb_nisye","📝 Nisyə satış"],
+  ["rb_kassapul","💰 Kassadakı pul (kassa hesabı; kassa sayımında \"olmalıdır\" məbləği)"],
+  ["rb_artiq","🪙 Artıq ödəmə"],
+  ["rb_zay","🗑️ Zay olan pul"],
+  ["rb_xerc","🧾 Xərclər"],
+  ["rb_anbarpul","📦 Anbarda qalan pul"],
+  ["rb_menfeet","📈 Xalis Gəlir"],
+  ["suppDebt","🚚 Bizim borclarımız (görmək və ödəmək)"],
+  ["cost","💰 Maya və qazancı görmək (cədvəllərdə, Banner pəncərəsində)"],
+  ["#","💸 Xərclər"],
+  ["expBuy","📦 Mal alışı yazmaq (+ alış tarixçəsi)"],
+  ["expOther","🧾 Digər xərcləri yazmaq"],
+  ["expDebt","💳 Mal alışı borclarını ödəmək"],
+  ["expDel","🗑️ Bu gün özü yazdığı xərci / alışı silmək"],
+  ["#","📦 Anbar"],
+  ["stock","📦 Qalıq, sayım, az qalanlar"],
+  ["stockMat","🧱 Materiallar: yeni mal, maya, Alış (+)"],
+  ["#","💳 Borclar"],
+  ["custDebt","🏢 Müştəri borclarını görmək və pulunu almaq"],
+  ["#","⚙️ Ayarlar"],
+  ["edit","✏️ Düymələri, qiymətləri və bölmələri dəyişmək"],
+  ["backup","💾 Ehtiyat nüsxə və bərpa"],
 ];
-const KASSIR_DEFAULT={zay:1,hist:1,supp:1,custSale:1,disc:1,exp:1,tip:1,payCard:1,paySplit:1,clearOrder:1};
-const TAB_PERM={faiz:"_admin",artiq:"reports",suppdebt:"suppDebt",kassa:"reports",nagd:"reports",kart:"reports",nisye:"reports",xerc:"cost",anbarpul:"cost",menfeet:"cost",pnl:"cost",borc:"reports",low:"stock",gun:"reports",ay:"cost",mal:"cost",zay:"reports",anbar:"stock",bolme:"edit",admin:"edit",mat:"stock",backup:"backup"};
+const KASSIR_DEFAULT={zay:1,hist:1,custSale:1,disc:1,expBuy:1,expOther:1,expDebt:1,expDel:1,tip:1,payCard:1,paySplit:1,clearOrder:1,free:1,kassa:1,upd:1,_v2:1};
+// Hesabatdakı Nağd/Kart/Nisyə/Kassadakı pul qutularının icazəsi
+const PK={"nağd":"rb_nagd","kart":"rb_kart","borc":"rb_nisye","kassapul":"rb_kassapul"};
+const TAB_PERM={faiz:"_admin",artiq:"rb_artiq",suppdebt:"suppDebt",kassa:"reports",nagd:"reports",kart:"reports",nisye:"reports",xerc:"rb_xerc",anbarpul:"rb_anbarpul",menfeet:"rb_menfeet",pnl:"cost",borc:"reports",low:"stock",gun:"reports",ay:"cost",mal:"cost",zay:"rb_zay",anbar:"stock",bolme:"edit",admin:"edit",mat:"stockMat",backup:"backup"};
 let me=null, loginSel=null, pinBuf="", pinErr="";
 const isAdmin=()=>me?.role==="admin";
-const can=p=>!!me&&(me.role==="admin"||!!me.perms?.[p]);
+const can=p=>!!me&&(me.role==="admin"||(p==="exp"?["expBuy","expOther","expDebt"].some(k=>!!me.perms?.[k]):!!me.perms?.[p]));
+const repAny=()=>repTabs().length>0||Object.values(PK).some(can);
 const curName=()=>me?.name||"";
 const userById=id=>S.users.find(u=>u.id===id);
 const roleName=u=>u.role==="admin"?"Admin":"Kassir";
@@ -1727,10 +1762,11 @@ const repTabs=()=>RT_REP.filter(([k])=>can(TAB_PERM[k]));
 const setTabs=()=>RT_SET.filter(([k])=>k==="users"||k==="supp"||k==="phone"||k==="cloud"?isAdmin()&&(k!=="phone"||REMOTE||typeof window.erpPhoneInfo==="function")&&(k!=="cloud"||(!REMOTE&&(NATIVE||PHONE_CLOUD))):can(TAB_PERM[k]));
 function applyPerms(){
   const show=(id,on)=>{const el=$(id);if(el)el.hidden=!on};
-  show("btnZay",can("zay"));show("btnRep",repTabs().length>0);show("btnExp",can("exp"));show("btnEdit",false); // v0.37.0: Düzəliş Ayarların içindədir
-  show("btnSet",setTabs().length>0);show("btnHist",can("hist"));show("btnSupp",false);show("btnStock",can("stock"));renderSuppBadge();show("btnCust",can("custDebt")||can("suppDebt"));renderCustBadge();show("today",can("reports"));
+  show("btnZay",can("zay"));show("btnRep",repAny());show("btnExp",can("exp"));show("btnEdit",false); // v0.37.0: Düzəliş Ayarların içindədir
+  show("btnSet",setTabs().length>0);show("btnHist",can("hist"));show("btnSupp",false);show("btnStock",can("stock")||can("stockMat"));renderSuppBadge();show("btnCust",can("custDebt")||can("suppDebt"));renderCustBadge();show("today",can("reports"));
   $("userName").textContent=curName()+(isAdmin()?" (admin)":"");
   if(editMode&&!can("edit"))setEdit(false);
+  if(typeof renderUpd==="function"&&CAN_UPD)renderUpd();renderKzBtn&&renderKzBtn();
 }
 // Açılışda: Admin-in PIN-i yoxdursa birbaşa admin kimi açılır (köhnə qayda), varsa giriş ekranı
 // Sahibinin telefonunda (bulud) yalnız admin girir — kassirlər orada görünmür
@@ -2074,7 +2110,7 @@ document.addEventListener("keydown",e=>{if($("ovM2").hidden)return;
   if(e.key==="Enter"||e.key==="NumpadEnter"){e.preventDefault();e.stopImmediatePropagation();addM2()}
   else if(e.key==="Escape"){e.stopImmediatePropagation();m2For=null;$("ovM2").hidden=true}},true);
 let pickFor=null;
-function tapItem(id){if(!editMode&&kzLocked()){kzLockMsg();return}const it=item(id);if((it?.area||it?.free)&&!editMode){openM2(id);return}
+function tapItem(id){if(!editMode&&kzLocked()){kzLockMsg();return}const it=item(id);if((it?.area||it?.free)&&!editMode){if(!can("free")){toast("🔒 Qiyməti satanda yazılan düymələri satmağa icazəniz yoxdur");return}openM2(id);return}
   if(it?.pick&&!editMode&&it.tiers.some(t=>+t[1])){const ms=pickMats(it);
     if(ms.length===1){addItem(id+"#"+ms[0].id,1);return}
     if(ms.length>1){pickFor=id;$("srt").textContent=`${it.name}: hansı?`;
@@ -2269,7 +2305,7 @@ const kzOpen=()=>{const L=kzLast();return L?.t==="open"&&dayKey(L.ts)===dayKey(D
 // v0.91.0 (sahibinin istəyi): kassir kassanı açmadan satış edə bilməz (admin üçün yoxdur)
 // v1.2.0 (sahibinin istəyi): admin Ayarlar → Kassirlər-də açılış tələbini söndürə bilər (S.kzReq===false) — onda kilid və avtomatik açılış pəncərəsi yoxdur
 const kzReq=()=>S.kzReq!==false;
-const kzLocked=()=>kzReq()&&!!me&&!isAdmin()&&!PHONE_CLOUD&&!kzOpen();
+const kzLocked=()=>kzReq()&&!!me&&!isAdmin()&&!PHONE_CLOUD&&can("kassa")&&!kzOpen();
 function kzLockMsg(){toast("🔒 Əvvəl kassanı sayıb açın — sonra satış edə bilərsiniz");openKassa()}
 let kzDraft={cnt:"",take:"",to:"",note:"",warn:false},kzSkip="",kzDel=null;
 // Admin səhv qeydi silir: günün açılış (c.open) və son sayım (c.counted) qalan qeydlərə görə yenidən hesablanır
@@ -2283,7 +2319,7 @@ function kzRemove(id){
 }
 function openKassa(){kzAutoShown=false;kzDraft={cnt:"",take:"",to:"",note:"",warn:false};drawKassa();$("ovKassa").hidden=false;setTimeout(()=>$("kz_cnt")?.focus(),30)}
 function drawKassa(){
-  const L=kzLast(),open=kzOpen(),today=dayKey(Date.now()),K=cashDay(today),D=kzDraft,seeExp=can("reports");
+  const L=kzLast(),open=kzOpen(),today=dayKey(Date.now()),K=cashDay(today),D=kzDraft,seeExp=can("rb_kassapul");
   let h="";
   if(!open){
     const exp=L?.t==="close"?L.left:null;
@@ -2356,17 +2392,17 @@ function kzSave(kind){
 // Girişdən sonra: kassa təhvil verilib, hələ açılmayıbsa — açılış pəncərəsi özü çıxır ("Sonra" ilə keçmək olar)
 // v1.8.1: bulud qoşuludursa, əvvəl buluddan ən son ayarlar (məs. "Kassa açılışı məcburidir" söndürülüb) gəlsin — 20 san.-ə qədər gözləyir
 let kzWait=0,kzAutoShown=false;
-function kzAuto(){if(!me||PHONE_CLOUD||!kzReq()||kzOpen())return;
+function kzAuto(){if(!me||PHONE_CLOUD||!kzReq()||!can("kassa")||kzOpen())return;
   if(CL.on&&CL.cfg&&!CL.pulled&&kzWait<20){kzWait++;setTimeout(kzAuto,1000);return}
   const L=kzLast();if(!L&&!kzLocked())return;const k=dayKey(Date.now())+"|"+curName();if(kzSkip===k)return;openKassa();kzAutoShown=true}
 let kzSeen;
 // Başqa kompüterdən (bulud) təhvil gələndə: bu kompüterdə girmiş işçiyə açılış pəncərəsi özü çıxır
-function kzWatch(){const L=kzLast(),id=L?.id||"";if(id===kzSeen)return;const first=kzSeen===undefined;kzSeen=id;if(!kzReq())return;
+function kzWatch(){const L=kzLast(),id=L?.id||"";if(id===kzSeen)return;const first=kzSeen===undefined;kzSeen=id;if(!kzReq()||!can("kassa"))return;
   if(first||!L||L.t!=="close"||L.by===curName()||!me||PHONE_CLOUD||editMode||!noModal())return;
   setTimeout(()=>{if(noModal()&&!kzOpen()){openKassa();kzAutoShown=true}},0)}
 function renderKzBtn(){kzWatch();
   // Admin başqa kompüterdə söndürübsə və pəncərə özü açılıbsa (kassir hələ heç nə yazmayıb) — bağla
-  if(!kzReq()&&kzAutoShown&&!$("ovKassa").hidden&&!(kzDraft&&(kzDraft.cnt||kzDraft.take||kzDraft.note))){$("ovKassa").hidden=true;kzAutoShown=false}const lk=$("kzLockBar");if(lk)lk.hidden=!kzLocked();const b=$("btnKassa");if(!b)return;b.hidden=!me||PHONE_CLOUD;$("kzState").textContent=kzOpen()?"açıqdır · "+(kzLast().by||""):"bağlıdır"}
+  if(!kzReq()&&kzAutoShown&&!$("ovKassa").hidden&&!(kzDraft&&(kzDraft.cnt||kzDraft.take||kzDraft.note))){$("ovKassa").hidden=true;kzAutoShown=false}const lk=$("kzLockBar");if(lk)lk.hidden=!kzLocked();const b=$("btnKassa");if(!b)return;b.hidden=!me||PHONE_CLOUD||!can("kassa");$("kzState").textContent=kzOpen()?"açıqdır · "+(kzLast().by||""):"bağlıdır"}
 document.addEventListener("input",e=>{if($("ovKassa").hidden)return;const id=e.target.id,D=kzDraft;
   if(id==="kz_cnt"){D.cnt=e.target.value;D.warn=false}else if(id==="kz_take")D.take=e.target.value;else if(id==="kz_note"){D.note=e.target.value;return}else if(id==="kz_to"){D.to=e.target.value;return}else return;
   const lv=$("kzLive");if(lv)lv.innerHTML=kzLive()});
@@ -2418,8 +2454,8 @@ function renderHist(){
       <td>${salePill(s)}</td>
       <td class="wrap">${s.lines.map(l=>`${esc(l.name)} <span class="sub">×${l.q}</span>`).join(", ")||'<span class="sub">—</span>'}${s.disc?`<div class="sub">🏷️ Endirim −${m2(s.disc)} ₼${s.discPct?` (${fmtN(s.discPct)}%)`:""}: ${esc(s.discReason||"")}</div>`:""}${Object.keys(s.returned||{}).length?`<div class="sub">↩️ Qaytarılıb: ${Object.entries(s.returned).map(([i,n])=>`${esc(s.lines[i]?.name||"")} ×${n}`).join(", ")}</div>`:""}${(s.payEdits||[]).map(x=>`<div class="sub">✏️ Ödəniş dəyişdirilib: ${payName(x.from)} → ${payName(x.to)} (${esc(x.by||"")}, ${fmtDate(x.ts)} ${fmtTime(x.ts)})</div>`).join("")}</td>
       <td>${esc(s.worker||"")}</td><td class="n"><b>${m2(s.total)} ₼</b></td>
-      <td class="acts">${!can("delSale")?(canRet(s)?`<button class="btn ghost sm" data-h="ret" data-k="${k}">↩️ Qaytar / Əvəzlə</button>`:""):hPayEd===k?`<button class="btn sm" data-h="payok" data-k="${k}">Bəli, ${s.pay==="nağd"?"💳 Kart":"💵 Nağd"} et</button> <button class="btn ghost sm" data-h="delx">Ləğv</button>`:hDel===k?`<button class="btn red sm" data-h="del" data-k="${k}">Bəli, sil</button> <button class="btn ghost sm" data-h="delx">Ləğv</button>`
-        :`${canRet(s)?`<button class="btn ghost sm" data-h="ret" data-k="${k}" title="Müştəri malı qaytarır və ya başqası ilə dəyişir">↩️ Qaytar / Əvəzlə</button> `:""}${s.pay!=="borc"&&!s.split?`<button class="btn ghost sm" data-h="payask" data-k="${k}" title="Kassir səhv ödəniş növü seçibsə">✏️ ${s.pay==="nağd"?"Karta":"Nağda"} dəyiş</button> `:""}<button class="btn ghost sm del" data-h="ask" data-k="${k}">Sil</button>`}</td></tr>`}).join("")}</table></div>
+      <td class="acts">${hPayEd===k&&can("payEdit")?`<button class="btn sm" data-h="payok" data-k="${k}">Bəli, ${s.pay==="nağd"?"💳 Kart":"💵 Nağd"} et</button> <button class="btn ghost sm" data-h="delx">Ləğv</button>`:hDel===k&&can("delSale")?`<button class="btn red sm" data-h="del" data-k="${k}">Bəli, sil</button> <button class="btn ghost sm" data-h="delx">Ləğv</button>`
+        :`${canRet(s)?`<button class="btn ghost sm" data-h="ret" data-k="${k}" title="Müştəri malı qaytarır və ya başqası ilə dəyişir">↩️ Qaytar / Əvəzlə</button> `:""}${s.pay!=="borc"&&!s.split&&can("payEdit")?`<button class="btn ghost sm" data-h="payask" data-k="${k}" title="Kassir səhv ödəniş növü seçibsə">✏️ ${s.pay==="nağd"?"Karta":"Nağda"} dəyiş</button> `:""}${can("delSale")?`<button class="btn ghost sm del" data-h="ask" data-k="${k}">Sil</button>`:""}`}</td></tr>`}).join("")}</table></div>
     ${list.length>500?`<p class="sub">Son 500 satış göstərilir (cəmlər hamısı üzrədir). Tarix aralığını daraldın.</p>`:""}`
     :`<p class="sub empty-grp">${title}: satış yoxdur${hPay!=="all"?" (seçilmiş ödəniş növü ilə)":""}.</p>`}`;
 }
@@ -2492,7 +2528,7 @@ document.addEventListener("keydown",e=>{if($("ovRet").hidden)return;
   if(e.key==="Escape"){e.stopImmediatePropagation();retFor=null;$("ovRet").hidden=true}
   else if(e.key==="Enter"&&e.target.matches("[data-rq]")){e.preventDefault();e.stopImmediatePropagation();addRet()}},true);
 const payName=p=>p==="nağd"?"💵 Nağd":p==="kart"?"💳 Kart":p==="qarış"?"💵+💳 Nağd + Kart":"📝 Nisyə";
-function changeSalePay(k){if(!can("delSale"))return;const s=S.sales.find(x=>saleKey(x)===k);hPayEd=null;if(!s||s.pay==="borc"||s.split){renderHist();return}
+function changeSalePay(k){if(!can("payEdit"))return;const s=S.sales.find(x=>saleKey(x)===k);hPayEd=null;if(!s||s.pay==="borc"||s.split){renderHist();return}
   const to=s.pay==="nağd"?"kart":"nağd";(s.payEdits=s.payEdits||[]).push({from:s.pay,to,ts:Date.now(),by:curName()});s.pay=to;
   save();renderHeader();renderHist();toast(`${fmtDate(s.ts)} ${fmtTime(s.ts)} — ${m2(s.total)} ₼ satış: ödəniş ${payName(to)} oldu ✓`)}
 const salePill=s=>(s.tip?`<span class="pill ok">🪙 +${m2(s.tip)}</span> `:"")+(s.split?`<span class="pill ok">💵 ${m2(s.split.nağd)}</span> <span class="pill card">💳 ${m2(s.split.kart)}</span>`:s.pay==="nağd"?'<span class="pill ok">💵 Nağd</span>':s.pay==="borc"?`<span class="pill warn">📝 Nisyə: ${esc(s.custName||custById(s.cust)?.name||"")}</span>`:'<span class="pill card">💳 Kart</span>');
@@ -2545,9 +2581,12 @@ const saleItems=()=>S.items.filter(i=>!i.group).map(i=>({id:i.id,label:pathOf(i)
 function renderDebtBadge(){const d=purchDebt();$("debtBadge").hidden=!d;$("debtBadge").textContent="borc "+m2(d)+" ₼"}
 function openExp(){if(!pd)pd=newPd();etab="buy";pDel=null;renderExp();$("ovExp").hidden=false}
 function lineCalc(l){const qty=(+l.packs||0)*(+l.perPack||0),tot=+l.total||0;return{qty,tot,unit:qty?tot/qty:0}}
+const EXP_PERM={buy:"expBuy",phist:"expBuy",debt:"expDebt",other:"expOther"};
 function renderExp(){
   const d=purchDebt();
-  $("etabs").innerHTML=[["buy","📦 Mal alışı"],["phist","📋 Alış tarixçəsi"],["debt","💳 Borclar"+(d?` (${m2(d)} ₼)`:"")],["other","🧾 Digər xərclər"]]
+  const ET=[["buy","📦 Mal alışı"],["phist","📋 Alış tarixçəsi"],["debt","💳 Borclar"+(d?` (${m2(d)} ₼)`:"")],["other","🧾 Digər xərclər"]].filter(([k])=>can(EXP_PERM[k]));
+  if(!ET.length){$("ovExp").hidden=true;return}if(!ET.some(([k])=>k===etab))etab=ET[0][0];
+  $("etabs").innerHTML=ET
     .map(([k,l])=>`<button class="tab ${k===etab?"on":""}" data-x="tab" data-t="${k}">${l}</button>`).join("");
   let h="";
   if(etab==="buy"){
@@ -2827,7 +2866,7 @@ document.addEventListener("change",e=>{
 // nağd ödəniş gün sonu kassa hesabından da çıxılır. Kassir yaza bilir (icazə "supp"), aylıq hesabat "suppRep" və ya admin.
 let stab="add",sSel=null,sDel=null,sMon="",sDraft=null,sPL=null;
 const suppName=id=>S.suppliers.find(x=>x.id===id)?.name;
-const suppTabs=()=>[["add","🚚 Alışı yaz","supp"],["rep","📊 Aylıq hesabat","suppRep"],["list","⚙️ Tədarükçülər","admin"]].filter(([,,p])=>p==="admin"?isAdmin():can(p));
+const suppTabs=()=>[["add","🚚 Alışı yaz","expOther"],["rep","📊 Aylıq hesabat","rb_xerc"],["list","⚙️ Tədarükçülər","admin"]].filter(([,,p])=>p==="admin"?isAdmin():can(p));
 const suppRecs=()=>S.expenses.filter(x=>x.supp);
 // v0.92.0 (sahibinin istəyi): tədarükçüdən (məs. Samir Foto) hazır alınıb satılan mal satış anında həmin tədarükçüyə NİSYƏ borc kimi yazılır.
 // Tədarükçüdə autoDebt (admin ⚙️ Tədarükçülər-də dəyişir); təyin edilməyibsə Samir Foto (sp1) üçün açıqdır.
@@ -3073,7 +3112,7 @@ document.addEventListener("change",e=>{if(e.target.id==="r_day"){if(e.target.val
 const RT_REP=[["kassa","📊 Ümumi Satış"],["artiq","🪙 Artıq ödəmə"],["suppdebt","🚚 Bizim borclarımız"],["zay","🗑️ Zay olan pul"],["xerc","🧾 Xərclər"],["anbarpul","📦 Anbarda qalan pul"],["menfeet","📈 Xalis Gəlir"],["faiz","👥 İşçi faizi"]];
 // 📦 Anbar (v0.38.0: Hesabatdan və Ayarlardan ayrıca düyməyə köçdü)
 const RT_STOCK=[["anbar","Qalıq / Sayım"],["mat","Materiallar"],["low","⚠ Az qalanlar"]];
-const stockTabs=()=>RT_STOCK.filter(()=>can("stock"));
+const stockTabs=()=>RT_STOCK.filter(([k])=>can(k==="mat"?"stockMat":"stock"));
 const RT_SET=[["bolme","Bölmələr"],["admin","Düymələr / Xidmətlər"],["users","👥 Kassirlər"],["supp","🚚 Tədarükçülər"],["phone","📱 Telefon"],["cloud","☁️ Bulud"],["backup","💾 Ehtiyat nüsxə"]];
 // v1.5.0 (sahibinin istəyi): Hesabatda hər bölmə (başlıq + cədvəl/izah) bağlı gəlir, yanında ▸ — basanda açılır. Rəqəm qutuları (KPI) həmişə görünür.
 // Açıq bölmələr yadda qalır (localStorage "kassa.repOpen", tab + sıra). Avtomatlaşdırılmış sınaqda (navigator.webdriver) hamısı açıq.
@@ -3089,9 +3128,9 @@ function renderRep(){
   $("rt").textContent=mode==="set"?"⚙️ Ayarlar":mode==="stock"?"📦 Anbar":"📊 Hesabat";
   $("btnReset").hidden=!(mode==="rep"&&isAdmin()&&!PHONE_CLOUD&&!REMOTE);
   const TABS=mode==="set"?setTabs():mode==="stock"?stockTabs():repTabs();
-  if(!TABS.length){$("ovRep").hidden=true;return}
+  if(!TABS.length&&!(mode==="rep"&&repAny())){$("ovRep").hidden=true;return}
   // v1.7.0 (sahibinin istəyi): Hesabatda tab yoxdur — bir səhifə, bütün bölmələr Ümumi Satış-da qutu (data-ks), basanda təfərrüat altında açılır.
-  if(mode==="rep"){rtab="kassa";const ok=["nağd","kart","borc","kassapul"].includes(kSub)?can("reports"):TABS.some(([k])=>k===kSub&&k!=="kassa");if(!ok)kSub=""}
+  if(mode==="rep"){rtab="kassa";const ok=PK[kSub]?can(PK[kSub]):TABS.some(([k])=>k===kSub&&k!=="kassa");if(!ok)kSub=""}
   $("rtabs").hidden=mode==="rep";
   if(mode!=="rep"&&!TABS.some(([k])=>k===rtab))rtab=TABS[0][0];
   $("rtabs").classList.toggle("g4",mode==="rep"&&TABS.length===8);$("rtabs").classList.toggle("g3",mode==="rep"&&TABS.length===9);$("rtabs").classList.toggle("g5",mode==="rep"&&TABS.length===10);$("rtabs").classList.toggle("g4c",mode==="rep"&&TABS.length===11);
@@ -3143,18 +3182,17 @@ function renderRep(){
         sales.forEach(s=>{const f=s.sub&&s.disc?s.total/s.sub:1;s.lines.forEach(l=>{if(!l.from)p+=l.sum*f*rate(item(l.id)?.cat||"?")/100})});return m2(p)+" ₼"}};
     V.kassapul=()=>m2(cashDay(one?rFrom:(rTo||dayKey(Date.now()))).should)+" ₼";
     const NOTE={suppdebt:"indi",anbarpul:"indi",kassapul:one?"":"son gün"};
-    const bx=(can("reports")?[["kassapul","💰 Kassadakı pul"]]:[]).concat(TABS.filter(([k])=>k!=="kassa"));
+    const bx=(can("rb_kassapul")?[["kassapul","💰 Kassadakı pul"]]:[]).concat(TABS.filter(([k])=>k!=="kassa"));
     if(bx.length)BOX=`<div class="kpis kboxes">${bx.map(([k,l])=>`<button class="kpi kbtn${kSub===k?" on":""}" data-ks="${k}" title="Təfərrüatı aç / bağla"><span>${l} ${kSub===k?"▾":"▸"}</span><b>${V[k]?V[k]():""}</b><span class="sub">${NOTE[k]?NOTE[k]+" · ":""}${kSub===k?"bağlamaq üçün basın":"təfərrüat üçün basın"}</span></button>`).join("")}</div>`;
-    if(!can("reports"))h+=BOX;
   }
-  if((rt==="kassa"||rt==="kassapul")&&can("reports")){
+  if((rt==="kassa"&&mode==="rep")||(rt==="kassapul"&&can("rb_kassapul"))){
     const kd=one?rFrom:(rTo||dayKey(Date.now())),K=cashDay(kd);
     const days={};S.sales.filter(s=>inR(s.ts)).forEach(s=>{days[dayKey(s.ts)]=1});
     const dsel=!one&&Object.keys(days).length?`<h4>📅 Günü seçin</h4><p class="sub">Kassa hər gün ayrıca hesablanır. İndi göstərilən gün: <b>${esc(fdk(kd))}</b></p>${tbl(["Gün","#Nağd satış","#Kassada olmalıdır","#Sayılıb"],dk2(days).map(k=>{const c=cashDay(k);return `<tr><td><button class="link" data-rd="${k}">${fdk(k)}</button></td><td class="n">${m2(c.sales)}</td><td class="n">${m2(c.should)}</td><td class="n">${c.counted==null?"—":m2(c.counted)}</td></tr>`}))}`:"";
     const byW={};S.sales.filter(s=>dayKey(s.ts)===kd&&payPart(s,"nağd")).forEach(s=>byW[s.worker||"—"]=(byW[s.worker||"—"]||0)+payPart(s,"nağd"));
     if(rt==="kassa"){const tot=sales.reduce((a,s)=>a+s.total,0),pp=p=>sales.reduce((a,s)=>a+payPart(s,p),0);
-     h+=`<div class="kpis"><div class="kpi hero"><span>📊 Ümumi satış — ${esc(rTitle)}</span><b>${m2(tot)} ₼</b><span>${sales.length} satış</span></div>
-      ${[["nağd","💵 Nağd"],["kart","💳 Kart"],["borc","📝 Nisyə"]].map(([p,l])=>`<button class="kpi kbtn${kSub===p?" on":""}" data-ks="${p}" title="Təfərrüatı aç / bağla"><span>${l} ${kSub===p?"▾":"▸"}</span><b>${m2(pp(p))} ₼</b><span class="sub">${kSub===p?"bağlamaq üçün basın":"təfərrüat üçün basın"}</span></button>`).join("")}</div>${BOX}`}
+     const row=(can("reports")?`<div class="kpi hero"><span>📊 Ümumi satış — ${esc(rTitle)}</span><b>${m2(tot)} ₼</b><span>${sales.length} satış</span></div>`:"")+`
+      ${[["nağd","💵 Nağd"],["kart","💳 Kart"],["borc","📝 Nisyə"]].filter(([p])=>can(PK[p])).map(([p,l])=>`<button class="kpi kbtn${kSub===p?" on":""}" data-ks="${p}" title="Təfərrüatı aç / bağla"><span>${l} ${kSub===p?"▾":"▸"}</span><b>${m2(pp(p))} ₼</b><span class="sub">${kSub===p?"bağlamaq üçün basın":"təfərrüat üçün basın"}</span></button>`).join("")}`;h+=(row.trim()?`<div class="kpis">${row}</div>`:"")+BOX}
     if(rt==="kassapul")h+=`<div class="kpis"><div class="kpi hero"><span>💰 Kassada olmalıdır — ${esc(fdk(kd))}</span><b>${m2(K.should)} ₼</b></div>
       ${K.counted!=null?`<div class="kpi"><span>Sayılıb</span><b>${m2(K.counted)} ₼</b></div>`:""}</div>
       <h4>💰 Kassa (yalnız nağd pul) — ${esc(fdk(kd))}</h4>
@@ -3303,11 +3341,11 @@ function renderRep(){
       <p class="sub">Alanda: 💸 Xərclər → 📦 Mal alışı — anbar özü artır.</p>`
       :`<p class="sub empty-grp">✓ Bütün materiallar kifayət qədərdir${S.materials.length?"":" (hələ material yoxdur — “Materiallar” tabında əlavə edin)"}.</p>`;
   }
-  if(rtab==="anbar"){
+  if(rtab==="anbar"){const SM=can("stockMat");
     h=`<p class="sub">Sayım: rəfdə saydığınız rəqəmi "Faktiki" xanasına yazın. Fərq qeydə alınmayan zay və ya itkidir. "Alış" xanasına yeni gələn kağızı yazın.</p>
     <div class="tw"><table><tr><th>Material</th><th class="n">Maya</th><th class="n">Sistemdə</th><th class="n">Faktiki</th><th class="n">Alış (+)</th><th>Vəziyyət</th></tr>
-    ${S.materials.map(m=>`<tr><td>${esc(m.name)}</td><td class="n"><input id="c_${m.id}" type="number" step="0.01" value="${m.cost}"></td><td class="n">${fmtN(m.stock)}</td>
-      <td class="n"><input id="f_${m.id}" type="number" step="any" min="0" placeholder="${+(+m.stock).toFixed(3)}"></td><td class="n"><input id="b_${m.id}" type="number" step="any" min="0" placeholder="0"></td>
+    ${S.materials.map(m=>`<tr><td>${esc(m.name)}</td><td class="n">${SM?`<input id="c_${m.id}" type="number" step="0.01" value="${m.cost}">`:(can("cost")?m2(m.cost):"—")}</td><td class="n">${fmtN(m.stock)}</td>
+      <td class="n"><input id="f_${m.id}" type="number" step="any" min="0" placeholder="${+(+m.stock).toFixed(3)}"></td><td class="n">${SM?`<input id="b_${m.id}" type="number" step="any" min="0" placeholder="0">`:"—"}</td>
       <td>${m.stock<=m.min?`<span class="pill warn">Az qalıb (min ${m.min})</span>`:`<span class="pill ok">Normal</span>`}</td></tr>`).join("")}</table></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="stSave">Yadda saxla</button></div>`;
   }
@@ -3486,7 +3524,7 @@ function userCard(u){
       ${u.pin?`<button class="btn ghost sm" data-act="upinx" data-id="${u.id}">PIN-i sil</button>`:""}
       ${self?"":`<button class="btn ghost sm" data-act="udel" data-id="${u.id}">${delArm===u.id?"Əminsiniz? Sil":"🗑 Sil"}</button>`}</div>
     ${adm?`<p class="sub">Admin bütün işləri görür, icazə seçmək lazım deyil.</p>`
-      :`<div class="perms">${PERMS.map(([k,l])=>`<label class="perm"><input type="checkbox" data-up="${u.id}" data-k="${k}" ${u.perms?.[k]?"checked":""}> ${l}</label>`).join("")}</div>`}
+      :`<div class="perms">${PERMS.map(([k,l])=>k==="#"?`<div class="permh">${l}</div>`:`<label class="perm"><input type="checkbox" data-up="${u.id}" data-k="${k}" ${u.perms?.[k]?"checked":""}> ${l}</label>`).join("")}</div>`}
   </div>`;
 }
 
@@ -3750,9 +3788,9 @@ document.addEventListener("click",e=>{
   else if(t.id==="stSave"){
     let diff=[];
     S.materials.forEach(m=>{
-      const c=parseFloat($("c_"+m.id).value);if(!isNaN(c))m.cost=c;
+      const c=parseFloat($("c_"+m.id)?.value);if(!isNaN(c))m.cost=c;
       const r3=x=>Math.round(x*1000)/1000; // v0.80.1: kəsr say (fleks 6.5 metr) — əvvəl parseInt yuvarlayırdı
-      const b=parseFloat($("b_"+m.id).value);if(b>0)m.stock=r3(m.stock+b);
+      const b=parseFloat($("b_"+m.id)?.value);if(b>0)m.stock=r3(m.stock+b);
       const f=String($("f_"+m.id).value).replace(",",".");if(f!==""&&!isNaN(parseFloat(f))){const F=r3(parseFloat(f)),d=r3(m.stock-F);if(d>0){S.waste.push({id:newId("w"),ts:Date.now(),mat:m.id,q:d,reason:"Sayım fərqi",worker:curName(),note:"qeydə alınmayan",cost:m.cost*d});diff.push(`${m.name}: −${d}`)}m.stock=F}
     });
     save();renderHeader();renderRep();toast(diff.length?"Sayım fərqi: "+diff.join(", "):"Anbar yeniləndi");
@@ -3841,7 +3879,7 @@ let updLatest=null,updArm=0;
 function verGt(a,b){const x=String(a).split(".").map(Number),y=String(b).split(".").map(Number);
   for(let i=0;i<Math.max(x.length,y.length);i++){const p=x[i]||0,q=y[i]||0;if(p!==q)return p>q}return false}
 async function checkUpd(){if(!CAN_UPD)return null;try{updLatest=await window.erpLatest()}catch(e){updLatest=null}renderUpd();return updLatest}
-function renderUpd(){const b=$("btnUpd");b.hidden=!CAN_UPD;if(!CAN_UPD)return;
+function renderUpd(){const b=$("btnUpd");b.hidden=!CAN_UPD||!can("upd");if(b.hidden)return;
   const nw=!!updLatest&&verGt(updLatest,APP_VERSION);b.classList.toggle("new",nw);b.classList.remove("arm");
   b.innerHTML=nw?`🔄 Yenilə <b>v${esc(updLatest)}</b>`:"🔄 Yenilə";b.title=nw?`Yeni versiya var: v${updLatest} (sizdə v${APP_VERSION})`:"Yeni versiya olub-olmadığını yoxla"}
 async function doUpdate(){

@@ -212,6 +212,12 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   (buluddan `S.kzReq=false` hələ gəlməmiş) işləyirdi. İndi: bulud qoşuludursa `kzAuto` ilk pull-u (`CL.pulled`, `cloudTick`-də) 20 san.-ə qədər gözləyir; pəncərə özü açılıbsa (`kzAutoShown`)
   və sonra `kzReq()` false olubsa, kassir heç nə yazmayıbsa `renderKzBtn` pəncərəni bağlayır. Ayar **şöbəyə görədir** — Mida-da ayrıca söndürülməlidir.
 - **v1.8.2 (sahibinin istəyi):** Hesabat qutularında solğun yazılar oxunaqlı — `#rbody .kpi span` `--fg` 14px 600, alt yazı 13px opacity .8, qutuya çərçivə; dövr çubuğu yazıları da tünd.
+- **v1.9.0 (sahibinin istəyi: "bütün funksiyaları kassir üçün qutu ilə aç/bağla"):** `PERMS` qruplara bölündü (`["#",başlıq]` → `.permh`). Yeni açarlar:
+  `free` (free/area düymələri, `tapItem`), `kassa` (Kassa düyməsi; yoxdursa `kzLocked/kzAuto/kzWatch` işləmir), `upd` (`renderUpd`), `payEdit` (Karta/Nağda dəyiş — əvvəl `delSale`-də idi),
+  Hesabat qutuları `rb_nagd/rb_kart/rb_nisye/rb_kassapul/rb_artiq/rb_zay/rb_xerc/rb_anbarpul/rb_menfeet` (`PK`, `TAB_PERM`; `reports` = yalnız Ümumi satış hero + başlıqdakı cəm; `cost` = maya sütunları;
+  kassa pəncərəsində "olmalıdır" `rb_kassapul`), `repAny()`; Xərclər `expBuy/expOther/expDebt/expDel` (`EXP_PERM` tablar; `can("exp")` = üçündən biri; `canDelRec` `expDel` istəyir),
+  Anbar `stock` + `stockMat` (Materiallar tabı, sayım cədvəlində maya/Alış(+) xanaları). Silindi: `supp`, `suppRep` (köhnə #ovSupp-da `expOther`/`rb_xerc`).
+  Köçürmə `upgrade()`-də hər kassirə bir dəfə (`perms._v2`, bayraqsız — şöbələr ayrı): reports→6 rb_, cost→3 rb_, delSale→payEdit, exp→4 exp*, stock→stockMat, free/kassa/upd=1.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
