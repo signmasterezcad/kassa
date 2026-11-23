@@ -208,6 +208,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   (`rt=kSub`), yuxarıda `.kback` "← Geri" (`data-ks=""`) + ad + dövr çubuğu (anbarpul-da yox); Esc əsas səhifəyə qaytarır (Hesabat bağlanmır); səhifə yuxarıdan açılır.
   Əsas səhifədə yalnız qutular (bir ekrana sığır): kassa hissəsi ayrıca qutu **💰 Kassadakı pul** `kassapul` (icazə `reports`; dəyər `cashDay(gün).should`). Admin 4+4+4.
   Testlər `repGo('xerc')` / `repGo('')` çağırır. `.ksub`, `%%KSUB%%` artıq yoxdur.
+- **v1.8.1 (sahibinin şikayəti: "Kassa açılışı məcburidir" söndürülüb, amma kassirdə yenə açılış pəncərəsi çıxır):** səbəb — kassir kompüteri açılanda `kzAuto` köhnə yerli məlumatla
+  (buluddan `S.kzReq=false` hələ gəlməmiş) işləyirdi. İndi: bulud qoşuludursa `kzAuto` ilk pull-u (`CL.pulled`, `cloudTick`-də) 20 san.-ə qədər gözləyir; pəncərə özü açılıbsa (`kzAutoShown`)
+  və sonra `kzReq()` false olubsa, kassir heç nə yazmayıbsa `renderKzBtn` pəncərəni bağlayır. Ayar **şöbəyə görədir** — Mida-da ayrıca söndürülməlidir.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

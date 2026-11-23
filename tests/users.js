@@ -82,6 +82,18 @@ let n = 0;
   await p.fill('#kz_cnt', '50'); await p.click('[data-kz=open]');
   ok(await p.isHidden('#kzLockBar') && await p.evaluate(() => kzOpen()), 'Leyla kassanı açdı (50 ₼) — satış açıldı');
   ok(await p.evaluate(() => { S.kzReq = false; const r1 = !kzLocked(); S.kzReq = true; const r2 = kzLocked() === !kzOpen(); return r1 && r2; }), 'v1.2.0: açılış tələbi söndürüləndə kassir kilidlənmir');
+  {const r = await p.evaluate(async () => {
+    const saved = JSON.stringify(S.cash), td = dayKey(Date.now()); S.cash[td].log = [];
+    CL.on = true; CL.cfg = {}; CL.pulled = false; kzWait = 0; kzSkip = ''; $('ovKassa').hidden = true; kzAuto();
+    await new Promise(r => setTimeout(r, 1500)); const waited = $('ovKassa').hidden;
+    S.kzReq = false; CL.pulled = true; await new Promise(r => setTimeout(r, 1300)); const noOpen = $('ovKassa').hidden;
+    S.kzReq = undefined; kzAuto(); const shown = !$('ovKassa').hidden;
+    S.kzReq = false; renderKzBtn(); const closed = $('ovKassa').hidden;
+    delete S.kzReq; CL.on = false; CL.cfg = null; S.cash = JSON.parse(saved); renderKzBtn();
+    return [waited, noOpen, shown, closed];
+  });
+  ok(r[0] && r[1], 'v1.8.1: bulud qoşuludursa kassa pəncərəsi buluddan ayar gələnə qədər gözləyir; "məcburi deyil" gəlsə açılmır');
+  ok(r[2] && r[3], 'v1.8.1: pəncərə özü açılıb, sonra admin söndürdüyü xəbəri gəlib → pəncərə özü bağlanır');}
   ok(await p.evaluate(() => ['tip', 'payCard', 'paySplit', 'clearOrder'].every(k => me.perms[k] === 1)) && await p.isVisible('#payCard') && await p.isVisible('#btnTip'), 'v0.97.0: yeni kassirə Çay pulu, Kart, Nağd+Kart, Ləğv et icazələri standart açıq');
   await p.evaluate(() => { ['tip', 'payCard', 'paySplit', 'clearOrder'].forEach(k => me.perms[k] = 0); renderOrder(); });
   ok(await p.isHidden('#payCard') && await p.isHidden('#paySplit') && await p.isHidden('#btnClear') && await p.isHidden('#btnTip') && await p.isVisible('#payCash'), 'icazə götürüləndə Kart, Nağd+Kart, Ləğv et, Çay pulu gizlənir (Nağd qalır)');

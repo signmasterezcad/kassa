@@ -723,7 +723,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.8.0";
+const APP_VERSION="1.8.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1441,7 +1441,7 @@ async function cloudTick(){
   if(!CL.on||!CL.cfg)return;
   if(CL.busy){CL.again=true;return}
   CL.busy=true;
-  try{await cloudPullNow();if(await cloudPushNow())await cloudPullNow();CL.online=true;CL.err="";CL.last=Date.now();saveCloudState()}
+  try{await cloudPullNow();CL.pulled=true;if(await cloudPushNow())await cloudPullNow();CL.online=true;CL.err="";CL.last=Date.now();saveCloudState()}
   catch(e){CL.online=false;CL.err=String(e.message||e);if(e.auth){CL.on=false;CL.err+=" — ☁️ Bulud bölməsindən yenidən daxil olun"}}
   finally{CL.busy=false;renderCloudBadge();if(CL.again){CL.again=false;cloudSoon()}}
 }
@@ -2275,7 +2275,7 @@ function kzRemove(id){
     save();toast("Qeyd silindi");return true}
   return false;
 }
-function openKassa(){kzDraft={cnt:"",take:"",to:"",note:"",warn:false};drawKassa();$("ovKassa").hidden=false;setTimeout(()=>$("kz_cnt")?.focus(),30)}
+function openKassa(){kzAutoShown=false;kzDraft={cnt:"",take:"",to:"",note:"",warn:false};drawKassa();$("ovKassa").hidden=false;setTimeout(()=>$("kz_cnt")?.focus(),30)}
 function drawKassa(){
   const L=kzLast(),open=kzOpen(),today=dayKey(Date.now()),K=cashDay(today),D=kzDraft,seeExp=can("reports");
   let h="";
@@ -2348,13 +2348,19 @@ function kzSave(kind){
   }
 }
 // Girişdən sonra: kassa təhvil verilib, hələ açılmayıbsa — açılış pəncərəsi özü çıxır ("Sonra" ilə keçmək olar)
-function kzAuto(){if(!me||PHONE_CLOUD||!kzReq()||kzOpen())return;const L=kzLast();if(!L&&!kzLocked())return;const k=dayKey(Date.now())+"|"+curName();if(kzSkip===k)return;openKassa()}
+// v1.8.1: bulud qoşuludursa, əvvəl buluddan ən son ayarlar (məs. "Kassa açılışı məcburidir" söndürülüb) gəlsin — 20 san.-ə qədər gözləyir
+let kzWait=0,kzAutoShown=false;
+function kzAuto(){if(!me||PHONE_CLOUD||!kzReq()||kzOpen())return;
+  if(CL.on&&CL.cfg&&!CL.pulled&&kzWait<20){kzWait++;setTimeout(kzAuto,1000);return}
+  const L=kzLast();if(!L&&!kzLocked())return;const k=dayKey(Date.now())+"|"+curName();if(kzSkip===k)return;openKassa();kzAutoShown=true}
 let kzSeen;
 // Başqa kompüterdən (bulud) təhvil gələndə: bu kompüterdə girmiş işçiyə açılış pəncərəsi özü çıxır
 function kzWatch(){const L=kzLast(),id=L?.id||"";if(id===kzSeen)return;const first=kzSeen===undefined;kzSeen=id;if(!kzReq())return;
   if(first||!L||L.t!=="close"||L.by===curName()||!me||PHONE_CLOUD||editMode||!noModal())return;
-  setTimeout(()=>{if(noModal()&&!kzOpen())openKassa()},0)}
-function renderKzBtn(){kzWatch();const lk=$("kzLockBar");if(lk)lk.hidden=!kzLocked();const b=$("btnKassa");if(!b)return;b.hidden=!me||PHONE_CLOUD;$("kzState").textContent=kzOpen()?"açıqdır · "+(kzLast().by||""):"bağlıdır"}
+  setTimeout(()=>{if(noModal()&&!kzOpen()){openKassa();kzAutoShown=true}},0)}
+function renderKzBtn(){kzWatch();
+  // Admin başqa kompüterdə söndürübsə və pəncərə özü açılıbsa (kassir hələ heç nə yazmayıb) — bağla
+  if(!kzReq()&&kzAutoShown&&!$("ovKassa").hidden&&!(kzDraft&&(kzDraft.cnt||kzDraft.take||kzDraft.note))){$("ovKassa").hidden=true;kzAutoShown=false}const lk=$("kzLockBar");if(lk)lk.hidden=!kzLocked();const b=$("btnKassa");if(!b)return;b.hidden=!me||PHONE_CLOUD;$("kzState").textContent=kzOpen()?"açıqdır · "+(kzLast().by||""):"bağlıdır"}
 document.addEventListener("input",e=>{if($("ovKassa").hidden)return;const id=e.target.id,D=kzDraft;
   if(id==="kz_cnt"){D.cnt=e.target.value;D.warn=false}else if(id==="kz_take")D.take=e.target.value;else if(id==="kz_note"){D.note=e.target.value;return}else if(id==="kz_to"){D.to=e.target.value;return}else return;
   const lv=$("kzLive");if(lv)lv.innerHTML=kzLive()});
