@@ -441,7 +441,11 @@ h4{margin:6px 0 0;font-size:14px}
 .sgap .wheel{all:unset;cursor:pointer;display:block;width:100%;max-width:184px;text-align:center;border-radius:14px;padding:4px 0;animation:camIn .6s ease-out both}
 .sgap .wheel[hidden],.sgap .cam[hidden]{display:none!important}.sgap .wheel:hover{background:var(--panel2)}.sgap .wheel:focus-visible{outline:2px solid var(--accent)}
 .wheel .wt{font:600 13px inherit;color:var(--fg);margin-bottom:4px}.wheel .ws{font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.35}
-.wheel svg{display:block;width:100%;height:auto}.wheel text{font-family:inherit;font-weight:700}
+.wheel svg{display:block;width:auto;max-width:100%;height:min(184px,calc(100vh - 480px));margin:0 auto}
+/* v1.15.1: çarx görünəndə sol menyu düymələri yığcam (sahibinin istəyi) */
+@media (min-width:861px){.side.wheelOn{gap:5px;padding:10px 10px}.side.wheelOn .hbtn{padding:7px 11px;font-size:14px;gap:4px 8px;flex-wrap:wrap;border-radius:10px}
+.side.wheelOn .hbtn .ic{font-size:17px;width:20px}.side.wheelOn .hbtn .lb{flex:1 0 auto;white-space:nowrap}.side.wheelOn .hbtn .badge{white-space:nowrap;font-size:11px}.side.wheelOn .hbtn .lb small{font-size:10.5px}
+.side.wheelOn .hbtn>.badge,.side.wheelOn .hbtn .badges{margin-left:auto}.side.wheelOn .sgap{padding:4px 0;overflow:hidden}}.wheel text{font-family:inherit;font-weight:700}
 @media (min-width:861px){
   .side{position:fixed;left:0;top:0;bottom:0;width:200px;z-index:15;display:flex;flex-direction:column;gap:8px;padding:14px 12px;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto}
   body{padding-left:200px}
@@ -743,7 +747,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.15.0";
+const APP_VERSION="1.15.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1890,7 +1894,7 @@ function wheelStats(){const now=Date.now(),mk=monKey(now);const sl=S.sales.filte
   const sales=sl.reduce((a,s)=>a+(+s.total||0),0),cost=sl.reduce((a,s)=>a+s.lines.reduce((b,l)=>b+(l.cost||0),0),0);
   const waste=(S.waste||[]).filter(w=>monKey(w.ts)===mk).reduce((a,w)=>a+(w.cost||0),0),exp=(S.expenses||[]).filter(x=>monKey(x.ts)===mk).reduce((a,x)=>a+(+x.amount||0),0);
   const spent=cost+waste+exp;return{mon:monName(mk),sales,spent,net:sales-spent,kassa:cashDay(dayKey(now)).should,anbar:(S.materials||[]).reduce((a,m)=>a+Math.max(0,+m.stock||0)*(+m.cost||0),0)}}
-function renderWheel(){const w=$("wheel"),cam=$("camImg");if(!w||!cam)return;const on=!!me&&isAdmin()&&!PHONE_CLOUD&&!REMOTE;w.hidden=!on;cam.hidden=on;if(!on)return;
+function renderWheel(){const w=$("wheel"),cam=$("camImg");if(!w||!cam)return;const on=!!me&&isAdmin()&&!PHONE_CLOUD&&!REMOTE;w.hidden=!on;cam.hidden=on;$("sideNav")?.classList.toggle("wheelOn",on);if(!on)return;
   const W=wheelStats(),T=(x,y,l,v,c)=>`<text x="${x}" y="${y}" font-size="10" fill="${c}" text-anchor="middle">${l}</text><text x="${x}" y="${y+15}" font-size="12.5" fill="${c}" text-anchor="middle">${wFmt(v)}</text>`;
   w.innerHTML=`<div class="wt">📅 ${esc(W.mon)}</div><svg viewBox="0 0 200 200" role="img" aria-label="Bu ay: satış ${wFmt(W.sales)}, xərclər ${wFmt(W.spent)}, xalis mənfəət ${wFmt(W.net)}, kassa ${wFmt(W.kassa)}, anbar ${wFmt(W.anbar)}">
     <path d="M100 100 L4 100 A96 96 0 0 1 100 4 Z" fill="#f57c1f"/><path d="M100 100 L100 4 A96 96 0 0 1 196 100 Z" fill="#3ddc97"/>
