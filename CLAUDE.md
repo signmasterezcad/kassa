@@ -244,6 +244,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Görünür: kassir `S.comm.users`-dədirsə **və** icazə `myComm` (🛒 Satış ekranı qrupunda; KASSIR_DEFAULT-da yox — admin özü açır). `#today` indi `reports || myCommMonth()` ilə görünür; "Bu gün: … satış" hissəsi yalnız `reports`.
 - **v1.13.0 (sahibinin istəyi):** Poliqrafiya Xidmətləri-nə (qrupsuz) **📄 Sadə CV 3 ₼** `pq_cv_sade` və **✨ Müasir CV 5 ₼** `pq_cv_muasir` (`S.mig.cvDuyme`); hər biri **1 vərəq A4 80 qram** —
   v0.78.0-ın hər açılış A4 blokuna əlavə olundu (hər şöbənin öz A4 80 materialı). Çox vərəqli CV üçün sahibi sayı artırır (və ya reseptdə dəyişir).
+- **v1.14.0 (sahibinin istəyi; anbardakı malın adı "A3 Sadə"):** hər açılışda adında "A3" olan kağız (lamin/stick/foto/plyon yox) `g_a3`-ün bütün düymələrinə + `ks_a3bw`, `ks_a3bw2` reseptinə **1 vərəq**
+  (reseptdə bu şöbənin A3 kağızı yoxdursa; A4 qaydası kimi, şöbəyə görə). Əvvəl A3 düymələrinin resepti boş idi — anbardan silmirdi.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

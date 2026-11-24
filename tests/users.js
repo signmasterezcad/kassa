@@ -437,6 +437,15 @@ let n = 0;
     order = []; addItem('pq_cv_sade', 1); addItem('pq_cv_muasir', 2); pay = 'nağd'; finishSale(); const st = S.materials.find(x => x.id === 'mA4t').stock, tot = S.sales.at(-1).total;
     S.sales.length = bakS; S.materials = JSON.parse(bakM); S.items = JSON.parse(bakI); return [a.tiers[0][1] === 3 && b.tiers[0][1] === 5, st === 97, tot === 13]; });
   ok(r.every(x => x === true), 'v1.13.0: Sadə CV 3 / Müasir CV 5, 3 CV = 3 vərəq A4 silindi, cəmi 13 ' + JSON.stringify(r));}
+  // v1.14.0: A3 Sadə kağızı A3 düymələrinə 1 vərəq, laminasiya A3 plyonkası qoşulmur
+  {const r = await p.evaluate(() => { const bakM = JSON.stringify(S.materials), bakI = JSON.stringify(S.items), bakS = S.sales.length; S.kzReq = false;
+    const ids = S.items.filter(i => i.parent === 'g_a3' && !i.group).map(i => i.id); if (!ids.length) return ['yox'];
+    S.items.filter(i => i.parent === 'g_a3').forEach(i => i.recipe = []);
+    S.materials.push({ id: 'mA3t', name: 'A3 Sadə', unit: 'vərəq', stock: 50, cost: 0.05, min: 0 }, { id: 'mLA3', name: 'Laminasiya A3 plyonka', unit: 'ədəd', stock: 10, cost: 0.2, min: 0 }); upgrade();
+    order = []; ids.forEach(id => addItem(id, 2)); pay = 'nağd'; finishSale();
+    const st = S.materials.find(x => x.id === 'mA3t').stock, lam = S.items.filter(i => i.parent === 'g_a3').some(i => i.recipe.some(([m]) => m === 'mLA3'));
+    S.sales.length = bakS; S.materials = JSON.parse(bakM); S.items = JSON.parse(bakI); return [st === 50 - 2 * ids.length, !lam]; });
+  ok(r.every(x => x === true), 'v1.14.0: A3 düymələri satılanda A3 Sadə kağızı silinir, A3 plyonka qoşulmur ' + JSON.stringify(r));}
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();

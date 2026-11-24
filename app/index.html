@@ -739,7 +739,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.13.0";
+const APP_VERSION="1.14.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1030,6 +1030,11 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   {const A=(S.materials||[]).filter(m=>/a4/i.test(m.name||"")&&/(^|\D)80(\D|$)/.test(m.name||"")).pop();
     if(A)S.items.filter(i=>!i.group&&(i.parent==="g_a4"||["ks_a4bw","ks_tel","pq_cv_sade","pq_cv_muasir"].includes(i.id))).forEach(it=>{it.recipe=it.recipe||[];
       if(!it.recipe.some(([m])=>{const M=mat(m);return M&&/a4/i.test(M.name||"")}))it.recipe.push([A.id,1])})}
+  // v1.14.0 (sahibinin istəyi): A3 kağızı (adında "A3", laminasiya/sticker/foto yox — sahibinin malı "A3 Sadə") hər açılışda A3 Sadə qrupunun bütün düymələrinə
+  // + A3 surət düymələrinə 1 vərəq qoşulur (reseptdə bu şöbənin A3 kağızı yoxdursa). Hər şöbədə öz materialı.
+  {const isA3=M=>M&&/a3/.test(norm(M.name||""))&&!/lamin|stick|foto|plyon/.test(norm(M.name||"")),A=(S.materials||[]).filter(isA3).pop();
+    if(A)S.items.filter(i=>!i.group&&(i.parent==="g_a3"||["ks_a3bw","ks_a3bw2"].includes(i.id))).forEach(it=>{it.recipe=it.recipe||[];
+      if(!it.recipe.some(([m])=>isA3(mat(m))))it.recipe.push([A.id,1])})}
   // v0.79.0: Poliqrafiya → Kəlağayı 10 / 15, Əklil lenti 10 / 15
   if(!S.mig.kelagayi){S.mig.kelagayi=1;
     const pc=S.cats.find(c=>c.id==="poli")||S.cats.find(c=>norm(c.name)==="poliqrafiya xidmetleri");
