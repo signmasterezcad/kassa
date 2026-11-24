@@ -446,6 +446,15 @@ let n = 0;
     const st = S.materials.find(x => x.id === 'mA3t').stock, lam = S.items.filter(i => i.parent === 'g_a3').some(i => i.recipe.some(([m]) => m === 'mLA3'));
     S.sales.length = bakS; S.materials = JSON.parse(bakM); S.items = JSON.parse(bakI); return [st === 50 - 2 * ids.length, !lam]; });
   ok(r.every(x => x === true), 'v1.14.0: A3 düymələri satılanda A3 Sadə kağızı silinir, A3 plyonka qoşulmur ' + JSON.stringify(r));}
+  // v1.15.0: admin üçün göstərici çarx (satış − xərclər = xalis mənfəət), kassirdə fotoaparat
+  {const r = await p.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); const meB = me, bS = S.sales.length, bE = S.expenses.length;
+    me = S.users.find(u => u.role === 'admin'); const w0 = wheelStats();
+    S.sales.push({ id: 'wT', ts: Date.now(), pay: 'nağd', total: 100, sub: 100, lines: [{ id: 'x', q: 1, sum: 100, cost: 30 }] }); S.expenses.push({ id: 'wX', ts: Date.now(), cat: 'Digər', amount: 20, pay: 'alver' });
+    const w1 = wheelStats(); renderAll(); const adm = !$('wheel').hidden && $('camImg').hidden;
+    const k = S.users.find(u => u.role !== 'admin'); let kas = true; if (k) { me = k; renderAll(); kas = $('wheel').hidden && !$('camImg').hidden; }
+    S.sales.length = bS; S.expenses.length = bE; me = meB; renderAll();
+    return [Math.abs((w1.sales - w0.sales) - 100) < 1e-9, Math.abs((w1.spent - w0.spent) - 50) < 1e-9, Math.abs(w1.net - (w1.sales - w1.spent)) < 1e-9, adm, kas]; });
+  ok(r.every(Boolean), 'v1.15.0: çarx — satış +100, xərclər +50 (maya 30 + xərc 20), xalis = satış − xərclər; admin görür, kassir yox ' + JSON.stringify(r));}
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();

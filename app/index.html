@@ -437,7 +437,11 @@ h4{margin:6px 0 0;font-size:14px}
 .sgap .cam{width:100%;max-width:176px;height:auto;user-select:none;pointer-events:none;animation:camIn .6s ease-out both}
 @keyframes camIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.sgap .cam{animation:none}}
-@media (max-height:640px){.sgap .cam{display:none}}
+@media (max-height:640px){.sgap .cam,.sgap .wheel{display:none!important}}
+.sgap .wheel{all:unset;cursor:pointer;display:block;width:100%;max-width:184px;text-align:center;border-radius:14px;padding:4px 0;animation:camIn .6s ease-out both}
+.sgap .wheel[hidden],.sgap .cam[hidden]{display:none!important}.sgap .wheel:hover{background:var(--panel2)}.sgap .wheel:focus-visible{outline:2px solid var(--accent)}
+.wheel .wt{font:600 13px inherit;color:var(--fg);margin-bottom:4px}.wheel .ws{font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.35}
+.wheel svg{display:block;width:100%;height:auto}.wheel text{font-family:inherit;font-weight:700}
 @media (min-width:861px){
   .side{position:fixed;left:0;top:0;bottom:0;width:200px;z-index:15;display:flex;flex-direction:column;gap:8px;padding:14px 12px;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto}
   body{padding-left:200px}
@@ -464,7 +468,7 @@ h4{margin:6px 0 0;font-size:14px}
   <button class="hbtn" id="btnCust"><span class="ic">💳</span><span class="lb">Borclar</span> <span class="badges"><span class="badge" id="custBadge" hidden title="Bizə borcludurlar"></span><span class="badge out" id="suppBadge" hidden title="Bizim borcumuz"></span></span></button>
   <button class="hbtn" id="btnSupp"><span class="ic">🚚</span><span class="lb">Tədarükçü</span></button>
   <button class="hbtn" id="btnEdit" hidden><span class="ic">✏️</span><span class="lb">Düzəliş</span></button>
-  <span class="sgap"><img class="cam" src="kamera.png" alt="" aria-hidden="true" draggable="false"></span>
+  <span class="sgap"><img class="cam" id="camImg" src="kamera.png" alt="" aria-hidden="true" draggable="false"><button class="wheel" id="wheel" hidden title="Hesabatı aç (bu ay)"></button></span>
   <button class="hbtn" id="btnCloud" hidden title="Bulud (Firebase) sinxronu"><span class="ic">☁️</span><span class="lb"><span id="cloudTxt"></span></span></button>
   <button class="hbtn" id="btnSet"><span class="ic">⚙️</span><span class="lb">Ayarlar</span></button>
   </nav>
@@ -739,7 +743,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.14.1";
+const APP_VERSION="1.15.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1878,7 +1882,25 @@ function myCommMonth(){const C=S.comm||{},U=(C.users||[]).filter(id=>userById(id
   const rate=cid=>C.rates&&C.rates[cid]!=null?+C.rates[cid]:(cid==="studiya"?10:5),mk=monKey(Date.now());let pool=0;
   S.sales.forEach(s=>{if(monKey(s.ts)!==mk)return;const f=s.sub&&s.disc?s.total/s.sub:1;s.lines.forEach(l=>{if(!l.from)pool+=l.sum*f*rate(item(l.id)?.cat||"?")/100})});
   return{v:pool/U.length,mon:monName(mk).split(" ")[0]}}
-function renderHeader(){renderShop();renderKzBtn();
+// v1.15.0 (sahibinin istəyi, əvvəl nümunə göstərildi, BAŞLA dedi): sol menyuda fotoaparat yerinə ADMİN üçün göstərici çarx — bu ayın 1-indən bu günədək.
+// Yuxarı: 🟧 Satış (dövriyyə) | 🟩 Xərclər (satılan malın mayası + zay + digər xərclər) → ortada 🟪 Xalis mənfəət = Satış − Xərclər (📈 Xalis Gəlir ilə eyni hesab).
+// Aşağı: 🟨 Kassa qalığı (bu gün cashDay.should) | 🟦 Anbar qalığı (qalıq × maya). Basanda Hesabat bu ayla açılır. Kassirdə fotoaparat qalır.
+const wFmt=v=>{const n=Math.abs(v)>=1000?String(Math.round(Math.abs(v))).replace(/\B(?=(\d{3})+(?!\d))/g," "):Math.abs(v).toFixed(2);return (v<-0.004?"−":"")+n+" ₼"};
+function wheelStats(){const now=Date.now(),mk=monKey(now);const sl=S.sales.filter(s=>monKey(s.ts)===mk);
+  const sales=sl.reduce((a,s)=>a+(+s.total||0),0),cost=sl.reduce((a,s)=>a+s.lines.reduce((b,l)=>b+(l.cost||0),0),0);
+  const waste=(S.waste||[]).filter(w=>monKey(w.ts)===mk).reduce((a,w)=>a+(w.cost||0),0),exp=(S.expenses||[]).filter(x=>monKey(x.ts)===mk).reduce((a,x)=>a+(+x.amount||0),0);
+  const spent=cost+waste+exp;return{mon:monName(mk),sales,spent,net:sales-spent,kassa:cashDay(dayKey(now)).should,anbar:(S.materials||[]).reduce((a,m)=>a+Math.max(0,+m.stock||0)*(+m.cost||0),0)}}
+function renderWheel(){const w=$("wheel"),cam=$("camImg");if(!w||!cam)return;const on=!!me&&isAdmin()&&!PHONE_CLOUD&&!REMOTE;w.hidden=!on;cam.hidden=on;if(!on)return;
+  const W=wheelStats(),T=(x,y,l,v,c)=>`<text x="${x}" y="${y}" font-size="10" fill="${c}" text-anchor="middle">${l}</text><text x="${x}" y="${y+15}" font-size="12.5" fill="${c}" text-anchor="middle">${wFmt(v)}</text>`;
+  w.innerHTML=`<div class="wt">📅 ${esc(W.mon)}</div><svg viewBox="0 0 200 200" role="img" aria-label="Bu ay: satış ${wFmt(W.sales)}, xərclər ${wFmt(W.spent)}, xalis mənfəət ${wFmt(W.net)}, kassa ${wFmt(W.kassa)}, anbar ${wFmt(W.anbar)}">
+    <path d="M100 100 L4 100 A96 96 0 0 1 100 4 Z" fill="#f57c1f"/><path d="M100 100 L100 4 A96 96 0 0 1 196 100 Z" fill="#3ddc97"/>
+    <path d="M100 100 L196 100 A96 96 0 0 1 100 196 Z" fill="#1ea7e8"/><path d="M100 100 L100 196 A96 96 0 0 1 4 100 Z" fill="#fbb024"/>
+    <g stroke="var(--panel)" stroke-width="7" stroke-linecap="round"><line x1="100" y1="2" x2="100" y2="198"/><line x1="2" y1="100" x2="198" y2="100"/></g>
+    <circle cx="100" cy="100" r="46" fill="#fff" fill-opacity=".35"/><circle cx="100" cy="100" r="38" fill="${W.net<-0.004?"#dc2626":"#7c4dff"}"/>
+    ${T(55,44,"🛒 Satış",W.sales,"#fff")}${T(145,44,"🧾 Xərclər",W.spent,"#0b3b2a")}${T(55,150,"💰 Kassa",W.kassa,"#4a2c00")}${T(145,150,"📦 Anbar",W.anbar,"#fff")}
+    <text x="100" y="94" font-size="8.5" fill="#fff" text-anchor="middle">Xalis mənfəət</text><text x="100" y="112" font-size="${Math.abs(W.net)>=10000?12:14}" fill="#fff" text-anchor="middle">${wFmt(W.net)}</text></svg>
+    <div class="ws">Ayın 1-indən bu günədək<br>Kassa və Anbar — indiki qalıq</div>`}
+function renderHeader(){renderWheel();renderShop();renderKzBtn();
   if(me)$("userName").textContent=curName()+(isAdmin()?" (admin)":"");
   renderSuppBadge();renderCustBadge();renderCloudBadge();
   const ts=S.sales.filter(s=>isToday(s.ts));
@@ -3884,6 +3906,7 @@ document.addEventListener("click",e=>{
   else if(t.id==="zSave")saveZay();
   else if(t.id==="btnStock"){mode="stock";rtab="anbar";draft=null;renderRep();$("ovRep").hidden=false}
   else if(t.id==="btnRep"){mode="rep";rtab="kassa";kSub="";draft=null;rFrom=rTo=dayKey(Date.now());renderRep();$("ovRep").hidden=false}
+  else if(t.id==="wheel"&&isAdmin()){mode="rep";rtab="kassa";kSub="";draft=null;rTo=dayKey(Date.now());rFrom=rTo.slice(0,8)+"01";renderRep();$("ovRep").hidden=false}
   else if(t.id==="btnEdit"){setEdit(!editMode)}
   else if(t.id==="btnHist"){openHist()}
   else if(t.id==="btnExp"){openExp()}
