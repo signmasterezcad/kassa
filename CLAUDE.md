@@ -246,6 +246,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   v0.78.0-ın hər açılış A4 blokuna əlavə olundu (hər şöbənin öz A4 80 materialı). Çox vərəqli CV üçün sahibi sayı artırır (və ya reseptdə dəyişir).
 - **v1.14.0 (sahibinin istəyi; anbardakı malın adı "A3 Sadə"):** hər açılışda adında "A3" olan kağız (lamin/stick/foto/plyon yox) `g_a3`-ün bütün düymələrinə + `ks_a3bw`, `ks_a3bw2` reseptinə **1 vərəq**
   (reseptdə bu şöbənin A3 kağızı yoxdursa; A4 qaydası kimi, şöbəyə görə). Əvvəl A3 düymələrinin resepti boş idi — anbardan silmirdi.
+- **v1.14.1 (sahibinin şəkli: 2 qutu ekran boyu uzanırdı, boşluq çox):** Hesabatın üst sırası (Ümumi satış + Nağd/Kart/Nisyə) `grid 1fr` əvəzinə `.kpis.kboxes.ktop` — hər qutu 25% (telefonda 50%), ortada; az qutu olanda uzanmır.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

@@ -341,7 +341,7 @@ header h1 .logo{width:28px;height:28px;vertical-align:-7px;margin-right:8px;bord
 #rbody .kpi span.sub,#rbody .kpi b+span{font-weight:500;font-size:13px;color:var(--fg);opacity:.8}
 #rbody .kpi.kbtn:hover{border-color:var(--accent)}
 #rbody .rrange .f{color:var(--fg);font-weight:600}
-.kpis.kboxes{display:flex;flex-wrap:wrap;justify-content:center;margin-top:10px}.kpis.kboxes .kbtn{flex:0 0 calc(25% - 8px);box-sizing:border-box}.kpis.kboxes.k3 .kbtn{flex-basis:calc(33.333% - 8px)}@media(max-width:640px){.kpis.kboxes .kbtn{flex-basis:calc(50% - 6px)}}
+.kpis.kboxes{display:flex;flex-wrap:wrap;justify-content:center;margin-top:10px}.kpis.kboxes .kbtn{flex:0 0 calc(25% - 8px);box-sizing:border-box}.kpis.kboxes.k3 .kbtn{flex-basis:calc(33.333% - 8px)}.kpis.ktop{margin-top:0}.kpis.ktop>.kpi{flex:0 0 calc(25% - 8px);box-sizing:border-box}@media(max-width:640px){.kpis.ktop>.kpi{flex-basis:calc(50% - 6px)}.kpis.kboxes .kbtn{flex-basis:calc(50% - 6px)}}
 .kback{display:flex;align-items:center;gap:12px;margin:0 0 10px;padding-bottom:10px;border-bottom:1px solid var(--line)}.kback h3{margin:0;font-size:20px}.kback .btn{font-size:16px;padding:8px 16px}
 .ksub{border:2px solid var(--accent,#3b82f6);border-radius:14px;padding:10px 12px;margin:10px 0}
 .legend{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:13px}
@@ -739,7 +739,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.14.0";
+const APP_VERSION="1.14.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -3278,7 +3278,7 @@ function renderRep(){
     const byW={};S.sales.filter(s=>dayKey(s.ts)===kd&&payPart(s,"nağd")).forEach(s=>byW[s.worker||"—"]=(byW[s.worker||"—"]||0)+payPart(s,"nağd"));
     if(rt==="kassa"){const tot=sales.reduce((a,s)=>a+s.total,0),pp=p=>sales.reduce((a,s)=>a+payPart(s,p),0);
      const row=(can("reports")?`<div class="kpi hero"><span>📊 Ümumi satış — ${esc(rTitle)}</span><b>${m2(tot)} ₼</b><span>${sales.length} satış</span></div>`:"")+`
-      ${[["nağd","💵 Nağd"],["kart","💳 Kart"],["borc","📝 Nisyə"]].filter(([p])=>can(PK[p])).map(([p,l])=>`<button class="kpi kbtn${kSub===p?" on":""}" data-ks="${p}" title="Təfərrüatı aç / bağla"><span>${l} ${kSub===p?"▾":"▸"}</span><b>${m2(pp(p))} ₼</b><span class="sub">${kSub===p?"bağlamaq üçün basın":"təfərrüat üçün basın"}</span></button>`).join("")}`;h+=(row.trim()?`<div class="kpis">${row}</div>`:"")+BOX}
+      ${[["nağd","💵 Nağd"],["kart","💳 Kart"],["borc","📝 Nisyə"]].filter(([p])=>can(PK[p])).map(([p,l])=>`<button class="kpi kbtn${kSub===p?" on":""}" data-ks="${p}" title="Təfərrüatı aç / bağla"><span>${l} ${kSub===p?"▾":"▸"}</span><b>${m2(pp(p))} ₼</b><span class="sub">${kSub===p?"bağlamaq üçün basın":"təfərrüat üçün basın"}</span></button>`).join("")}`;h+=(row.trim()?`<div class="kpis kboxes ktop">${row}</div>`:"")+BOX}
     if(rt==="kassapul")h+=`<div class="kpis"><div class="kpi hero"><span>💰 Kassada olmalıdır — ${esc(fdk(kd))}</span><b>${m2(K.should)} ₼</b></div>
       ${K.counted!=null?`<div class="kpi"><span>Sayılıb</span><b>${m2(K.counted)} ₼</b></div>`:""}</div>
       <h4>💰 Kassa (yalnız nağd pul) — ${esc(fdk(kd))}</h4>
