@@ -430,6 +430,13 @@ let n = 0;
     S.sales = S.sales.filter(x => x.id !== 'sF'); S.users = JSON.parse(bakU); S.comm = JSON.parse(bakC); me = meB; applyPerms(); renderAll();
     return [off, Math.abs(v1 - v0 - 0.5) < 1e-9, shown]; });
   ok(r.every(Boolean), 'v1.12.0: icazəsiz görünmür; 20 ₼ × 5% / 2 işçi = +0.50 ₼; başlıqda görünür ' + JSON.stringify(r));}
+  // v1.13.0: Sadə CV 3 / Müasir CV 5, satışda 1 vərəq A4 80 qram
+  {const r = await p.evaluate(() => { const bakM = JSON.stringify(S.materials), bakI = JSON.stringify(S.items), bakS = S.sales.length; S.kzReq = false;
+    const a = S.items.find(i => i.id === 'pq_cv_sade'), b = S.items.find(i => i.id === 'pq_cv_muasir'); if (!a || !b) return ['yox'];
+    S.items.filter(i => i.id.startsWith('pq_cv')).forEach(i => i.recipe = []); const m = { id: 'mA4t', name: 'A4 Sadə 80 qram', unit: 'vərəq', stock: 100, cost: 0.011, min: 0 }; S.materials.push(m); upgrade();
+    order = []; addItem('pq_cv_sade', 1); addItem('pq_cv_muasir', 2); pay = 'nağd'; finishSale(); const st = S.materials.find(x => x.id === 'mA4t').stock, tot = S.sales.at(-1).total;
+    S.sales.length = bakS; S.materials = JSON.parse(bakM); S.items = JSON.parse(bakI); return [a.tiers[0][1] === 3 && b.tiers[0][1] === 5, st === 97, tot === 13]; });
+  ok(r.every(x => x === true), 'v1.13.0: Sadə CV 3 / Müasir CV 5, 3 CV = 3 vərəq A4 silindi, cəmi 13 ' + JSON.stringify(r));}
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();

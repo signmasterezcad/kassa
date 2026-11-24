@@ -242,6 +242,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **v1.12.0 (sahibinin istəyi, Mida kassirləri faiz alır):** başlıqda `#today`-də yaşıl nişan **"👥 % Faizim · <Ay>: X ₼"** (`myCommMonth()`, `.myfz`) — bu ayın 1-indən indiyədək öz payı, hər satışda artır.
   Hesab Hesabat → İşçi faizi ilə eyni (sətir sum × endirim nisbəti × bölmə faizi, `from` yox, qaytarma azaldır, `S.comm.users` arasında bərabər; ödənilən çıxılmır).
   Görünür: kassir `S.comm.users`-dədirsə **və** icazə `myComm` (🛒 Satış ekranı qrupunda; KASSIR_DEFAULT-da yox — admin özü açır). `#today` indi `reports || myCommMonth()` ilə görünür; "Bu gün: … satış" hissəsi yalnız `reports`.
+- **v1.13.0 (sahibinin istəyi):** Poliqrafiya Xidmətləri-nə (qrupsuz) **📄 Sadə CV 3 ₼** `pq_cv_sade` və **✨ Müasir CV 5 ₼** `pq_cv_muasir` (`S.mig.cvDuyme`); hər biri **1 vərəq A4 80 qram** —
+  v0.78.0-ın hər açılış A4 blokuna əlavə olundu (hər şöbənin öz A4 80 materialı). Çox vərəqli CV üçün sahibi sayı artırır (və ya reseptdə dəyişir).
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

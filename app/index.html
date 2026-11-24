@@ -739,7 +739,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.12.0";
+const APP_VERSION="1.13.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -935,6 +935,10 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   if(!S.mig.xidmet){S.mig.xidmet=1;const pc=S.cats.find(c=>c.id==="poli")||S.cats.find(c=>norm(c.name)==="poliqrafiya xidmetleri")||S.cats[0];
     if(pc&&!S.items.some(i=>i.id==="pq_xidmet"))S.items.push({id:"pq_xidmet",name:"Xidmət",cat:pc.id,icon:"💼",color:"#0f766e",fav:0,ink:0,recipe:[],tiers:[[1,0]],free:1,noteReq:1,
       noteLabel:"Hansı xidmət göstərildi?",notePh:"məs. Excel cədvəli doldurulub telefona göndərildi"})}
+  // v1.13.0 (sahibinin istəyi): Poliqrafiya → 📄 Sadə CV 3 ₼, ✨ Müasir CV 5 ₼ — hər biri 1 vərəq A4 80 qram (aşağıdakı A4 bloku hər açılışda qoşur)
+  if(!S.mig.cvDuyme){const pc=S.cats.find(c=>c.id==="poli")||S.cats.find(c=>norm(c.name)==="poliqrafiya xidmetleri");
+    if(pc){S.mig.cvDuyme=1;[["pq_cv_sade","Sadə CV","📄","#0369a1",3],["pq_cv_muasir","Müasir CV","✨","#7c3aed",5]].forEach(([id,n,ic,col,pr])=>{
+      if(!S.items.some(i=>i.id===id))S.items.push({id,name:n,cat:pc.id,icon:ic,color:col,fav:0,ink:0,recipe:[],tiers:[[1,pr]]})})}}
   if(!S.mig.studiya2){S.mig.studiya2=1;
     const sc=S.cats.find(c=>c.id==="studiya")||S.cats.find(c=>norm(c.name)==="studiya"),inS=i=>sc&&i.cat===sc.id&&!i.group;
     S.items.filter(i=>inS(i)&&norm(i.name).includes("kost")).forEach(i=>{i.icon="🤵"});
@@ -1024,7 +1028,7 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   // v0.78.0 (sahibinin istəyi): A4 Sadə qrupundakı BÜTÜN düymələr (sonradan əlavə olunanlar da) + A4 surət düymələri 1 vərəq A4 80 qram silsin.
   // Hər açılışda yoxlanır, hər şöbədə öz A4 80 qram materialı (başqa şöbənin materialı reseptdə qalır, görünmür).
   {const A=(S.materials||[]).filter(m=>/a4/i.test(m.name||"")&&/(^|\D)80(\D|$)/.test(m.name||"")).pop();
-    if(A)S.items.filter(i=>!i.group&&(i.parent==="g_a4"||["ks_a4bw","ks_tel"].includes(i.id))).forEach(it=>{it.recipe=it.recipe||[];
+    if(A)S.items.filter(i=>!i.group&&(i.parent==="g_a4"||["ks_a4bw","ks_tel","pq_cv_sade","pq_cv_muasir"].includes(i.id))).forEach(it=>{it.recipe=it.recipe||[];
       if(!it.recipe.some(([m])=>{const M=mat(m);return M&&/a4/i.test(M.name||"")}))it.recipe.push([A.id,1])})}
   // v0.79.0: Poliqrafiya → Kəlağayı 10 / 15, Əklil lenti 10 / 15
   if(!S.mig.kelagayi){S.mig.kelagayi=1;
