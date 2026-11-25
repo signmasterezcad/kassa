@@ -266,6 +266,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   bu şöbənin qalığı azalır, **zay yazılmır**. Alan şöbədə satış ekranında `#xfBar` (bölmələrin altında, hamıya) **"✓ Qəbul et"** (`data-xfok` → `acceptTransfer`): eyni adlı mal (norm) tapılır və ya yaranır,
   qalıq artır, maya orta qiymətlə, `t.done={ts,by}`. Qəbul **əl ilədir** — iki kompüter eyni anda avtomatik əlavə edib ikiqat saymasın deyə. Anbarın altında "🔁 Şöbələrarası göndərmələr" tarixçəsi (`xfHist`).
   Sınaq: `tests/cloud.js` 9-cu hissə (Hövsan → Mida, real bulud sınağı).
+- **v1.17.1 (sahibinin sualı + razılığı):** 📋 Alış tarixçəsi KPI-larına **🏪 Alverdən** (pay "alver") əlavə olundu — əvvəl Nağd+Kart+Nisyə cəmi "Bu ay alış"a bərabər deyildi.
+  `S.mig.unitFix`: vahidi "paçka" olan A3 (→ vərəq) və laminasiya (→ ədəd) malları + onların alış sətirləri (sahibi 500 / 100 ədədi səhvən "paçka" seçib yazmışdı; say dəyişmir).
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

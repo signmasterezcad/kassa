@@ -749,7 +749,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.17.0";
+const APP_VERSION="1.17.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1066,6 +1066,10 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
       const L=(S.materials||[]).filter(M=>fits(M,r)),A=L.find(M=>SZ(M.name)===r[1])||L[L.length-1];
       it.recipe=it.recipe.filter(([m])=>{const M=mat(m);return !isMq(M)||(A?m===A.id:fits(M,r))});
       if(A&&!it.recipe.some(([m])=>m===A.id))it.recipe.push([A.id,1])})}
+  // v1.17.1 (sahibinin razılığı): "A3 Sadə" və laminasiya plyonkası səhvən "paçka" vahidi ilə yazılıb (500 / 100 — əslində vərəq / ədəd). Say düzdür, yalnız vahid adı dəyişir (mal + alış sətirləri).
+  if(!S.mig.unitFix){const fix=[];(S.materials||[]).forEach(m=>{if(m.unit!=="paçka")return;const n=norm(m.name||"");
+      const u=/lamin/.test(n)?"ədəd":/a3/.test(n)?"vərəq":"";if(u){m.unit=u;fix.push([m.id,u])}});
+    if(fix.length){S.mig.unitFix=1;(S.purchases||[]).forEach(p=>(p.lines||[]).forEach(l=>{const f=fix.find(x=>x[0]===l.mat);if(f&&l.unit==="paçka")l.unit=f[1]}))}}
   // v1.14.0 (sahibinin istəyi): A3 kağızı (adında "A3", laminasiya/sticker/foto yox — sahibinin malı "A3 Sadə") hər açılışda A3 Sadə qrupunun bütün düymələrinə
   // + A3 surət düymələrinə 1 vərəq qoşulur (reseptdə bu şöbənin A3 kağızı yoxdursa). Hər şöbədə öz materialı.
   {const isA3=M=>M&&/a3/.test(norm(M.name||""))&&!/lamin|stick|foto|plyon/.test(norm(M.name||"")),A=(S.materials||[]).filter(isA3).pop();
@@ -2757,7 +2761,7 @@ function renderExp(){
   if(etab==="phist"){
     const list=S.purchases.slice().sort((a,b)=>b.ts-a.ts),mk=dayKey(Date.now()).slice(0,7),mon=list.filter(p=>dayKey(p.ts).startsWith(mk));
     const sum=f=>mon.filter(f).reduce((a,p)=>a+p.total,0);
-    h=`<div class="kpis"><div class="kpi"><span>Bu ay alış</span><b>${m2(sum(()=>1))} ₼</b></div><div class="kpi"><span>💵 Nağd</span><b>${m2(sum(p=>p.pay==="nağd"))} ₼</b></div>
+    h=`<div class="kpis"><div class="kpi"><span>Bu ay alış</span><b>${m2(sum(()=>1))} ₼</b></div><div class="kpi"><span>🏪 Alverdən</span><b>${m2(sum(p=>p.pay==="alver"))} ₼</b></div><div class="kpi"><span>💵 Nağd</span><b>${m2(sum(p=>p.pay==="nağd"))} ₼</b></div>
       <div class="kpi"><span>💳 Kart</span><b>${m2(sum(p=>p.pay==="kart"))} ₼</b></div><div class="kpi"><span>📝 Nisyə</span><b style="color:var(--warn)">${m2(sum(p=>p.pay==="nisyə"))} ₼</b></div></div>
     ${list.length?`<div class="tw"><table class="hist"><tr><th>Tarix</th><th>Təchizatçı</th><th>Ödəniş</th><th>Nə alınıb</th><th class="n">Məbləğ</th><th></th></tr>
     ${list.slice(0,500).map(p=>`<tr class="${pDel===p.id?"confirm":""}"><td><b>${fmtDate(p.ts)}</b> <span class="sub">${fmtTime(p.ts)}</span></td><td>${esc(p.supplier||"—")}</td>

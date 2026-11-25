@@ -463,6 +463,14 @@ let n = 0;
     const names = S.items.filter(i => i.parent === 'g_maqnit').map(i => i.name + ':' + i.tiers[0][1]).join('|'), urek = S.items.find(i => i.id === 'mq_urek').recipe.map(r => r[0]).join();
     S.sales.length = bS; S.materials = JSON.parse(bM); S.items = JSON.parse(bI); return [g.group === 1, it.parent === 'g_maqnit', st === 17, tot === 7.5, names === 'Maqnit Sublim Ürək 95x100:3|Maqnit Sublim Ürək 75x75:2.5|Maqnit Sublim Yumru 75x75:2.5|Maqnit Sublim Kvadrat 75x75:2.5|Maqnit Sublim Düzbucaq 55x90:3', urek === 'mMu']; });
   ok(r.every(x => x === true), 'v1.16.1: Maqnit — 4 düymə, Kvadrat 2.50 × 3 = 7.50, öz malından silinir, Ürək öz malına ' + JSON.stringify(r));}
+  // v1.17.1: "paçka" vahidi → vərəq / ədəd (A3 Sadə, laminasiya); Alış tarixçəsində Alverdən qutusu
+  {const r = await p.evaluate(() => { const bM = JSON.stringify(S.materials), bP = JSON.stringify(S.purchases), bMig = !!S.mig.unitFix; delete S.mig.unitFix;
+    S.materials.push({ id: 'uA3', name: 'A3 Sadə', unit: 'paçka', stock: 500, cost: 0.036, min: 0 }, { id: 'uLm', name: 'A4 Laminasiya 125 micron', unit: 'paçka', stock: 100, cost: 0.16, min: 0 });
+    S.purchases.push({ id: 'uP', ts: Date.now(), supplier: 'T', pay: 'alver', total: 18, lines: [{ mat: 'uA3', name: 'A3 Sadə', unit: 'paçka', qty: 500, total: 18 }] }); upgrade();
+    const ok1 = S.materials.find(m => m.id === 'uA3').unit === 'vərəq' && S.materials.find(m => m.id === 'uLm').unit === 'ədəd' && S.purchases.find(p => p.id === 'uP').lines[0].unit === 'vərəq';
+    openExp(); etab = 'phist'; renderExp(); const ok2 = /Alverdən/.test($('expBody').textContent); document.querySelectorAll('.ov').forEach(o => o.hidden = true);
+    S.materials = JSON.parse(bM); S.purchases = JSON.parse(bP); if (bMig) S.mig.unitFix = 1; return [ok1, ok2]; });
+  ok(r.every(Boolean), 'v1.17.1: paçka → vərəq/ədəd, Alış tarixçəsində 🏪 Alverdən qutusu ' + JSON.stringify(r));}
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();
