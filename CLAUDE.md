@@ -261,6 +261,11 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **v1.16.2 (sahibinin istəyi):** + **Maqnit Sublim Ürək 75x75 — 2.50 ₼** `mq_urek75` (`S.mig.maqnitUrek75`). Qoşma qaydası indi **forma + ölçü** ilə (`SH`: mq_urek 95x100, mq_urek75/mq_yumru/mq_7575 75x75, mq_duz 55x90):
   adında maqnit + forma + eyni ölçü olan mal (ölçüsüz ad da olar); başqa ölçü/forma reseptdən çıxır. Sahibinin anbarında 5 mal da ölçü ilə yazılıb.
   Sual: ayarlarda qrupun içinə düymə — düymə redaktorunda **"Hansı qrupda"** seçimi (`#e_parent`) və ya düzəliş rejimində qrupu açıb **＋ Yeni düymə** (`qnew`) — artıq var idi, sahibinə izah olundu.
+- **v1.17.0 (sahibinin istəyi: Hövsandan Midaya 2 ədəd mal aparır, zay sayılmasın):** **🔁 Şöbələrarası göndərmə.** `S.transfers` — **ortaq** KEYED siyahı (`isSharedUnit` "transfers~", bütün şöbələrə yazılır):
+  `{id,ts,from,to,mat,name,unit,q,cost,by,done?}`. Göndərmə: 📦 Anbar → Qalıq/Sayım → **🔁 Göndər** (`xfCan()`: admin + bulud + 2+ şöbə; `data-xf` → sətir `xf_q`, `xf_to`, `data-xfgo` → `sendTransfer`) —
+  bu şöbənin qalığı azalır, **zay yazılmır**. Alan şöbədə satış ekranında `#xfBar` (bölmələrin altında, hamıya) **"✓ Qəbul et"** (`data-xfok` → `acceptTransfer`): eyni adlı mal (norm) tapılır və ya yaranır,
+  qalıq artır, maya orta qiymətlə, `t.done={ts,by}`. Qəbul **əl ilədir** — iki kompüter eyni anda avtomatik əlavə edib ikiqat saymasın deyə. Anbarın altında "🔁 Şöbələrarası göndərmələr" tarixçəsi (`xfHist`).
+  Sınaq: `tests/cloud.js` 9-cu hissə (Hövsan → Mida, real bulud sınağı).
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

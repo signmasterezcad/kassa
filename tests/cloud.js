@@ -238,6 +238,20 @@ const srv = http.createServer((req, res) => {
     await PC.evaluate(() => switchShop('main')); await PC.waitForFunction(() => CLOUD_SHOP === 'main' && !shopSwitching, null, { timeout: 20000 });
     ok(await PC.evaluate(() => S.sales.length === 5 && S.users.length > 1 && S.materials.some(m => m.id === 'mx')), 'kompüter Hövsana qayıtdı: 5 satış, kassirlər, anbar yerindədir');
     ok(JSON.parse(pcFiles.data).shopId === 'main', 'kompüterin faylı yenə Hövsanındır');
+    // ---------- 9) 🔁 Şöbələrarası göndərmə (v1.17.0) ----------
+    const mx0 = await PC.evaluate(() => { const m = S.materials.find(x => x.id === 'mx'); m.stock = 10; m.cost = 0.5; save(); return m.name; });
+    await PC.evaluate(() => cloudTick()); await sleep(1200);
+    ok(await PC.evaluate(() => sendTransfer('mx', 2, 'mida1')) && await PC.evaluate(() => S.materials.find(x => x.id === 'mx').stock === 8 && !S.waste.some(w => w.mat === 'mx' && Date.now() - w.ts < 60000)), '🔁 Hövsan: 2 ədəd göndərildi, qalıq 10 → 8, zay yazılmadı');
+    await PC.evaluate(() => cloudTick()); await sleep(1500);
+    await Ph.evaluate(() => switchShop('mida1')); await Ph.waitForFunction(() => CLOUD_SHOP === 'mida1' && !shopSwitching, null, { timeout: 20000 });
+    await Ph.evaluate(() => cloudTick()); await sleep(1500);
+    ok(await Ph.evaluate(() => xfIncoming().length === 1 && !document.getElementById('xfBar').hidden), '🔁 Mida: "mal gəlib — Qəbul et" bildirişi çıxdı');
+    await Ph.click('#xfBar [data-xfok]');
+    ok(await Ph.evaluate(n => { const m = S.materials.find(x => norm(x.name) === norm(n)); return !!m && m.stock === 2 && Math.abs(m.cost - 0.5) < 1e-9 && xfIncoming().length === 0; }, mx0), '🔁 Mida: qəbul edildi — anbarda 2 ədəd, maya 0.50');
+    await Ph.evaluate(() => cloudTick()); await sleep(1500); await PC.evaluate(() => cloudTick()); await sleep(1500);
+    ok(await PC.evaluate(() => S.transfers.every(t => t.done)), '🔁 Hövsan: göndərmə "qəbul edilib" göründü');
+    await Ph.evaluate(() => switchShop('main')); await Ph.waitForFunction(() => CLOUD_SHOP === 'main' && !shopSwitching, null, { timeout: 20000 });
+    ok(await Ph.evaluate(() => S.materials.find(x => x.id === 'mx')?.stock === 8 && xfIncoming().length === 0), '🔁 telefon Hövsanda: qalıq 8, gələn mal yoxdur');
   } finally {
     ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
     await b.close(); srv.close();

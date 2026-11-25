@@ -17,6 +17,7 @@
 #rtabs.g4{display:grid;grid-template-columns:repeat(4,1fr)}#rtabs.g4 .tab{justify-content:center;text-align:center}
 @media(max-width:640px){#rtabs.g4c .tab{flex-basis:calc(50% - 4px)}#rtabs.g4,#rtabs.g3,#rtabs.g5{grid-template-columns:repeat(2,1fr)}}
 .kzinfo{display:flex;flex-direction:column;gap:6px;background:var(--soft,rgba(127,127,127,.08));border-radius:12px;padding:12px 14px;margin-bottom:8px}.kzbig{font-size:18px}
+.xfbar{display:flex;flex-direction:column;gap:6px;background:color-mix(in srgb,var(--accent) 14%,var(--panel));border:2px solid var(--accent);border-radius:12px;padding:10px 14px;margin:0 0 10px;font-weight:600}.xfbar[hidden]{display:none}.xfbar .xr{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .kzlockbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fef3c7;color:#78350f;border:2px solid #d97706;border-radius:12px;padding:12px 14px;margin:0 0 10px;font-weight:700}.kzlockbar[hidden]{display:none}
 .kzlock{background:#fef3c7;color:#78350f;border-radius:10px;padding:8px 12px;font-weight:700}
 #payCard[hidden],#paySplit[hidden],#payDebt[hidden],#btnClear[hidden],#btnTip[hidden],#btnDisc[hidden],#btnHist[hidden]{display:none!important}
@@ -487,6 +488,7 @@ h4{margin:6px 0 0;font-size:14px}
     <div class="searchbar" id="searchbar"><input id="q" type="search" placeholder="🔍 Düymə axtar: məs. surət, fincan, 10x15…" autocomplete="off" aria-label="Düymə axtar"><button class="btn ghost sm" id="qClear" hidden>Təmizlə</button></div>
     <div class="tabs" id="tabs"></div>
     <div class="crumb" id="crumb" hidden></div>
+    <div class="xfbar" id="xfBar" hidden></div>
     <div class="kzlockbar" id="kzLockBar" hidden>🔒 Kassa açılmayıb — satış etmək üçün əvvəl kassanı sayıb açın. <button class="btn sm" id="btnKassa2">💰 Kassanı aç</button></div>
     <div class="grid" id="grid"></div>
   </section>
@@ -747,7 +749,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.16.2";
+const APP_VERSION="1.17.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1132,6 +1134,7 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   // Hər cihazda eyni id çıxsın deyə id vaxtdan + materialdan qurulur.
   (S.waste||[]).forEach(w=>{if(w&&w.id==null)w.id="w"+w.ts+"_"+(w.mat||"")});
   if(!S.shopId)S.shopId=CLOUD_SHOP;
+  if(!Array.isArray(S.transfers))S.transfers=[];
   if(!S.mig.branches){S.mig.branches=1;if(!S.branches?.length)S.branches=[{id:"main",name:"Hövsan"},{id:"mida1",name:"Mida"}]}
   // v0.97.0: yeni satış düyməsi icazələri — mövcud kassirlərə açıq verilir (əvvəlki kimi işləsin), admin bağlaya bilər
   // v1.10.6: xərc növlərinin adında artıq boşluq (iki boşluq, sonda boşluq) siyahıda seçimi pozurdu — bir dəfə təmizlə (xərclərin və aylıqların adı da)
@@ -1348,12 +1351,12 @@ function merge3(b,l,r,k){
 // Göndər: son ortaq vəziyyətdən (base) fərqlənən vahidlər. Al: bulud sənədləri "t" (server vaxtı) üzrə, kursordan sonrakılar.
 // Toqquşmada merge3; anbar qalığı (stock) buluda artım/azalma kimi yazılır, ona görə iki yerdə satış toplanır.
 let CLOUD_SHOP="main";const PAGES_URL="https://signmasterezcad.github.io/kassa/app/";
-const KEYED=["items","cats","users","materials","suppliers","customers","recurring","sales","expenses","purchases","waste","custPays","suppPays"];
+const KEYED=["items","cats","users","materials","suppliers","customers","recurring","sales","expenses","purchases","waste","custPays","suppPays","transfers"];
 const ORDERED=new Set(["items","cats","users","materials","suppliers","customers","recurring"]);
 const PERSUB=new Set(["cash"]), LOCALONLY=new Set(["lastAuto","lastBackup"]);
 // v0.76.0 🏢 Şöbələr: hər şöbə ayrı yerdədir (shops/<id>): satış, anbar, xərc, müştəri, kassir ayrıdır.
 // Düymələr, bölmələr və şöbə siyahısı hamı üçün eynidir — onlar bütün şöbələrə yazılır.
-const isSharedUnit=id=>id.startsWith("items~")||id.startsWith("cats~")||id==="@ord~items"||id==="@ord~cats"||id==="@branches";
+const isSharedUnit=id=>id.startsWith("transfers~")||id.startsWith("items~")||id.startsWith("cats~")||id==="@ord~items"||id==="@ord~cats"||id==="@branches";
 const PERSHOP_LISTS=["sales","purchases","expenses","waste","custPays","suppPays","customers","materials","recurring"];
 // Yaddaş: kompüterdə exe faylları (bulud-*.json), telefonda IndexedDB
 const KV=(()=>{
@@ -1930,7 +1933,31 @@ function renderWheel(){const w=$("wheel"),cam=$("camImg");if(!w||!cam)return;con
     ${T(55,44,"🛒 Satış",W.sales,"#fff")}${T(145,44,"🧾 Xərclər",W.spent,"#0b3b2a")}${T(55,150,"💰 Kassa",W.kassa,"#4a2c00")}${T(145,150,"📦 Anbar",W.anbar,"#fff")}
     <text x="100" y="94" font-size="8.5" fill="#fff" text-anchor="middle">Xalis mənfəət</text><text x="100" y="112" font-size="${Math.abs(W.net)>=10000?12:14}" fill="#fff" text-anchor="middle">${wFmt(W.net)}</text></svg>
     <div class="ws">Ayın 1-indən bu günədək<br>Kassa və Anbar — indiki qalıq</div>`}
-function renderHeader(){renderWheel();renderShop();renderKzBtn();
+// v1.17.0 (sahibinin istəyi): 🔁 Şöbələrarası mal göndərmə. S.transfers — ORTAQ siyahı (bütün şöbələrə yazılır, isSharedUnit "transfers~").
+// Göndərən şöbədə (admin, bulud, 2+ şöbə) Anbar → Qalıq/Sayım → 🔁: qalıq azalır (zay DEYİL); alan şöbədə satış ekranında "✓ Qəbul et" —
+// eyni adlı mal tapılır (yoxdursa yaranır), qalıq artır, maya orta qiymətlə; t.done yazılır. Qəbulu əl ilə etmək iki kompüterin eyni anda ikiqat əlavəsinin qarşısını alır.
+const curShop=()=>S.shopId||CLOUD_SHOP||"main",shopNm=id=>(S.branches||[]).find(b=>b.id===id)?.name||id;
+const xfCan=()=>isAdmin()&&!!CL.cfg&&(S.branches||[]).length>1;
+const xfIncoming=()=>(S.transfers||[]).filter(t=>t.to===curShop()&&!t.done);
+let xfOpen=null;
+function sendTransfer(mid,q,to){const m=mat(mid);q=Math.round((+q||0)*1e6)/1e6;
+  if(!xfCan()||!m)return false;if(!(q>0)){toast("Neçə ədəd göndərirsiniz? Sayı yazın");return false}
+  if(q>(+m.stock||0)+1e-9){toast(`Anbarda yalnız ${fmtN(m.stock)} ${m.unit||"ədəd"} var`);return false}
+  if(!to||to===curShop()){toast("Hansı şöbəyə göndərirsiniz?");return false}
+  m.stock=Math.round(((+m.stock||0)-q)*1e6)/1e6;S.transfers=S.transfers||[];
+  S.transfers.push({id:newId("tr"),ts:Date.now(),from:curShop(),to,mat:m.id,name:m.name,unit:m.unit||"ədəd",q,cost:+m.cost||0,by:curName()});
+  save();toast(`🔁 ${fmtN(q)} ${m.unit||"ədəd"} ${m.name} → ${shopNm(to)} göndərildi. Orada "Qəbul et" basılanda anbara düşəcək.`);return true}
+function acceptTransfer(id){const t=(S.transfers||[]).find(x=>x.id===id);if(!t||t.done||t.to!==curShop())return;
+  let m=S.materials.find(x=>norm(x.name).trim()===norm(t.name).trim());
+  if(!m){m={id:newId("m"),name:t.name,unit:t.unit||"ədəd",cost:+t.cost||0,stock:0,min:0};S.materials.push(m)}
+  const st=Math.max(0,+m.stock||0),q=+t.q||0;if(st+q>0)m.cost=(st*(+m.cost||0)+q*(+t.cost||0))/(st+q);
+  m.stock=Math.round(((+m.stock||0)+q)*1e6)/1e6;t.done={ts:Date.now(),by:curName()};
+  upgrade();save();renderHeader();if(!$("ovRep").hidden)renderRep();toast(`✓ ${fmtN(q)} ${t.unit||"ədəd"} ${t.name} anbara əlavə olundu`)}
+function xfHist(){const L=(S.transfers||[]).filter(t=>t.from===curShop()||t.to===curShop()).sort((a,b)=>b.ts-a.ts).slice(0,50);if(!L.length)return"";
+  return `<h4>🔁 Şöbələrarası göndərmələr</h4><div class="tw"><table><tr><th>Tarix</th><th>Haradan → Haraya</th><th>Mal</th><th class="n">Say</th><th>Vəziyyət</th></tr>${L.map(t=>`<tr><td>${fmtDate(t.ts)}</td><td>${esc(shopNm(t.from))} → ${esc(shopNm(t.to))}</td><td>${esc(t.name)}</td><td class="n">${fmtN(t.q)} ${esc(t.unit||"")}</td><td>${t.done?`<span class="pill ok">✓ qəbul edilib</span>`:t.to===curShop()?`<button class="btn sm" data-xfok="${t.id}">✓ Qəbul et</button>`:`<span class="pill warn">yoldadır</span>`}</td></tr>`).join("")}</table></div>`}
+function renderXfBar(){const b=$("xfBar");if(!b)return;const L=me?xfIncoming():[];b.hidden=!L.length;if(!L.length)return;
+  b.innerHTML=L.map(t=>`<div class="xr">🔁 <span><b>${esc(shopNm(t.from))}</b> şöbəsindən mal gəlib: <b>${fmtN(t.q)} ${esc(t.unit||"ədəd")} ${esc(t.name)}</b> <span class="sub">(${fmtDate(t.ts)}, ${esc(t.by||"")})</span></span><button class="btn sm" data-xfok="${t.id}">✓ Qəbul et</button></div>`).join("")}
+function renderHeader(){renderXfBar();renderWheel();renderShop();renderKzBtn();
   if(me)$("userName").textContent=curName()+(isAdmin()?" (admin)":"");
   renderSuppBadge();renderCustBadge();renderCloudBadge();
   const ts=S.sales.filter(s=>isToday(s.ts));
@@ -3497,13 +3524,19 @@ function renderRep(){
       <p class="sub">Alanda: 💸 Xərclər → 📦 Mal alışı — anbar özü artır.</p>`
       :`<p class="sub empty-grp">✓ Bütün materiallar kifayət qədərdir${S.materials.length?"":" (hələ material yoxdur — “Materiallar” tabında əlavə edin)"}.</p>`;
   }
-  if(rtab==="anbar"){const SM=can("stockMat");
+  if(rtab==="anbar"){const SM=can("stockMat"),XF=xfCan();
     h=`<p class="sub">Sayım: rəfdə saydığınız rəqəmi "Faktiki" xanasına yazın. Fərq qeydə alınmayan zay və ya itkidir. "Alış" xanasına yeni gələn kağızı yazın.</p>
-    <div class="tw"><table><tr><th>Material</th><th class="n">Maya</th><th class="n">Sistemdə</th><th class="n">Faktiki</th><th class="n">Alış (+)</th><th>Vəziyyət</th></tr>
+    <div class="tw"><table><tr><th>Material</th><th class="n">Maya</th><th class="n">Sistemdə</th><th class="n">Faktiki</th><th class="n">Alış (+)</th><th>Vəziyyət</th>${XF?"<th>Şöbəyə</th>":""}</tr>
     ${S.materials.map(m=>`<tr><td>${esc(m.name)}</td><td class="n">${SM?`<input id="c_${m.id}" type="number" step="0.01" value="${m.cost}">`:(can("cost")?m2(m.cost):"—")}</td><td class="n">${fmtN(m.stock)}</td>
       <td class="n"><input id="f_${m.id}" type="number" step="any" min="0" placeholder="${+(+m.stock).toFixed(3)}"></td><td class="n">${SM?`<input id="b_${m.id}" type="number" step="any" min="0" placeholder="0">`:"—"}</td>
-      <td>${m.stock<=m.min?`<span class="pill warn">Az qalıb (min ${m.min})</span>`:`<span class="pill ok">Normal</span>`}</td></tr>`).join("")}</table></div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="stSave">Yadda saxla</button></div>`;
+      <td>${m.stock<=m.min?`<span class="pill warn">Az qalıb (min ${m.min})</span>`:`<span class="pill ok">Normal</span>`}</td>${XF?`<td><button class="btn ghost sm" data-xf="${m.id}" ${m.stock>0?"":"disabled"} title="Başqa şöbəyə göndər">🔁 Göndər</button></td>`:""}</tr>
+      ${XF&&xfOpen===m.id?`<tr class="selrow"><td colspan="7"><div class="frow" style="align-items:flex-end"><span>🔁 <b>${esc(m.name)}</b> başqa şöbəyə:</span>
+        <label class="f">Neçə ${esc(m.unit||"ədəd")}<input id="xf_q" type="number" step="any" min="0" max="${+m.stock}" placeholder="məs. 2"></label>
+        <label class="f">Hansı şöbəyə<select id="xf_to">${(S.branches||[]).filter(b=>b.id!==curShop()).map(b=>`<option value="${esc(b.id)}">${esc(b.name)}</option>`).join("")}</select></label>
+        <button class="btn" data-xfgo="${m.id}">✓ Göndər</button><button class="btn ghost" data-xfx>Ləğv</button></div>
+        <p class="sub" style="margin:6px 0 0">Bu şöbənin anbarından silinir (zay sayılmır). Qarşı şöbədə "✓ Qəbul et" basılanda onun anbarına eyni maya ilə düşür.</p></td></tr>`:""}`).join("")}</table></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="stSave">Yadda saxla</button></div>
+    ${xfHist()}`;
   }
   if(rtab==="bolme") h=renderCats();
   // ✏️ Düzəliş rejimi (v0.37.0: başlıqdan Ayarların içinə köçdü)
@@ -3754,6 +3787,11 @@ async function fillBackupList(){
 }
 function backupText(){return JSON.stringify({app:"KASSA",version:APP_VERSION,exported:new Date().toISOString(),data:S},null,1)}
 
+document.addEventListener("click",e=>{const x=e.target.closest("[data-xfok],[data-xf],[data-xfgo],[data-xfx]");if(!x)return;
+  if(x.dataset.xfok){acceptTransfer(x.dataset.xfok);return}
+  if(x.dataset.xf){xfOpen=xfOpen===x.dataset.xf?null:x.dataset.xf;renderRep();setTimeout(()=>$("xf_q")?.focus(),0);return}
+  if(x.hasAttribute("data-xfx")){xfOpen=null;renderRep();return}
+  if(x.dataset.xfgo){if(sendTransfer(x.dataset.xfgo,parseFloat(String($("xf_q")?.value||"").replace(",",".")),$("xf_to")?.value)){xfOpen=null;renderRep();renderHeader()}}});
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const a=t.dataset.act;
