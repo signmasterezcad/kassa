@@ -253,6 +253,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Basanda Hesabat ayın 1-i – bu gün aralığı ilə açılır. Ekran hündürlüyü ≤640px-də gizli (fotoaparat kimi). "Gəlir" yox "Xalis mənfəət" — sahibinə izah olundu (gəlir = satış).
 - **v1.15.1 (sahibinin şəkli: çarx Borclar nişanının və bulud düyməsinin üstünə düşürdü):** çarx görünəndə `#sideNav.wheelOn` — kompüterdə düymələr yığcam (padding 7px, 14px, gap 5px, nişan sətirdə sağda/aşağıda),
   `.sgap` `overflow:hidden`, çarxın hündürlüyü `min(184px, 100vh − 480px)` — heç vaxt başqa düymənin üstünə düşmür.
+- **v1.16.0 (sahibinin istəyi):** Sublim → 🧲 **Maqnit** qrupu `g_maqnit` (`S.mig.maqnit`), içində **Maqnit Sublim 75x75 — 3 ₼** `mq_7575`. Anbardakı maqnit malı (adında maqnit/magnit, "75" olan üstün)
+  hər açılışda qrupun bütün düymələrinə 1 ədəd qoşulur (şöbəyə görə). Başqa ölçülər sonra bu qrupa əlavə oluna bilər — qayda onlara da işləyir.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

@@ -747,7 +747,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.15.1";
+const APP_VERSION="1.16.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1038,6 +1038,13 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   {const A=(S.materials||[]).filter(m=>/a4/i.test(m.name||"")&&/(^|\D)80(\D|$)/.test(m.name||"")).pop();
     if(A)S.items.filter(i=>!i.group&&(i.parent==="g_a4"||["ks_a4bw","ks_tel","pq_cv_sade","pq_cv_muasir"].includes(i.id))).forEach(it=>{it.recipe=it.recipe||[];
       if(!it.recipe.some(([m])=>{const M=mat(m);return M&&/a4/i.test(M.name||"")}))it.recipe.push([A.id,1])})}
+  // v1.16.0 (sahibinin istəyi): Sublim → 🧲 Maqnit qrupu (g_maqnit), içində "Maqnit Sublim 75x75" 3 ₼ (mq_7575). Anbardakı maqnit malı (adında maqnit/magnit; 75 olan üstün)
+  // hər açılışda bu qrupun düymələrinə 1 ədəd qoşulur (reseptdə bu şöbənin maqnit malı yoxdursa).
+  if(!S.mig.maqnit){const c=S.cats.find(x=>x.id===S.items.find(i=>i.id==="fc_sade")?.cat)||S.cats.find(x=>norm(x.name).trim()==="sublim");
+    if(c){S.mig.maqnit=1;if(!S.items.some(i=>i.id==="g_maqnit"))S.items.push({id:"g_maqnit",name:"Maqnit",cat:c.id,icon:"🧲",color:"#0891b2",group:1,fav:0,ink:0,recipe:[],tiers:[[1,0]]});
+      if(!S.items.some(i=>i.id==="mq_7575"))S.items.push({id:"mq_7575",name:"Maqnit Sublim 75x75",cat:c.id,parent:"g_maqnit",icon:"🧲",color:"#0891b2",fav:0,ink:0,recipe:[],tiers:[[1,3]]})}}
+  {const isMq=M=>M&&/maqnit|magnit/.test(norm(M.name||"")),L=(S.materials||[]).filter(isMq),A=L.find(m=>/75/.test(m.name))||L[L.length-1];
+    if(A)S.items.filter(i=>!i.group&&i.parent==="g_maqnit").forEach(it=>{it.recipe=it.recipe||[];if(!it.recipe.some(([m])=>isMq(mat(m))))it.recipe.push([A.id,1])})}
   // v1.14.0 (sahibinin istəyi): A3 kağızı (adında "A3", laminasiya/sticker/foto yox — sahibinin malı "A3 Sadə") hər açılışda A3 Sadə qrupunun bütün düymələrinə
   // + A3 surət düymələrinə 1 vərəq qoşulur (reseptdə bu şöbənin A3 kağızı yoxdursa). Hər şöbədə öz materialı.
   {const isA3=M=>M&&/a3/.test(norm(M.name||""))&&!/lamin|stick|foto|plyon/.test(norm(M.name||"")),A=(S.materials||[]).filter(isA3).pop();
