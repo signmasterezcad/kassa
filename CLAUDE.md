@@ -268,6 +268,7 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   Sınaq: `tests/cloud.js` 9-cu hissə (Hövsan → Mida, real bulud sınağı).
 - **v1.17.1 (sahibinin sualı + razılığı):** 📋 Alış tarixçəsi KPI-larına **🏪 Alverdən** (pay "alver") əlavə olundu — əvvəl Nağd+Kart+Nisyə cəmi "Bu ay alış"a bərabər deyildi.
   `S.mig.unitFix`: vahidi "paçka" olan A3 (→ vərəq) və laminasiya (→ ədəd) malları + onların alış sətirləri (sahibi 500 / 100 ədədi səhvən "paçka" seçib yazmışdı; say dəyişmir).
+- **v1.17.2 (sahibinin istəyi, yalnız göstərmə):** 📋 Alış tarixçəsində 💵 Nağd və 💳 Kart qutuları silindi (qalır: Bu ay alış, 🏪 Alverdən, 📝 Nisyə); ayda nağd/kart alış varsa bir kiçik "Nağd / Kart — köhnə qeydlər" qutusu çıxır ki cəm tutsun. Formalarda Nağd/Kart qalır.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

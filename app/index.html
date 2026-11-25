@@ -749,7 +749,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.17.1";
+const APP_VERSION="1.17.2";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2761,8 +2761,8 @@ function renderExp(){
   if(etab==="phist"){
     const list=S.purchases.slice().sort((a,b)=>b.ts-a.ts),mk=dayKey(Date.now()).slice(0,7),mon=list.filter(p=>dayKey(p.ts).startsWith(mk));
     const sum=f=>mon.filter(f).reduce((a,p)=>a+p.total,0);
-    h=`<div class="kpis"><div class="kpi"><span>Bu ay alış</span><b>${m2(sum(()=>1))} ₼</b></div><div class="kpi"><span>🏪 Alverdən</span><b>${m2(sum(p=>p.pay==="alver"))} ₼</b></div><div class="kpi"><span>💵 Nağd</span><b>${m2(sum(p=>p.pay==="nağd"))} ₼</b></div>
-      <div class="kpi"><span>💳 Kart</span><b>${m2(sum(p=>p.pay==="kart"))} ₼</b></div><div class="kpi"><span>📝 Nisyə</span><b style="color:var(--warn)">${m2(sum(p=>p.pay==="nisyə"))} ₼</b></div></div>
+    h=`<div class="kpis"><div class="kpi"><span>Bu ay alış</span><b>${m2(sum(()=>1))} ₼</b></div><div class="kpi"><span>🏪 Alverdən</span><b>${m2(sum(p=>p.pay==="alver"))} ₼</b></div>${sum(p=>p.pay==="nağd"||p.pay==="kart")>0.004?`<div class="kpi"><span>💵 Nağd / 💳 Kart</span><b>${m2(sum(p=>p.pay==="nağd"||p.pay==="kart"))} ₼</b><span class="sub">köhnə qeydlər</span></div>`:""}
+      <div class="kpi"><span>📝 Nisyə</span><b style="color:var(--warn)">${m2(sum(p=>p.pay==="nisyə"))} ₼</b></div></div>
     ${list.length?`<div class="tw"><table class="hist"><tr><th>Tarix</th><th>Təchizatçı</th><th>Ödəniş</th><th>Nə alınıb</th><th class="n">Məbləğ</th><th></th></tr>
     ${list.slice(0,500).map(p=>`<tr class="${pDel===p.id?"confirm":""}"><td><b>${fmtDate(p.ts)}</b> <span class="sub">${fmtTime(p.ts)}</span></td><td>${esc(p.supplier||"—")}</td>
       <td>${payPill(p)}</td><td class="wrap">${p.lines.map(l=>`${esc(l.name)} <span class="sub">${l.qty} ${esc(l.unit)}</span>`).join(", ")}${p.note?`<br><span class="sub">${esc(p.note)}</span>`:""}</td>
