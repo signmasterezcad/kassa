@@ -747,7 +747,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.16.1";
+const APP_VERSION="1.16.2";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1052,11 +1052,18 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
     if(!S.items.some(i=>i.id==="mq_urek"))S.items.splice(at(),0,mk("mq_urek","Maqnit Sublim Ürək 95x100",3));
     if(!S.items.some(i=>i.id==="mq_yumru"))S.items.splice(at(),0,mk("mq_yumru","Maqnit Sublim Yumru 75x75",2.5));
     if(!S.items.some(i=>i.id==="mq_duz"))S.items.splice(at()+1,0,mk("mq_duz","Maqnit Sublim Düzbucaq 55x90",3))}
-  // Hər açılışda: hər maqnit düyməsi anbarda adında "maqnit" + öz formasının sözü olan mala 1 ədəd qoşulur (ürək / yumru / kvadrat / düzbucaq); başqa formanın malı reseptdən çıxır.
-  {const SH={mq_urek:/urek|urey/,mq_yumru:/yumru|dair/,mq_7575:/kvadrat/,mq_duz:/duzbucaq|dbucaq|duz bucaq/},isMq=M=>M&&/maqnit|magnit/.test(norm(M.name||""));
-    Object.entries(SH).forEach(([id,re])=>{const it=S.items.find(i=>i.id===id);if(!it)return;it.recipe=it.recipe||[];
-      it.recipe=it.recipe.filter(([m])=>{const M=mat(m);return !isMq(M)||re.test(norm(M.name||""))});
-      const A=(S.materials||[]).filter(M=>isMq(M)&&re.test(norm(M.name||""))).pop();if(A&&!it.recipe.some(([m])=>isMq(mat(m))))it.recipe.push([A.id,1])})}
+  // v1.16.2 (sahibinin istəyi): + "Maqnit Sublim Ürək 75x75" 2.50 ₼ (mq_urek75, Ürək 95x100-dən sonra).
+  if(!S.mig.maqnitUrek75&&S.items.some(i=>i.id==="g_maqnit")){S.mig.maqnitUrek75=1;const g=S.items.find(i=>i.id==="g_maqnit"),u=S.items.find(i=>i.id==="mq_urek");
+    if(!S.items.some(i=>i.id==="mq_urek75"))S.items.splice(u?S.items.indexOf(u)+1:S.items.length,0,{id:"mq_urek75",name:"Maqnit Sublim Ürək 75x75",cat:g.cat,parent:"g_maqnit",icon:"🧲",color:"#0891b2",fav:0,ink:0,recipe:[],tiers:[[1,2.5]]})}
+  // Hər açılışda: hər maqnit düyməsi anbarda adında "maqnit" + öz formasının sözü + öz ölçüsü olan mala 1 ədəd qoşulur (ölçü yazılmayıbsa — yalnız forma ilə, ölçüsüz mal);
+  // eyni formanın başqa ölçüsü / başqa formanın maqnit malı reseptdən çıxır.
+  {const isMq=M=>M&&/maqnit|magnit/.test(norm(M.name||"")),SZ=t=>{const m=String(t||"").match(/(\d+)\s*[x×х*]\s*(\d+)/i);return m?m[1]+"x"+m[2]:""};
+    const SH={mq_urek:[/urek|urey/,"95x100"],mq_urek75:[/urek|urey/,"75x75"],mq_yumru:[/yumru|dair/,"75x75"],mq_7575:[/kvadrat/,"75x75"],mq_duz:[/duzbucaq|dbucaq|duz bucaq/,"55x90"]};
+    const fits=(M,[re,sz])=>isMq(M)&&re.test(norm(M.name||""))&&(SZ(M.name)===sz||!SZ(M.name));
+    Object.entries(SH).forEach(([id,r])=>{const it=S.items.find(i=>i.id===id);if(!it)return;it.recipe=it.recipe||[];
+      const L=(S.materials||[]).filter(M=>fits(M,r)),A=L.find(M=>SZ(M.name)===r[1])||L[L.length-1];
+      it.recipe=it.recipe.filter(([m])=>{const M=mat(m);return !isMq(M)||(A?m===A.id:fits(M,r))});
+      if(A&&!it.recipe.some(([m])=>m===A.id))it.recipe.push([A.id,1])})}
   // v1.14.0 (sahibinin istəyi): A3 kağızı (adında "A3", laminasiya/sticker/foto yox — sahibinin malı "A3 Sadə") hər açılışda A3 Sadə qrupunun bütün düymələrinə
   // + A3 surət düymələrinə 1 vərəq qoşulur (reseptdə bu şöbənin A3 kağızı yoxdursa). Hər şöbədə öz materialı.
   {const isA3=M=>M&&/a3/.test(norm(M.name||""))&&!/lamin|stick|foto|plyon/.test(norm(M.name||"")),A=(S.materials||[]).filter(isA3).pop();

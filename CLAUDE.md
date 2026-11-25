@@ -258,6 +258,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **v1.16.1 (sahibinin istəyi):** Maqnit qrupunda 4 düymə (`S.mig.maqnit4`): **Ürək 95x100 3 ₼** `mq_urek`, **Yumru 75x75 2.50** `mq_yumru`, **Kvadrat 75x75 2.50** (`mq_7575`, köhnə "Maqnit Sublim 75x75" — ad/qiymət dəyişdi),
   **Düzbucaq 55x90 3** `mq_duz`. v1.16.0-ın ümumi maqnit qaydası əvəzləndi: hər açılışda hər düymə adında "maqnit" + **öz formasının sözü** (ürək / yumru / kvadrat / düzbucaq) olan mala 1 ədəd qoşulur,
   başqa formanın maqnit malı reseptdən çıxarılır. Sahibinin anbarındakı "Maqnit Sublim Urek" → Ürək düyməsinə.
+- **v1.16.2 (sahibinin istəyi):** + **Maqnit Sublim Ürək 75x75 — 2.50 ₼** `mq_urek75` (`S.mig.maqnitUrek75`). Qoşma qaydası indi **forma + ölçü** ilə (`SH`: mq_urek 95x100, mq_urek75/mq_yumru/mq_7575 75x75, mq_duz 55x90):
+  adında maqnit + forma + eyni ölçü olan mal (ölçüsüz ad da olar); başqa ölçü/forma reseptdən çıxır. Sahibinin anbarında 5 mal da ölçü ilə yazılıb.
+  Sual: ayarlarda qrupun içinə düymə — düymə redaktorunda **"Hansı qrupda"** seçimi (`#e_parent`) və ya düzəliş rejimində qrupu açıb **＋ Yeni düymə** (`qnew`) — artıq var idi, sahibinə izah olundu.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
