@@ -749,7 +749,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.17.2";
+const APP_VERSION="1.17.3";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2763,11 +2763,14 @@ function renderExp(){
     const sum=f=>mon.filter(f).reduce((a,p)=>a+p.total,0);
     h=`<div class="kpis"><div class="kpi"><span>Bu ay alış</span><b>${m2(sum(()=>1))} ₼</b></div><div class="kpi"><span>🏪 Alverdən</span><b>${m2(sum(p=>p.pay==="alver"))} ₼</b></div>${sum(p=>p.pay==="nağd"||p.pay==="kart")>0.004?`<div class="kpi"><span>💵 Nağd / 💳 Kart</span><b>${m2(sum(p=>p.pay==="nağd"||p.pay==="kart"))} ₼</b><span class="sub">köhnə qeydlər</span></div>`:""}
       <div class="kpi"><span>📝 Nisyə</span><b style="color:var(--warn)">${m2(sum(p=>p.pay==="nisyə"))} ₼</b></div></div>
-    ${list.length?`<div class="tw"><table class="hist"><tr><th>Tarix</th><th>Təchizatçı</th><th>Ödəniş</th><th>Nə alınıb</th><th class="n">Məbləğ</th><th></th></tr>
-    ${list.slice(0,500).map(p=>`<tr class="${pDel===p.id?"confirm":""}"><td><b>${fmtDate(p.ts)}</b> <span class="sub">${fmtTime(p.ts)}</span></td><td>${esc(p.supplier||"—")}</td>
+    ${list.length?(()=>{const days=[];list.slice(0,500).forEach(p=>{const k=dayKey(p.ts);let d=days.find(x=>x.k===k);if(!d){d={k,ps:[]};days.push(d)}d.ps.push(p)});
+      return days.map(d=>{const tot=d.ps.reduce((a,p)=>a+(p.total||0),0),op=d.ps.some(p=>p.id===pDel)?"open":expOpenAttr("pd:"+d.k);
+        return `<details class="rsec" data-eo="pd:${d.k}" ${op}><summary>📅 ${fmtDate(d.ps[0].ts)} <span class="sub">— ${d.ps.length} alış</span><span style="margin-left:auto">${m2(tot)} ₼</span></summary>
+      <div class="tw"><table class="hist"><tr><th>Saat</th><th>Təchizatçı</th><th>Ödəniş</th><th>Nə alınıb</th><th class="n">Məbləğ</th><th></th></tr>
+    ${d.ps.map(p=>`<tr class="${pDel===p.id?"confirm":""}"><td><span class="sub">${fmtTime(p.ts)}</span></td><td>${esc(p.supplier||"—")}</td>
       <td>${payPill(p)}</td><td class="wrap">${p.lines.map(l=>`${esc(l.name)} <span class="sub">${l.qty} ${esc(l.unit)}</span>`).join(", ")}${p.note?`<br><span class="sub">${esc(p.note)}</span>`:""}</td>
       <td class="n"><b>${m2(p.total)} ₼</b></td><td>${pDel===p.id?`<button class="btn red sm" data-x="pdel" data-id="${p.id}">Bəli, sil</button> <button class="btn ghost sm" data-x="pdelx">Ləğv</button>`
-        :canDelRec(p)?`<button class="btn ghost sm del" data-x="pask" data-id="${p.id}">Sil</button>`:""}</td></tr>`).join("")}</table></div>
+        :canDelRec(p)?`<button class="btn ghost sm del" data-x="pask" data-id="${p.id}">Sil</button>`:""}</td></tr>`).join("")}</table></div></details>`}).join("")})()+`
     <p class="sub">Alışı silsəniz, həmin mal anbardan geri çıxılır. Silmədən əvvəl ehtiyat nüsxə yazılır.</p>`
     :`<p class="sub empty-grp">Hələ alış yoxdur. "📦 Mal alışı" tabından birincini yazın.</p>`}`;
   }
