@@ -455,13 +455,14 @@ let n = 0;
     S.sales.length = bS; S.expenses.length = bE; me = meB; renderAll();
     return [Math.abs((w1.sales - w0.sales) - 100) < 1e-9, Math.abs((w1.spent - w0.spent) - 50) < 1e-9, Math.abs(w1.net - (w1.sales - w1.spent)) < 1e-9, adm, kas]; });
   ok(r.every(Boolean), 'v1.15.0: çarx — satış +100, xərclər +50 (maya 30 + xərc 20), xalis = satış − xərclər; admin görür, kassir yox ' + JSON.stringify(r));}
-  // v1.16.0: Sublim → Maqnit qrupu, Maqnit Sublim 75x75 3 ₼, anbardan 1 ədəd
+  // v1.16.0: Sublim → Maqnit qrupu, 4 maqnit düyməsi (v1.16.1), anbardan 1 ədəd
   {const r = await p.evaluate(() => { const bM = JSON.stringify(S.materials), bI = JSON.stringify(S.items), bS = S.sales.length; S.kzReq = false;
     const g = S.items.find(i => i.id === 'g_maqnit'), it = S.items.find(i => i.id === 'mq_7575'); if (!g || !it) return ['yox'];
-    it.recipe = []; S.materials.push({ id: 'mMq', name: 'Maqnit 75x75', unit: 'ədəd', stock: 20, cost: 0.8, min: 0 }); upgrade();
+    it.recipe = []; S.materials.push({ id: 'mMq', name: 'Maqnit Kvadrat 75x75', unit: 'ədəd', stock: 20, cost: 0.8, min: 0 }, { id: 'mMu', name: 'Maqnit Sublim Ürək', unit: 'ədəd', stock: 5, cost: 1, min: 0 }); upgrade();
     order = []; addItem('mq_7575', 3); pay = 'nağd'; finishSale(); const st = S.materials.find(x => x.id === 'mMq').stock, tot = S.sales.at(-1).total;
-    S.sales.length = bS; S.materials = JSON.parse(bM); S.items = JSON.parse(bI); return [g.group === 1, it.parent === 'g_maqnit', st === 17, tot === 9]; });
-  ok(r.every(x => x === true), 'v1.16.0: Maqnit qrupu, 75x75 3 ₼, 3 satış = 3 ədəd anbardan ' + JSON.stringify(r));}
+    const names = S.items.filter(i => i.parent === 'g_maqnit').map(i => i.name + ':' + i.tiers[0][1]).join('|'), urek = S.items.find(i => i.id === 'mq_urek').recipe.map(r => r[0]).join();
+    S.sales.length = bS; S.materials = JSON.parse(bM); S.items = JSON.parse(bI); return [g.group === 1, it.parent === 'g_maqnit', st === 17, tot === 7.5, names === 'Maqnit Sublim Ürək 95x100:3|Maqnit Sublim Yumru 75x75:2.5|Maqnit Sublim Kvadrat 75x75:2.5|Maqnit Sublim Düzbucaq 55x90:3', urek === 'mMu']; });
+  ok(r.every(x => x === true), 'v1.16.1: Maqnit — 4 düymə, Kvadrat 2.50 × 3 = 7.50, öz malından silinir, Ürək öz malına ' + JSON.stringify(r));}
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();

@@ -255,6 +255,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   `.sgap` `overflow:hidden`, çarxın hündürlüyü `min(184px, 100vh − 480px)` — heç vaxt başqa düymənin üstünə düşmür.
 - **v1.16.0 (sahibinin istəyi):** Sublim → 🧲 **Maqnit** qrupu `g_maqnit` (`S.mig.maqnit`), içində **Maqnit Sublim 75x75 — 3 ₼** `mq_7575`. Anbardakı maqnit malı (adında maqnit/magnit, "75" olan üstün)
   hər açılışda qrupun bütün düymələrinə 1 ədəd qoşulur (şöbəyə görə). Başqa ölçülər sonra bu qrupa əlavə oluna bilər — qayda onlara da işləyir.
+- **v1.16.1 (sahibinin istəyi):** Maqnit qrupunda 4 düymə (`S.mig.maqnit4`): **Ürək 95x100 3 ₼** `mq_urek`, **Yumru 75x75 2.50** `mq_yumru`, **Kvadrat 75x75 2.50** (`mq_7575`, köhnə "Maqnit Sublim 75x75" — ad/qiymət dəyişdi),
+  **Düzbucaq 55x90 3** `mq_duz`. v1.16.0-ın ümumi maqnit qaydası əvəzləndi: hər açılışda hər düymə adında "maqnit" + **öz formasının sözü** (ürək / yumru / kvadrat / düzbucaq) olan mala 1 ədəd qoşulur,
+  başqa formanın maqnit malı reseptdən çıxarılır. Sahibinin anbarındakı "Maqnit Sublim Urek" → Ürək düyməsinə.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

@@ -747,7 +747,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.16.0";
+const APP_VERSION="1.16.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1043,8 +1043,20 @@ function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map
   if(!S.mig.maqnit){const c=S.cats.find(x=>x.id===S.items.find(i=>i.id==="fc_sade")?.cat)||S.cats.find(x=>norm(x.name).trim()==="sublim");
     if(c){S.mig.maqnit=1;if(!S.items.some(i=>i.id==="g_maqnit"))S.items.push({id:"g_maqnit",name:"Maqnit",cat:c.id,icon:"🧲",color:"#0891b2",group:1,fav:0,ink:0,recipe:[],tiers:[[1,0]]});
       if(!S.items.some(i=>i.id==="mq_7575"))S.items.push({id:"mq_7575",name:"Maqnit Sublim 75x75",cat:c.id,parent:"g_maqnit",icon:"🧲",color:"#0891b2",fav:0,ink:0,recipe:[],tiers:[[1,3]]})}}
-  {const isMq=M=>M&&/maqnit|magnit/.test(norm(M.name||"")),L=(S.materials||[]).filter(isMq),A=L.find(m=>/75/.test(m.name))||L[L.length-1];
-    if(A)S.items.filter(i=>!i.group&&i.parent==="g_maqnit").forEach(it=>{it.recipe=it.recipe||[];if(!it.recipe.some(([m])=>isMq(mat(m))))it.recipe.push([A.id,1])})}
+  // v1.16.1 (sahibinin istəyi): Maqnit qrupunda 4 düymə — Ürək 95x100 3 ₼, Yumru 75x75 2.50, Kvadrat 75x75 2.50 (köhnə mq_7575 — ad dəyişdi, satışlar qalır), Düzbucaq 55x90 3.
+  if(!S.mig.maqnit4&&S.items.some(i=>i.id==="g_maqnit")){S.mig.maqnit4=1;const g=S.items.find(i=>i.id==="g_maqnit");
+    const mk=(id,n,pr)=>({id,name:n,cat:g.cat,parent:"g_maqnit",icon:"🧲",color:"#0891b2",fav:0,ink:0,recipe:[],tiers:[[1,pr]]});
+    let k=S.items.find(i=>i.id==="mq_7575");if(!k){k=mk("mq_7575","",2.5);S.items.push(k)}k.name="Maqnit Sublim Kvadrat 75x75";k.tiers=[[1,2.5]];
+    k.recipe=(k.recipe||[]).filter(([m])=>{const M=mat(m);return !(M&&/maqnit|magnit/.test(norm(M.name||"")))});
+    const at=()=>S.items.indexOf(k);
+    if(!S.items.some(i=>i.id==="mq_urek"))S.items.splice(at(),0,mk("mq_urek","Maqnit Sublim Ürək 95x100",3));
+    if(!S.items.some(i=>i.id==="mq_yumru"))S.items.splice(at(),0,mk("mq_yumru","Maqnit Sublim Yumru 75x75",2.5));
+    if(!S.items.some(i=>i.id==="mq_duz"))S.items.splice(at()+1,0,mk("mq_duz","Maqnit Sublim Düzbucaq 55x90",3))}
+  // Hər açılışda: hər maqnit düyməsi anbarda adında "maqnit" + öz formasının sözü olan mala 1 ədəd qoşulur (ürək / yumru / kvadrat / düzbucaq); başqa formanın malı reseptdən çıxır.
+  {const SH={mq_urek:/urek|urey/,mq_yumru:/yumru|dair/,mq_7575:/kvadrat/,mq_duz:/duzbucaq|dbucaq|duz bucaq/},isMq=M=>M&&/maqnit|magnit/.test(norm(M.name||""));
+    Object.entries(SH).forEach(([id,re])=>{const it=S.items.find(i=>i.id===id);if(!it)return;it.recipe=it.recipe||[];
+      it.recipe=it.recipe.filter(([m])=>{const M=mat(m);return !isMq(M)||re.test(norm(M.name||""))});
+      const A=(S.materials||[]).filter(M=>isMq(M)&&re.test(norm(M.name||""))).pop();if(A&&!it.recipe.some(([m])=>isMq(mat(m))))it.recipe.push([A.id,1])})}
   // v1.14.0 (sahibinin istəyi): A3 kağızı (adında "A3", laminasiya/sticker/foto yox — sahibinin malı "A3 Sadə") hər açılışda A3 Sadə qrupunun bütün düymələrinə
   // + A3 surət düymələrinə 1 vərəq qoşulur (reseptdə bu şöbənin A3 kağızı yoxdursa). Hər şöbədə öz materialı.
   {const isA3=M=>M&&/a3/.test(norm(M.name||""))&&!/lamin|stick|foto|plyon/.test(norm(M.name||"")),A=(S.materials||[]).filter(isA3).pop();
