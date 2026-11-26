@@ -423,7 +423,7 @@ const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) process
   ok(r1.includes('Köhnə A') && !r1.includes('Köhnə B') && r1.includes('Günlər üzrə'), 'tarix aralığı (5 gün əvvəldən bu günədək): 3 gün əvvəlki satış var, 10 gün əvvəlki yox; günlər üzrə cədvəl');
   await p.fill('#hFrom', dk(0)); await p.dispatchEvent('#hFrom', 'change'); await p.fill('#hTo', dk(12)); await p.dispatchEvent('#hTo', 'change');
   ok((await p.inputValue('#hFrom')) === dk(12) && (await p.textContent('#hBody')).includes('Köhnə B'), 'tarixlər tərs yazılanda özü düzəlir');
-  await p.click('[data-h=all]');
+  await p.evaluate(() => { hFrom = hTo = ''; renderHist(); });
   ok((await p.textContent('#hBody')).includes('Bütün günlər') && (await p.inputValue('#hFrom')) === '', 'Bütün günlər: tarix boşdur');
   await p.click('#hBody [data-hd] >> nth=0');
   ok((await p.inputValue('#hFrom')) === (await p.inputValue('#hTo')), 'günlər cədvəlində günə basanda yalnız o gün açılır');

@@ -529,15 +529,15 @@ h4{margin:6px 0 0;font-size:14px}
   <div class="modal" role="dialog" aria-labelledby="ht">
     <div class="mh"><h3 id="ht">🧾 Satış Tarixçəsi</h3><button class="hbtn" data-close>Bağla</button></div>
     <div class="mb">
-      <div class="frow">
-        <label class="f">Tarixdən<input type="date" id="hFrom"></label>
-        <label class="f">Tarixədək<input type="date" id="hTo"></label>
+      <div class="frow rrange">
         <button class="btn ghost sm" data-h="today">Bu gün</button>
         <button class="btn ghost sm" data-h="yday">Dünən</button>
-        <button class="btn ghost sm" data-h="week">Bu həftə</button>
-        <button class="btn ghost sm" data-h="month">Bu ay</button>
-        <button class="btn ghost sm" data-h="pmonth">Keçən ay</button>
-        <button class="btn ghost sm" data-h="all">Bütün günlər</button>
+        <label class="f">📅 Gün seç<input type="date" id="hDay"></label>
+        <span class="rrsep">Tarix aralığı:</span>
+        <label class="f">Tarixdən<input type="date" id="hFrom"></label>
+        <label class="f">Tarixədək<input type="date" id="hTo"></label>
+      </div>
+      <div class="frow">
         <span class="sub">Ödəniş:</span>
         <button class="tab sm" data-hp="all">Hamısı</button><button class="tab sm" data-hp="nağd">💵 Nağd</button><button class="tab sm" data-hp="kart">💳 Kart</button><button class="tab sm" data-hp="borc">📝 Nisyə</button>
       </div>
@@ -749,7 +749,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.19.0";
+const APP_VERSION="1.19.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2573,7 +2573,7 @@ function openHist(p){hFrom=hTo=dayKey(Date.now());hPay=p||"all";hDel=null;render
 document.addEventListener("click",e=>{const t=e.target.closest("[data-epay]");if(!t)return;if(can("hist"))openHist(t.dataset.epay)});
 function renderHist(){
   if(hFrom&&hTo&&hFrom>hTo)[hFrom,hTo]=[hTo,hFrom];
-  $("hFrom").value=hFrom;$("hTo").value=hTo;
+  $("hFrom").value=hFrom;$("hTo").value=hTo;$("hDay").value=hFrom&&hFrom===hTo?hFrom:"";
   document.querySelectorAll("[data-hp]").forEach(b=>b.classList.toggle("on",b.dataset.hp===hPay));
   const inRange=ts=>{const k=dayKey(ts);return(!hFrom||k>=hFrom)&&(!hTo||k<=hTo)};
   const list=S.sales.filter(s=>inRange(s.ts)&&(hPay==="all"||s.pay===hPay||(s.split&&+s.split[hPay]>0))).sort((a,b)=>b.ts-a.ts);
@@ -4101,6 +4101,7 @@ document.querySelectorAll(".ov").forEach(ov=>{
 });
 $("hFrom").addEventListener("change",e=>{hFrom=e.target.value;hDel=null;renderHist()});
 $("hTo").addEventListener("change",e=>{hTo=e.target.value;hDel=null;renderHist()});
+$("hDay").addEventListener("change",e=>{if(!e.target.value)return;hFrom=hTo=e.target.value;hDel=null;renderHist()});
 document.addEventListener("click",e=>{const t=e.target.closest("[data-hd]");if(!t)return;hFrom=hTo=t.dataset.hd;hDel=null;renderHist()});
 $("q").addEventListener("input",e=>{q=e.target.value;qAdded=null;grp=null;$("qClear").hidden=!q;renderGrid()});
 // Axtarışda Enter: birinci nəticəni əlavə et. Yazı dəyişməyibsə və sifariş varsa, növbəti Enter ödəniş sayılır.

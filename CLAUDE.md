@@ -279,6 +279,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   📦 Anbar → Materiallar cədvəlində "📷 Barkod" / "1 barkodda" sütunları (`m_b_`, `m_bq_`; eyni barkod iki malda olanda xəbərdarlıq). 💸 Xərclər → Mal alışı: `#p_bar` xanası + **qlobal tutma**
   (Mal alışı açıqdırsa, ≥6 simvol orta <45 ms aralıqla + Enter → barkod; yazıldığı xananın əvvəlki dəyəri geri qaytarılır). `onBarcode(code)`: tanınırsa `barAddLine` (eyni mal sətri varsa say +1, yoxsa yeni sətir `perPack=barQ`);
   tanınmırsa `barAsk` qutusu (`.barask`): mövcud mala qoş (`barlink`, yalnız barkodsuz mallar) / ＋ yeni mal (`barnew`, vahid) / Ləğv. Barkod mal üstündədir → şöbəyə görə ayrı (hər şöbədə bir dəfə qoşulur).
+- **v1.19.1 (sahibinin istəyi: "Satış Tarixçəsində tarix hissəsi Hesabatdakı kimi olsun"):** `#ovHist` dövr çubuğu `.frow.rrange` — **Bu gün / Dünən / 📅 Gün seç** (`#hDay`) / **Tarix aralığı:** Tarixdən–Tarixədək;
+  Ödəniş süzgəci ayrıca sətirdə. Bu həftə / Bu ay / Keçən ay / Bütün günlər düymələri silindi (kod `data-h=week|month|pmonth|all` qalır; testlər `hFrom=hTo=""`).
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
