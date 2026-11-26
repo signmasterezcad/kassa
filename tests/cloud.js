@@ -248,8 +248,10 @@ const srv = http.createServer((req, res) => {
     ok(await Ph.evaluate(() => xfIncoming().length === 1 && !document.getElementById('xfBar').hidden), '🔁 Mida: "mal gəlib — Qəbul et" bildirişi çıxdı');
     await Ph.click('#xfBar [data-xfok]');
     ok(await Ph.evaluate(n => { const m = S.materials.find(x => norm(x.name) === norm(n)); return !!m && m.stock === 2 && Math.abs(m.cost - 0.5) < 1e-9 && xfIncoming().length === 0; }, mx0), '🔁 Mida: qəbul edildi — anbarda 2 ədəd, maya 0.50');
+    ok(await Ph.evaluate(() => { const p = S.purchases.filter(x => x.pay === 'xfer'); return p.length === 1 && Math.abs(p[0].total - 1) < 1e-9 && cashDay(dayKey(Date.now())).purch === 0; }), '🔁 Mida: alış xərcinə +1.00 ₼ yazıldı, kassaya toxunmadı');
     await Ph.evaluate(() => cloudTick()); await sleep(1500); await PC.evaluate(() => cloudTick()); await sleep(1500);
     ok(await PC.evaluate(() => S.transfers.every(t => t.done)), '🔁 Hövsan: göndərmə "qəbul edilib" göründü');
+    ok(await PC.evaluate(() => { const p = S.purchases.filter(x => x.pay === 'xfer'); return p.length === 1 && Math.abs(p[0].total + 1) < 1e-9 && p[0].lines[0].qty === -2; }), '🔁 Hövsan: alış xərcindən −1.00 ₼ (2 × 0.50) çıxıldı');
     await Ph.evaluate(() => switchShop('main')); await Ph.waitForFunction(() => CLOUD_SHOP === 'main' && !shopSwitching, null, { timeout: 20000 });
     ok(await Ph.evaluate(() => S.materials.find(x => x.id === 'mx')?.stock === 8 && xfIncoming().length === 0), '🔁 telefon Hövsanda: qalıq 8, gələn mal yoxdur');
   } finally {
