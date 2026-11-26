@@ -487,7 +487,7 @@ Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köç�
 - WebView2 başladıcısının açılış sürəti Windows-da ölçülməyib.
 - Google Disk-ə nüsxə — istifadəçi istəmədi. Setup iş kompüterində quraşdırıldı və işləyir; iş kompüteri v0.44.1-də linklə buluda qoşuldu (☁️ ✓, sahibi təsdiqlədi).
 - Bulud real Firebase ilə işləyir (layihə `kassa-7bad5`, istifadəçi təsdiqlədi: kompüter + telefon sinxron). GitHub Pages açıqdır. Depo Private olsa, Pages pulsuz işləmir.
-- APK 1.1 sahibinin telefonunda quraşdırıldı və buluda qoşuldu (26.11.2026, sahibi təsdiqlədi; əvvəl Firebase parolunu Authentication → Users-dən yenilədi).
+- APK 1.1 sahibinin telefonunda quraşdırıldı və buluda qoşuldu (26.11.2026, sahibi təsdiqlədi; əvvəl Firebase parolunu Authentication → Users-dən yenilədi). **Diqqət:** Firebase-də parolu dəyişmək bütün cihazların girişini (refresh token) ləğv edir → hər kompüterdə "Giriş vaxtı bitib" (TOKEN_EXPIRED) → ☁️ Bulud-dan yeni parolla yenidən daxil olmaq lazımdır (sahibinə izah olundu).
 - Telefon Windows-da real Wi-Fi ilə hələ yoxlanmayıb (Firewall icazəsi, IP ünvanı).
 
 ## Brauzer versiyası (nümayiş üçün)
