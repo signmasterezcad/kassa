@@ -749,7 +749,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.19.1";
+const APP_VERSION="1.20.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1818,6 +1818,7 @@ const PERMS=[
   ["expOther","🧾 Digər xərcləri yazmaq"],
   ["expDebt","💳 Mal alışı borclarını ödəmək"],
   ["expDel","🗑️ Bu gün özü yazdığı xərci / alışı silmək"],
+  ["expView","👀 Digər xərclərin siyahısını, cəmlərini və aylıq təkrarlananları görmək"],
   ["#","📦 Anbar"],
   ["stock","📦 Qalıq, sayım, az qalanlar"],
   ["stockMat","🧱 Materiallar: yeni mal, maya, Alış (+)"],
@@ -2835,6 +2836,7 @@ function renderExp(){
     if(!ed)ed=newEd();if(!eMon)eMon=monKey(Date.now());
     const cur=monKey(Date.now()),list=S.expenses.filter(x=>monKey(x.ts)===eMon).sort((a,b)=>b.ts-a.ts);
     const byCat={};list.forEach(x=>byCat[x.cat]=(byCat[x.cat]||0)+x.amount);
+    const EV=can("expView"); // v1.20.0: kassir standart olaraq yalnız formanı görür
     const tot=list.reduce((a,x)=>a+x.amount,0),months=[...new Set([cur,...S.expenses.map(x=>monKey(x.ts))])].sort().reverse();
     h=`<p class="sub">Pul qazandırmayan xərclər: maaş, icarə, işıq, çay, salfet… Bunlar anbara düşmür, ayın mənfəətindən çıxılır. Nağd ödənənlər gün sonu kassa hesabından da çıxılır.</p>
     <div class="editor">
@@ -2848,10 +2850,10 @@ function renderExp(){
       </div>
       ${catNew?`<div class="frow newcat"><label class="f grow">${catNew==="ren"?`"${esc(ed.cat)}" növünün yeni adı`:"Yeni xərc növünün adı"}<input id="x_newcat" value="${catNew==="ren"?esc(ed.cat):""}" placeholder="məs. Sifarişli çərçivə, Nəqliyyat"></label>
         <button class="btn sm" data-x="xcat">✓ ${catNew==="ren"?"Yadda saxla":"Əlavə et"}</button><button class="btn ghost sm" data-x="xcatx">Ləğv</button></div>`:""}
-      <div class="frow"><label class="chk"><input type="checkbox" id="x_rec" ${ed.rec?"checked":""}> Hər ay təkrarlanır (icarə, maaş kimi) — siyahıya əlavə et</label>
+      <div class="frow">${EV?`<label class="chk"><input type="checkbox" id="x_rec" ${ed.rec?"checked":""}> Hər ay təkrarlanır (icarə, maaş kimi) — siyahıya əlavə et</label>`:""}
         <span class="grow"></span><button class="btn" data-x="xsave">✓ Xərci yaz</button></div>
     </div>
-    <h4>🔁 Aylıq təkrarlanan xərclər — ${monName(cur)}</h4>
+    ${!EV?`<p class="sub">✓ Yazdığınız xərc adminə görünür.</p>`:`<h4>🔁 Aylıq təkrarlanan xərclər — ${monName(cur)}</h4>
     ${S.recurring.length?`<div class="tw"><table class="hist">${S.recurring.map(r=>{const done=S.expenses.find(x=>x.rec===r.id&&monKey(x.ts)===cur);return `<tr>
       <td><b>${esc(r.cat)}</b>${r.note?` <span class="sub">${esc(r.note)}</span>`:""}</td><td class="n"><b>${m2(r.amount)} ₼</b></td>
       <td>${done?`<span class="pill ok">✓ ödənilib ${fmtDate(done.ts)} (${done.pay==="nağd"?"nağd":done.pay==="alver"?"alverdən":"kart"})</span>`
@@ -2868,7 +2870,7 @@ function renderExp(){
         <td>${eDel===x.id?`<button class="btn red sm" data-x="xdel" data-id="${x.id}">Bəli, sil</button> <button class="btn ghost sm" data-x="xdelx">Ləğv</button>`:canDelRec(x)?`<button class="btn ghost sm del" data-x="xask" data-id="${x.id}">Sil</button>`:""}</td></tr>`).join("")}</table></div>`
       :`<p class="sub empty-grp">${monName(eMon)} üçün xərc yoxdur.</p>`}</details>
     <details class="rsec" data-eo="xcats" ${expOpenAttr("xcats")}><summary>🏷️ Xərc növləri (${S.expCats.length})</summary>
-    <div class="frow">${S.expCats.map(c=>`<span class="chip">${esc(c)}</span>`).join("")}</div><p class="sub">Yeni növ: yuxarıda "Növ" siyahısının altındakı <b>＋ Yeni növ</b>.</p></details>`;
+    <div class="frow">${S.expCats.map(c=>`<span class="chip">${esc(c)}</span>`).join("")}</div><p class="sub">Yeni növ: yuxarıda "Növ" siyahısının altındakı <b>＋ Yeni növ</b>.</p></details>`}`;
   }
   $("expBody").innerHTML=h;
 }
@@ -2913,7 +2915,7 @@ async function savePurchase(){
   S.purchases.push(p);pd=newPd();upgrade();save();renderHeader();renderDebtBadge();renderExp();
   toast(`Alış yazıldı ✓ ${m2(p.total)} ₼ · ${out.map(l=>l.name+" +"+l.qty).join(", ")}`);
 }
-function syncEd(){if(!ed||!$("x_day"))return;ed.day=$("x_day").value||ed.day;ed.cat=$("x_cat").value;ed.amount=$("x_amt").value;ed.note=$("x_note").value;ed.rec=$("x_rec").checked}
+function syncEd(){if(!ed||!$("x_day"))return;ed.day=$("x_day").value||ed.day;ed.cat=$("x_cat").value;ed.amount=$("x_amt").value;ed.note=$("x_note").value;ed.rec=!!$("x_rec")?.checked&&can("expView")}
 function saveExpense(){
   syncEd();const amt=+ed.amount;
   if(!(amt>0)){toast("Məbləği yazın (0-dan böyük)");return}
@@ -2963,8 +2965,8 @@ document.addEventListener("click",e=>{
   else if(a==="xask"){syncEd();eDel=t.dataset.id}
   else if(a==="xdelx"){syncEd();eDel=null}
   else if(a==="xdel"){const x=S.expenses.find(y=>y.id===t.dataset.id);if(!canDelRec(x))return;if(x?.supp&&x.pay==="nisyə"&&suppOwed(x.supp)-x.amount<-0.004){toast("Bu nisyə alış üçün artıq ödəniş edilib. Əvvəlcə 🚚 Tədarükçü → 💳 Borclar-da ödənişi silin");return}S.expenses=S.expenses.filter(y=>y.id!==t.dataset.id);eDel=null;save();toast(`Xərc silindi: ${x?.cat} ${m2(x?.amount||0)} ₼`)}
-  else if(a==="rpay"){if(!can("expOther"))return;const r=S.recurring.find(y=>y.id===t.dataset.id);if(r){S.expenses.push({id:newId("x"),ts:Date.now(),cat:r.cat,amount:r.amount,pay:t.dataset.by,note:r.note,rec:r.id,worker:curName()});save();toast(`${r.cat}: ${m2(r.amount)} ₼ ödənildi ✓`)}}
-  else if(a==="rdel"){if(!can("expOther"))return;syncEd();const k="r"+t.dataset.id;if(eDel!==k)eDel=k;else{S.recurring=S.recurring.filter(y=>y.id!==t.dataset.id);eDel=null;save();toast("Aylıq siyahıdan çıxarıldı (keçmiş ödənişlər qalır)")}}
+  else if(a==="rpay"){if(!can("expOther")||!can("expView"))return;const r=S.recurring.find(y=>y.id===t.dataset.id);if(r){S.expenses.push({id:newId("x"),ts:Date.now(),cat:r.cat,amount:r.amount,pay:t.dataset.by,note:r.note,rec:r.id,worker:curName()});save();toast(`${r.cat}: ${m2(r.amount)} ₼ ödənildi ✓`)}}
+  else if(a==="rdel"){if(!can("expOther")||!can("expView"))return;syncEd();const k="r"+t.dataset.id;if(eDel!==k)eDel=k;else{S.recurring=S.recurring.filter(y=>y.id!==t.dataset.id);eDel=null;save();toast("Aylıq siyahıdan çıxarıldı (keçmiş ödənişlər qalır)")}}
   else if(a==="xcatnew"||a==="xcatren"){syncEd();catNew=a==="xcatren"?"ren":"new";catDelAsk=null;renderExp();setTimeout(()=>{const i=$("x_newcat");if(i){i.focus();i.select()}},0);return}
   else if(a==="xcatdel"){syncEd();const c=ed.cat;if(!isAdmin()||CAT_LOCK.includes(c))return;const n=S.expenses.filter(x=>x.cat===c).length+(S.recurring||[]).filter(r=>r.cat===c).length;
     if(n){toast(`"${c}" növündə ${n} xərc yazılıb — silmək olmaz. Adını dəyişə bilərsiniz.`);catDelAsk=null}

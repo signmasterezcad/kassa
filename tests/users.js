@@ -483,6 +483,16 @@ let n = 0;
     const r4 = await p.evaluate(bM => { const M = S.materials.find(m => m.name === 'Barkod sınaq kağızı'); const ok = M.stock === 200 && Math.abs(M.cost - 0.035) < 1e-9;
       document.querySelectorAll('.ov').forEach(o => o.hidden = true); S.purchases = S.purchases.filter(x => !x.lines.some(l => l.mat === M.id)); S.materials = JSON.parse(bM); save(); return ok; }, bM);
     ok(r1 && r2 && r3 && r4, 'v1.19.0: 📷 barkod — tanınmayan → yeni mal (1 oxutma = 100), 2-ci oxutma +1 paçka, qiymət xanası pozulmadı, anbara 200 ' + JSON.stringify([r1, r2, r3, r4]));}
+  // v1.20.0: kassir "👀 xərcləri görmək" (expView) olmadan Digər xərclər-də yalnız formanı görür
+  {const r = await p.evaluate(() => { const bMe = me, bR = JSON.stringify(S.recurring), bE = JSON.stringify(S.expenses);
+    S.recurring.push({ id: 'rT', cat: 'İcarə', amount: 300, note: '' }); S.expenses.push({ id: 'xT', ts: Date.now(), cat: 'İcarə', amount: 300, pay: 'alver', note: 'gizli' });
+    me = { id: 'kT', name: 'Test kassir', role: 'kassir', perms: { expOther: 1 } }; ed = null; eMon = ''; openExp(); etab = 'other'; renderExp();
+    const T = $('expBody').textContent, tabs = $('etabs').textContent;
+    const k1 = !!$('x_amt') && !$('x_rec') && !/Aylıq təkrarlanan/.test(T) && !/gizli/.test(T) && !$('x_mon') && !/Mal alışı|Borclar/.test(tabs);
+    me.perms.expView = 1; renderExp(); const T2 = $('expBody').textContent;
+    const k2 = !!$('x_rec') && /Aylıq təkrarlanan/.test(T2) && /gizli/.test(T2);
+    me = bMe; S.recurring = JSON.parse(bR); S.expenses = JSON.parse(bE); ed = null; document.querySelectorAll('.ov').forEach(o => o.hidden = true); return [k1, k2]; });
+  ok(r.every(Boolean), 'v1.20.0: kassir expView-sız yalnız xərc formasını görür, icazə ilə hamısını ' + JSON.stringify(r));}
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();
