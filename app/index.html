@@ -749,7 +749,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.20.0";
+const APP_VERSION="1.21.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1794,6 +1794,7 @@ const PERMS=[
   ["myComm","👥 % Öz faizini görmək (başlıqda bu ayın faizi; yalnız Hesabat → İşçi faizi-də seçilən işçi)"],
   ["#","🧾 Satış tarixçəsi"],
   ["hist","🧾 Satış tarixçəsinə baxmaq"],
+  ["histAll","📅 Satış tarixçəsində bütün günləri görmək (bağlıdırsa — yalnız son 7 gün)"],
   ["payEdit","✏️ Ödənişi Karta / Nağda dəyişmək"],
   ["refund","↩️ Malı qaytarmaq / əvəzləmək"],
   ["delSale","❌ Satışı silmək"],
@@ -2572,8 +2573,12 @@ const fmtTime=ts=>{const d=new Date(ts);return pad(d.getHours())+":"+pad(d.getMi
 const saleKey=s=>s.id||("t"+s.ts);
 function openHist(p){hFrom=hTo=dayKey(Date.now());hPay=p||"all";hDel=null;renderHist();$("ovHist").hidden=false}
 document.addEventListener("click",e=>{const t=e.target.closest("[data-epay]");if(!t)return;if(can("hist"))openHist(t.dataset.epay)});
+// v1.21.0 (sahibinin istəyi): histAll icazəsi olmayan kassir yalnız son 7 günü (bu gün + əvvəlki 6 gün) görür
+const histMin=()=>can("histAll")?"":dayKey(Date.now()-6*864e5);
 function renderHist(){
   if(hFrom&&hTo&&hFrom>hTo)[hFrom,hTo]=[hTo,hFrom];
+  const hm=histMin();if(hm){if(!hFrom||hFrom<hm)hFrom=hm;if(hTo&&hTo<hFrom)hTo=hFrom}
+  ["hFrom","hTo","hDay"].forEach(i=>{if(hm)$(i).min=hm;else $(i).removeAttribute("min")});
   $("hFrom").value=hFrom;$("hTo").value=hTo;$("hDay").value=hFrom&&hFrom===hTo?hFrom:"";
   document.querySelectorAll("[data-hp]").forEach(b=>b.classList.toggle("on",b.dataset.hp===hPay));
   const inRange=ts=>{const k=dayKey(ts);return(!hFrom||k>=hFrom)&&(!hTo||k<=hTo)};
@@ -2584,7 +2589,7 @@ function renderHist(){
   // bir neçə gün seçiləndə: günlər üzrə cəmlər
   const days={};list.forEach(s=>{const k=dayKey(s.ts),d=days[k]||(days[k]={n:0,c:0,k:0,b:0,t:0});d.n++;d.t+=s.total;d.c+=payPart(s,"nağd");d.k+=payPart(s,"kart");d.b+=payPart(s,"borc")});
   const dk=Object.keys(days).sort().reverse();
-  $("hBody").innerHTML=`<div class="kpis">
+  $("hBody").innerHTML=(hm?`<p class="sub">📅 Siz son 7 günün satışlarını görə bilərsiniz (${fd(hm)}-dən).</p>`:"")+`<div class="kpis">
       <div class="kpi"><span>${esc(title)} · satış sayı</span><b>${list.length}</b></div>
       <div class="kpi"><span>Cəmi</span><b>${m2(sum(()=>1))} ₼</b></div>
       <div class="kpi"><span>💵 Nağd</span><b style="color:var(--ok)">${m2(list.reduce((a,s)=>a+payPart(s,"nağd"),0))} ₼</b></div>

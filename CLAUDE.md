@@ -284,6 +284,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **v1.20.0 (sahibinin istəyi: kassir yalnız digər xərc əlavə etsin, siyahı/cəmləri görməsin):** yeni icazə **`expView`** "👀 Digər xərclərin siyahısını, cəmlərini və aylıq təkrarlananları görmək"
   (KASSIR_DEFAULT-da **yox**, köçürmə yoxdur → bütün kassirlərdə bağlı). Yoxdursa 🧾 Digər xərclər-də yalnız forma (tarix, növ, məbləğ, ödəniş, qeyd, ✓ Xərci yaz); "Hər ay təkrarlanır", 🔁 aylıq təkrarlananlar,
   ay seçimi + KPI-lar, Xərclər bir-bir, Xərc növləri gizli; `rpay`/`rdel` də `expView` istəyir. Mal alışı / Alış tarixçəsi / Borclar tablarını sahibi özü `expBuy`/`expDebt` qutuları ilə bağlayır (izah olundu).
+- **v1.21.0 (sahibinin istəyi: kassir Satış tarixçəsində yalnız son 1 həftəni görsün):** yeni icazə **`histAll`** "📅 Satış tarixçəsində bütün günləri görmək" (KASSIR_DEFAULT-da yox → bütün kassirlərdə bağlı).
+  Yoxdursa `histMin()` = bu gün − 6 gün: `renderHist` `hFrom/hTo`-nu bu həddə sıxır, `#hFrom/#hTo/#hDay` `min`, yuxarıda "son 7 gün" qeydi. Hesabat (rb_ qutuları) ayrıca icazədir — buna toxunmur.
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

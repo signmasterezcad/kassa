@@ -493,6 +493,15 @@ let n = 0;
     const k2 = !!$('x_rec') && /Aylıq təkrarlanan/.test(T2) && /gizli/.test(T2);
     me = bMe; S.recurring = JSON.parse(bR); S.expenses = JSON.parse(bE); ed = null; document.querySelectorAll('.ov').forEach(o => o.hidden = true); return [k1, k2]; });
   ok(r.every(Boolean), 'v1.20.0: kassir expView-sız yalnız xərc formasını görür, icazə ilə hamısını ' + JSON.stringify(r));}
+  // v1.21.0: histAll olmayan kassir Satış tarixçəsində yalnız son 7 günü görür
+  {const r = await p.evaluate(() => { const bMe = me, bS = JSON.stringify(S.sales), D = 864e5;
+    S.sales.push({ id: 'hOld', ts: Date.now() - 10 * D, total: 7.77, pay: 'nağd', worker: 'X', lines: [{ id: 'x', name: 'Köhnə satış Q', q: 1, sum: 7.77 }] },
+      { id: 'hNew', ts: Date.now() - 3 * D, total: 3.33, pay: 'nağd', worker: 'X', lines: [{ id: 'x', name: 'Yeni satış Q', q: 1, sum: 3.33 }] });
+    me = { id: 'kT', name: 'Test kassir', role: 'kassir', perms: { hist: 1 } }; openHist(); hFrom = ''; hTo = ''; renderHist();
+    const T = $('hBody').textContent, k1 = !/Köhnə satış Q/.test(T) && /Yeni satış Q/.test(T) && hFrom === dayKey(Date.now() - 6 * D) && $('hFrom').min === hFrom;
+    me.perms.histAll = 1; hFrom = hTo = ''; renderHist(); const k2 = /Köhnə satış Q/.test($('hBody').textContent);
+    me = bMe; S.sales = JSON.parse(bS); document.querySelectorAll('.ov').forEach(o => o.hidden = true); return [k1, k2]; });
+  ok(r.every(Boolean), 'v1.21.0: kassir histAll-sız yalnız son 7 gün, icazə ilə bütün günlər ' + JSON.stringify(r));}
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();
