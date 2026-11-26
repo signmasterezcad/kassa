@@ -749,7 +749,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.18.0";
+const APP_VERSION="1.19.0";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -2719,6 +2719,37 @@ const monKey=ts=>dayKey(ts).slice(0,7);
 const monName=k=>{const [y,m]=k.split("-");return ["Yanvar","Fevral","Mart","Aprel","May","İyun","İyul","Avqust","Sentyabr","Oktyabr","Noyabr","Dekabr"][+m-1]+" "+y};
 const blankLine=()=>({mat:"",newName:"",unit:"ədəd",packs:1,perPack:1,total:"",link:""});
 const newPd=()=>({day:dayKey(Date.now()),supplier:"",pay:isAdmin()?"alver":"nağd",note:"",lines:[blankLine()]});
+// v1.19.0 (sahibinin istəyi): 📷 barkodla mal qəbulu. Materialda `bar` (barkod) və `barQ` (1 oxutmada anbara neçə düşür).
+let barAsk=null;   // tanınmayan barkod: {code}
+const barMat=c=>S.materials.find(m=>m.bar&&String(m.bar).trim()===c);
+function barAddLine(M){
+  let i=pd.lines.findIndex(l=>l.mat===M.id);
+  if(i>=0)pd.lines[i].packs=(+pd.lines[i].packs||0)+1;
+  else{i=pd.lines.findIndex(l=>!l.mat&&!(+l.total));const L={...blankLine(),mat:M.id,packs:1,perPack:+M.barQ||1};if(i>=0)pd.lines[i]=L;else{pd.lines.push(L);i=pd.lines.length-1}}
+  return i;
+}
+function onBarcode(code){
+  code=String(code||"").replace(/\s+/g,"").trim();if(!code||!pd||etab!=="buy"||!can("expBuy"))return;
+  syncPd();const M=barMat(code);
+  if(M){const i=barAddLine(M);barAsk=null;renderExp();toast(`📷 ${M.name}: ${fmtN(pd.lines[i].packs)} × ${fmtN(pd.lines[i].perPack)} ${M.unit||"ədəd"}`)}
+  else{barAsk={code};renderExp();toast("📷 Bu barkod tanınmır — hansı mala aid olduğunu seçin")}
+  setTimeout(()=>{const b=$("p_bar");if(b){b.value="";b.focus()}},0);
+}
+// Oxuyucu klaviatura kimi çox sürətli yazır və sonda Enter basır: kursor başqa xanada olsa da tuturuq, həmin xanadakı yazını geri qaytarırıq
+let barBuf={s:"",t:0,el:null,val:null,n:0,first:0};
+document.addEventListener("keydown",e=>{
+  if($("ovExp")?.hidden!==false||etab!=="buy"||e.target?.id==="p_bar"||e.ctrlKey||e.altKey||e.metaKey)return;
+  const now=performance.now();
+  if(e.key==="Enter"){const B=barBuf;barBuf={s:"",t:0,el:null,val:null,n:0,first:0};
+    if(B.s.length>=6&&now-B.t<80&&(B.t-B.first)/Math.max(1,B.n-1)<45){e.preventDefault();e.stopPropagation();
+      if(B.el&&B.val!==null)try{B.el.value=B.val;B.el.dispatchEvent(new Event("input",{bubbles:true}))}catch(err){}
+      onBarcode(B.s)}
+    return}
+  if(e.key.length!==1){return}
+  if(!barBuf.s||now-barBuf.t>80){const el=e.target;barBuf={s:"",t:0,el:el&&"value" in el?el:null,val:el&&"value" in el?el.value:null,n:0,first:now}}
+  barBuf.s+=e.key;barBuf.t=now;barBuf.n++;
+},true);
+document.addEventListener("keydown",e=>{if(e.target.id==="p_bar"&&e.key==="Enter"){e.preventDefault();onBarcode(e.target.value)}});
 const purchDebt=()=>S.purchases.filter(p=>p.pay==="nisyə"&&!p.paid).reduce((a,p)=>a+p.total,0);
 const saleItems=()=>S.items.filter(i=>!i.group).map(i=>({id:i.id,label:pathOf(i)+" › "+i.name})).sort((a,b)=>a.label.localeCompare(b.label,"az"));
 function renderDebtBadge(){const d=purchDebt();$("debtBadge").hidden=!d;$("debtBadge").textContent="borc "+m2(d)+" ₼"}
@@ -2751,6 +2782,15 @@ function renderExp(){
       <datalist id="supList">${[...new Set(S.purchases.map(p=>p.supplier).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join("")}</datalist>
       <div class="f"><span class="sub">Ödəniş</span><div class="frow">${[["alver","🏪 Ümumi alverdən"],["nağd","💵 Nağd (kassadan)"],["kart","💳 Kart"],["nisyə","📝 Nisyə (borc)"]].map(([k,l])=>`<button class="tab sm ${pd.pay===k?"on":""}" data-x="pay" data-p="${k}">${l}</button>`).join("")}</div></div>
     </div>
+    <div class="barrow"><label class="f grow">📷 Barkodu oxudun <span class="sub">(kursor harada olsa da oxuyur; əl ilə yazıb Enter da olar)</span><input id="p_bar" autocomplete="off" placeholder="barkod…"></label></div>
+    ${barAsk?(()=>{const free=mats.filter(m=>!m.bar);return `<div class="warnbox barask"><b>📷 Bu barkod tanınmır: <code>${esc(barAsk.code)}</code></b>
+      <p class="sub" style="margin:4px 0">Hansı mala aiddir? Bir dəfə seçin — proqram yadda saxlayacaq, növbəti dəfə özü tanıyacaq.</p>
+      <div class="frow"><label class="f">1 oxutmada anbara neçə düşür (məs. paçkada 100 vərəq → 100)<input id="b_q" type="number" min="0" step="any" value="1" style="max-width:140px"></label></div>
+      <div class="frow"><label class="f grow">Mövcud mal<select id="b_mat"><option value="">— seçin —</option>${free.map(m=>`<option value="${m.id}">${esc(m.name)} (${esc(m.unit||"ədəd")})</option>`).join("")}</select></label>
+        <button class="btn" data-x="barlink">✓ Bu mala qoş</button></div>
+      <div class="frow"><label class="f grow">və ya ＋ Yeni mal<input id="b_nn" placeholder="məs. Foto kağız 10x15 (paçka 100)"></label>
+        <label class="f sm">Vahid<select id="b_un">${UNITS.map(u=>`<option>${u}</option>`).join("")}</select></label>
+        <button class="btn" data-x="barnew">＋ Yarat və qoş</button><button class="btn ghost" data-x="barx">Ləğv</button></div></div>`})():""}
     <div class="buylines">${pd.lines.map((l,i)=>{const c=lineCalc(l),M=mat(l.mat);return `<div class="bline">
       <label class="f grow">Mal<select id="l_mat_${i}" data-li="${i}" data-x="matsel"><option value="">— seçin —</option>${mats.map(m=>`<option value="${m.id}" ${m.id===l.mat?"selected":""}>${esc(m.name)} (qalıq ${fmtN(m.stock)} ${esc(m.unit||"ədəd")})</option>`).join("")}<option value="__new" ${l.mat==="__new"?"selected":""}>➕ Yeni mal (siyahıda yoxdur)</option></select></label>
       ${l.mat==="__new"?`<label class="f grow">Yeni malın adı<input id="l_nn_${i}" value="${esc(l.newName)}" placeholder="məs. A4 80 qr, Çərçivə 10x15, Fincan ağ"></label>
@@ -2903,7 +2943,15 @@ document.addEventListener("click",e=>{
   else if(a==="pay")pd.pay=t.dataset.p;
   else if(a==="ladd")pd.lines.push(blankLine());
   else if(a==="ldel")pd.lines.splice(+t.dataset.li,1);
-  else if(a==="pclear")pd=newPd();
+  else if(a==="pclear"){pd=newPd();barAsk=null}
+  else if(a==="barx")barAsk=null;
+  else if(a==="barlink"||a==="barnew"){if(!barAsk||!can("expBuy"))return;const q=parseFloat(String($("b_q")?.value||"1").replace(",","."))||1;let M;
+    if(a==="barlink"){M=mat($("b_mat")?.value);if(!M){toast("Malı seçin");return}}
+    else{const nm=($("b_nn")?.value||"").replace(/\s+/g," ").trim();if(!nm){toast("Yeni malın adını yazın");$("b_nn")?.focus();return}
+      M=S.materials.find(m=>norm(m.name)===norm(nm));if(!M){M={id:newId("m"),name:nm,unit:$("b_un").value,cost:0,stock:0,min:0};S.materials.push(M)}}
+    if(barMat(barAsk.code)&&barMat(barAsk.code)!==M){toast("Bu barkod artıq başqa mala qoşulub");return}
+    M.bar=barAsk.code;M.barQ=q;barAsk=null;barAddLine(M);save();toast(`📷 Barkod "${M.name}" malına qoşuldu ✓ (1 oxutma = ${fmtN(q)} ${M.unit||"ədəd"})`);
+    renderExp();setTimeout(()=>$("p_bar")?.focus(),0);return}
   else if(a==="psave"){if(!can("expBuy"))return;savePurchase();return}
   else if(a==="pask")pDel=t.dataset.id;
   else if(a==="pdelx")pDel=null;
@@ -3692,15 +3740,17 @@ function openSet(tab,sc){mode="set";rtab=tab;if(sc)setCat=sc;$("ovRep").hidden=f
 // ---------- Admin: materiallar və işçilər ----------
 function renderMatAdmin(){
   return `<p class="sub">Material adını, mayasını (1 vərəq / ədəd üçün alış qiyməti) və minimum qalığı dəyişin. Qalıq "Anbar / Sayım" bölməsindən dəyişir.</p>
-  <div class="tw"><table><tr><th>Material</th><th class="n">Maya ₼</th><th class="n">Min. qalıq</th><th class="n">Qalıq</th><th></th></tr>
+  <div class="tw"><table><tr><th>Material</th><th class="n">Maya ₼</th><th class="n">Min. qalıq</th><th class="n">Qalıq</th><th>📷 Barkod</th><th class="n" title="1 dəfə oxudanda anbara neçə düşür">1 barkodda</th><th></th></tr>
   ${S.materials.map(m=>`<tr><td><input id="m_n_${m.id}" value="${esc(m.name)}" class="wide"></td>
     <td class="n"><input id="m_c_${m.id}" type="number" step="0.001" value="${m.cost}"></td>
     <td class="n"><input id="m_min_${m.id}" type="number" step="any" min="0" value="${m.min}"></td><td class="n">${fmtN(m.stock)}</td>
+    <td><input id="m_b_${m.id}" value="${esc(m.bar||"")}" placeholder="—" autocomplete="off" style="width:140px"></td>
+    <td class="n"><input id="m_bq_${m.id}" type="number" step="any" min="0" value="${m.barQ||1}" style="width:70px"></td>
     <td><button class="btn ghost sm" data-act="mdel" data-id="${m.id}">${delArm===m.id?"Əminsiniz?":"Sil"}</button></td></tr>`).join("")}
   <tr><td><input id="nm_name" placeholder="Yeni material, məs. A3 80 qr" class="wide"></td>
     <td class="n"><input id="nm_cost" type="number" step="0.001" placeholder="0.00"></td>
     <td class="n"><input id="nm_min" type="number" step="any" min="0" placeholder="0"></td>
-    <td class="n"><input id="nm_stock" type="number" step="any" min="0" placeholder="qalıq"></td>
+    <td class="n"><input id="nm_stock" type="number" step="any" min="0" placeholder="qalıq"></td><td></td><td></td>
     <td><button class="btn sm" data-act="madd">+ Əlavə et</button></td></tr></table></div>
   <div><button class="btn" data-act="msave">Dəyişiklikləri yadda saxla</button></div>`;
 }
@@ -3872,8 +3922,10 @@ document.addEventListener("click",e=>{
   }
   else if(a==="msave"){
     S.materials.forEach(m=>{const n=$("m_n_"+m.id).value.trim();if(n)m.name=n;
-      const c=parseFloat($("m_c_"+m.id).value);if(!isNaN(c))m.cost=c;const mn=parseFloat(String($("m_min_"+m.id).value).replace(",","."));if(!isNaN(mn))m.min=mn});
-    upgrade();save();renderHeader();toast("Materiallar yadda saxlandı");
+      const c=parseFloat($("m_c_"+m.id).value);if(!isNaN(c))m.cost=c;
+      if($("m_b_"+m.id)){const b=$("m_b_"+m.id).value.replace(/\s+/g,"");if(b)m.bar=b;else delete m.bar;const bq=parseFloat(String($("m_bq_"+m.id).value).replace(",","."));if(bq>0)m.barQ=bq}const mn=parseFloat(String($("m_min_"+m.id).value).replace(",","."));if(!isNaN(mn))m.min=mn});
+    const dup=S.materials.filter(m=>m.bar&&S.materials.some(x=>x!==m&&x.bar===m.bar));
+    upgrade();save();renderHeader();toast(dup.length?`⚠ Eyni barkod bir neçə malda: ${dup.map(m=>m.name).join(", ")} — düzəldin`:"Materiallar yadda saxlandı");
   }
   else if(a==="madd"){
     const n=$("nm_name").value.trim();if(!n){toast("Materialın adını yazın");return}

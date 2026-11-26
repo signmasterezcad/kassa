@@ -471,6 +471,18 @@ let n = 0;
     openExp(); etab = 'phist'; renderExp(); const ok2 = /Alverdən/.test($('expBody').textContent); document.querySelectorAll('.ov').forEach(o => o.hidden = true);
     S.materials = JSON.parse(bM); S.purchases = JSON.parse(bP); if (bMig) S.mig.unitFix = 1; return [ok1, ok2]; });
   ok(r.every(Boolean), 'v1.17.1: paçka → vərəq/ədəd, Alış tarixçəsində 🏪 Alverdən qutusu ' + JSON.stringify(r));}
+  // v1.19.0: 📷 barkodla mal qəbulu — tanınmayan barkod → yeni mal; ikinci oxutma say +1; kursor qiymət xanasında olsa da qiymət pozulmur
+  {const bM = await p.evaluate(() => { const b = JSON.stringify(S.materials); pd = null; openExp(); etab = 'buy'; renderExp(); return b; });
+    await p.focus('#p_bar'); await p.keyboard.type('4607001234567'); await p.keyboard.press('Enter');
+    const r1 = await p.evaluate(() => !!document.querySelector('.barask') && /4607001234567/.test(document.querySelector('.barask').textContent));
+    await p.fill('#b_q', '100'); await p.fill('#b_nn', 'Barkod sınaq kağızı'); await p.click('[data-x=barnew]');
+    const r2 = await p.evaluate(() => { const M = S.materials.find(m => m.name === 'Barkod sınaq kağızı'); return !!M && M.bar === '4607001234567' && M.barQ === 100 && pd.lines[0].mat === M.id && +pd.lines[0].perPack === 100 && +pd.lines[0].packs === 1; });
+    await p.fill('#l_tt_0', '7'); await p.focus('#l_tt_0'); await p.keyboard.type('4607001234567', { delay: 5 }); await p.keyboard.press('Enter'); await p.waitForTimeout(100);
+    const r3 = await p.evaluate(() => +pd.lines[0].packs === 2 && +pd.lines[0].total === 7 && pd.lines.length === 1);
+    await p.click('[data-x=psave]');
+    const r4 = await p.evaluate(bM => { const M = S.materials.find(m => m.name === 'Barkod sınaq kağızı'); const ok = M.stock === 200 && Math.abs(M.cost - 0.035) < 1e-9;
+      document.querySelectorAll('.ov').forEach(o => o.hidden = true); S.purchases = S.purchases.filter(x => !x.lines.some(l => l.mat === M.id)); S.materials = JSON.parse(bM); save(); return ok; }, bM);
+    ok(r1 && r2 && r3 && r4, 'v1.19.0: 📷 barkod — tanınmayan → yeni mal (1 oxutma = 100), 2-ci oxutma +1 paçka, qiymət xanası pozulmadı, anbara 200 ' + JSON.stringify([r1, r2, r3, r4]));}
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();

@@ -275,6 +275,10 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   göndərəndə **göndərən** şöbədə `total = −q×maya`, sətir `qty:−q` ("🔁 X şöbəsinə göndərildi"); qəbulda **alan** şöbədə `+q×maya` ("🔁 X şöbəsindən gəldi"). Anbara təsiri yoxdur (qalıq transfer kodu ilə dəyişir),
   **silinmir** (`pdel` bloku + Sil düyməsi yoxdur — səhvdə malı geri göndərmək). `cashDay` toxunmur (yalnız nağd); `ALV()` "xfer"-i xərc sayır ("🔁 Başqa şöbədən gələn / göndərilən mal" sətri);
   `payPill`/`pill`/`pp` "🔁 Şöbələrarası"; Alış tarixçəsində ayda varsa "🔁 Şöbələrarası" qutusu. Köhnə (v1.17.x) göndərmələrə tətbiq olunmur.
+- **v1.19.0 (sahibinin istəyi; cihaz SUNLUX RW10 — klaviatura kimi yazır + Enter): 📷 barkodla mal qəbulu** (yalnız alış, satışda yox). Materialda `bar` (barkod) və `barQ` (1 oxutmada anbara neçə — paçka 100 vərəq → 100);
+  📦 Anbar → Materiallar cədvəlində "📷 Barkod" / "1 barkodda" sütunları (`m_b_`, `m_bq_`; eyni barkod iki malda olanda xəbərdarlıq). 💸 Xərclər → Mal alışı: `#p_bar` xanası + **qlobal tutma**
+  (Mal alışı açıqdırsa, ≥6 simvol orta <45 ms aralıqla + Enter → barkod; yazıldığı xananın əvvəlki dəyəri geri qaytarılır). `onBarcode(code)`: tanınırsa `barAddLine` (eyni mal sətri varsa say +1, yoxsa yeni sətir `perPack=barQ`);
+  tanınmırsa `barAsk` qutusu (`.barask`): mövcud mala qoş (`barlink`, yalnız barkodsuz mallar) / ＋ yeni mal (`barnew`, vahid) / Ləğv. Barkod mal üstündədir → şöbəyə görə ayrı (hər şöbədə bir dəfə qoşulur).
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
