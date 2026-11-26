@@ -286,6 +286,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   ay seçimi + KPI-lar, Xərclər bir-bir, Xərc növləri gizli; `rpay`/`rdel` də `expView` istəyir. Mal alışı / Alış tarixçəsi / Borclar tablarını sahibi özü `expBuy`/`expDebt` qutuları ilə bağlayır (izah olundu).
 - **v1.21.0 (sahibinin istəyi: kassir Satış tarixçəsində yalnız son 1 həftəni görsün):** yeni icazə **`histAll`** "📅 Satış tarixçəsində bütün günləri görmək" (KASSIR_DEFAULT-da yox → bütün kassirlərdə bağlı).
   Yoxdursa `histMin()` = bu gün − 6 gün: `renderHist` `hFrom/hTo`-nu bu həddə sıxır, `#hFrom/#hTo/#hDay` `min`, yuxarıda "son 7 gün" qeydi. Hesabat (rb_ qutuları) ayrıca icazədir — buna toxunmur.
+- **v1.21.1 (sahibi Firebase parolunu dəyişdi → bütün kompüterlərdə "Giriş vaxtı bitib", parol yazmağa yer yox idi):** `CL.authErr` (cloudTick-də `e.auth`) olanda ☁️ Bulud bölməsində (kompüter + telefon, admin)
+  `relogBox()` — **🔑 Yenidən daxil olun**: yalnız parol `#cf_rw` + `data-act=clrelog` (Enter da) → `cloudSignIn` mövcud apiKey/projectId/email ilə; `base/kursor/seen` qalır (Buluddan ayır + yenidən qoşulmaq lazım deyil),
+  səhv parolda `CL.cfg` geri qoyulur. Sınaq: `tests/cloud.js` 10-cu hissə (`REFTOK`).
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,

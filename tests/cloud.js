@@ -6,7 +6,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const APP = path.resolve('app');
 
 // ---------- sınaq Firebase ----------
-const USER = { email: 'sahib@test.az', password: 'parol123', uid: 'U1' };
+const USER = { email: 'sahib@test.az', password: 'parol123', uid: 'U1' }; let REFTOK = 'REF';
 const docs = new Map(); // name -> {fields, updateTime}
 let commits = 0, lastMicros = 0;
 const now = () => { let us = Date.now() * 1000; if (us <= lastMicros) us = lastMicros + 1; lastMicros = us; const ms = Math.floor(us / 1000); return new Date(ms).toISOString().replace('Z', '').replace(/\.\d+$/, '') + '.' + String(us % 1000000).padStart(6, '0') + 'Z'; };
@@ -18,9 +18,9 @@ const srv = http.createServer((req, res) => {
     if (u.pathname === '/auth/accounts:signInWithPassword') {
       const j = JSON.parse(body); if (u.searchParams.get('key') !== 'KEY1') return send(400, { error: { message: 'API key not valid. Please pass a valid API key.' } });
       if (j.email !== USER.email || j.password !== USER.password) return send(400, { error: { message: 'INVALID_LOGIN_CREDENTIALS' } });
-      return send(200, { idToken: 'TOK', refreshToken: 'REF', localId: USER.uid, expiresIn: '3600' });
+      return send(200, { idToken: 'TOK', refreshToken: REFTOK, localId: USER.uid, expiresIn: '3600' });
     }
-    if (u.pathname === '/token/token') { if (!body.includes('refresh_token=REF')) return send(400, { error: { message: 'INVALID_REFRESH_TOKEN' } }); return send(200, { id_token: 'TOK', refresh_token: 'REF', expires_in: '3600' }); }
+    if (u.pathname === '/token/token') { if (!body.includes('refresh_token=' + REFTOK)) return send(400, { error: { message: 'INVALID_REFRESH_TOKEN' } }); return send(200, { id_token: 'TOK', refresh_token: REFTOK, expires_in: '3600' }); }
     if (u.pathname.startsWith('/fs/')) {
       if (req.headers.authorization !== 'Bearer TOK') return send(403, { error: { status: 'PERMISSION_DENIED', message: 'Missing or insufficient permissions.' } });
       if (u.pathname.endsWith(':commit')) {
@@ -254,6 +254,17 @@ const srv = http.createServer((req, res) => {
     ok(await PC.evaluate(() => { const p = S.purchases.filter(x => x.pay === 'xfer'); return p.length === 1 && Math.abs(p[0].total + 1) < 1e-9 && p[0].lines[0].qty === -2; }), '🔁 Hövsan: alış xərcindən −1.00 ₼ (2 × 0.50) çıxıldı');
     await Ph.evaluate(() => switchShop('main')); await Ph.waitForFunction(() => CLOUD_SHOP === 'main' && !shopSwitching, null, { timeout: 20000 });
     ok(await Ph.evaluate(() => S.materials.find(x => x.id === 'mx')?.stock === 8 && xfIncoming().length === 0), '🔁 telefon Hövsanda: qalıq 8, gələn mal yoxdur');
+    // 10. v1.21.1: Firebase-də parol dəyişdi → köhnə giriş ləğv olur; kompüterdə yalnız yeni parolu yazıb yenidən daxil olmaq
+    REFTOK = 'REF2'; USER.password = 'yeni456';
+    await PC.evaluate(() => { document.querySelectorAll('.ov').forEach(o => o.hidden = true); CL.tok = null; S.sales.push({ id: 'relogS', ts: Date.now(), total: 1, pay: 'nağd', worker: 'A', lines: [] }); save(); return cloudTick(); });
+    ok(await PC.evaluate(() => CL.authErr && !CL.on && /Giriş vaxtı bitib/.test(CL.err)), '🔑 parol dəyişdi: "Giriş vaxtı bitib" göründü');
+    await PC.click('#btnSet'); await PC.click('[data-rt=cloud]');
+    ok(await PC.isVisible('#cf_rw'), '🔑 Bulud bölməsində yeni parol xanası var');
+    await PC.fill('#cf_rw', 'səhv'); await PC.click('[data-act=clrelog]'); await sleep(800);
+    ok(await PC.evaluate(() => !!CL.cfg && CL.authErr), '🔑 səhv parolda bulud ayarı itmir');
+    await PC.fill('#cf_rw', 'yeni456'); await PC.click('[data-act=clrelog]'); await sleep(2500);
+    ok(await PC.evaluate(() => CL.on && !CL.authErr && !CL.err && CL.cfg.refresh === 'REF2'), '🔑 yeni parolla yenidən daxil oldu, sinxron işləyir');
+    { let got = false; for (let i = 0; i < 40 && !got; i++) { got = [...docs.keys()].some(k => k.includes('relogS')); if (!got) await sleep(250); } ok(got, '🔑 gözləyən satış buluda getdi'); }
   } finally {
     ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
     await b.close(); srv.close();

@@ -749,7 +749,7 @@ let S=null, firstRun=false, migrated=false, PATHS=null, backups=null, loadBroken
 // Sinxron: kompüter (exe) və telefon eyni məlumatı versiya ilə yazır. Arada o biri yazıbsa, iki tərəfin dəyişikliyi birləşdirilir.
 const SYNC=typeof window.erpLoadV==="function";
 let syncVer=0, syncBase=null, pushing=false, pushAgain=false, pushT=null, syncOnline=true;
-const APP_VERSION="1.21.0";
+const APP_VERSION="1.21.1";
 // köhnə versiyadan gələn məlumatda çatışmayan sahələri tamamla
 const kidsOf=id=>S.items.filter(i=>i.parent===id);
 function upgrade(){if(!S.cats)S.cats=DEFAULT_CATS.filter(c=>c[0]!=="search").map(([id,name])=>({id,name}));S.workers=S.workers?.length?S.workers:["Admin"];S.sales=S.sales||[];S.purchases=S.purchases||[];S.expenses=S.expenses||[];S.recurring=S.recurring||[];S.cash=S.cash||{};
@@ -1540,7 +1540,7 @@ async function cloudTick(){
   if(CL.busy){CL.again=true;return}
   CL.busy=true;
   try{await cloudPullNow();CL.pulled=true;if(await cloudPushNow())await cloudPullNow();CL.online=true;CL.err="";CL.last=Date.now();saveCloudState()}
-  catch(e){CL.online=false;CL.err=String(e.message||e);if(e.auth){CL.on=false;CL.err+=" — ☁️ Bulud bölməsindən yenidən daxil olun"}}
+  catch(e){CL.online=false;CL.err=String(e.message||e);if(e.auth){CL.on=false;CL.authErr=true;CL.err+=" — ☁️ Bulud bölməsindən yenidən daxil olun"}}
   finally{CL.busy=false;renderCloudBadge();if(CL.again){CL.again=false;cloudSoon()}}
 }
 function cloudSoon(){if(!CL.on)return;clearTimeout(CL.soonT);CL.soonT=setTimeout(cloudTick,1500)}
@@ -1550,6 +1550,9 @@ function cloudStart(){
   cloudTick();renderCloudBadge();
 }
 function cloudStop(){CL.on=false;clearInterval(CL.timer);renderCloudBadge()}
+// v1.21.1: giriş vaxtı bitəndə (məs. Firebase-də parol dəyişdirilib) — yalnız parolu yazıb yenidən daxil olmaq; sinxron vəziyyəti (base/kursor) qalır
+const relogBox=()=>CL.authErr&&CL.cfg&&isAdmin()?`<div class="warnbox relog"><b>🔑 Yenidən daxil olun</b><p class="sub" style="margin:4px 0">Bulud parolu dəyişdirilib və ya giriş vaxtı bitib. <b>${esc(CL.cfg.email)}</b> üçün <b>yeni parolu</b> yazın. Məlumat itmir — yığılan dəyişikliklər daxil olan kimi göndəriləcək.</p>
+  <div class="frow"><label class="f grow">Parol<input id="cf_rw" type="password" autocomplete="off"></label><button class="btn" data-act="clrelog">☁️ Daxil ol</button></div></div>`:"";
 async function cloudInit(){
   try{CL.cfg=JSON.parse(await KV.get("cfg")||"null")}catch(e){CL.cfg=null}
   CL.dev=await KV.get("dev");if(!CL.dev){CL.dev=newId("d");KV.set("dev",CL.dev)}
@@ -1691,7 +1694,7 @@ function renderCloud(){
   if(PHONE_CLOUD)return `<p>☁️ Bu telefon buludla işləyir: <b>${esc(c?.email||"")}</b>. İnternet olanda kompüterlə məlumat mübadiləsi özü gedir, internet olmayanda telefon son vəziyyəti göstərir və etdiyiniz dəyişiklikləri sonra göndərir.</p>
     <div class="kpis"><div class="kpi"><span>Vəziyyət</span><b style="font-size:16px">${!CL.online?"⚠ internet yoxdur":CL.pend?`⏳ ${CL.pend} dəyişiklik gözləyir`:"✓ sinxrondur"}</b></div>
       <div class="kpi"><span>Son sinxron</span><b style="font-size:16px">${CL.last?fmtDate(CL.last)+" "+fmtTime(CL.last):"—"}</b></div></div>
-    ${CL.err?`<p class="pill bad">${esc(CL.err)}</p>`:""}
+    ${CL.err?`<p class="pill bad">${esc(CL.err)}</p>`:""}${relogBox()}
     <div class="frow"><button class="btn" data-act="clnow">🔄 İndi sinxronlaşdır</button><button class="btn ghost" data-act="cloff">Bu telefonu buluddan ayır</button></div>`;
   if(!c)return `<p>☁️ <b>Bulud</b>: işdə olmasanız da telefonunuzdan internetlə satışlara, hesabatlara baxa, dəyişiklik edə bilərsiniz. Kompüter internetsiz də işləyir: internet gələndə yığılan əməliyyatlar özü buluda gedir.</p>
     <h4>Bir dəfəlik quraşdırma (Google Firebase, pulsuz)</h4>
@@ -1717,7 +1720,7 @@ function renderCloud(){
       <div class="kpi"><span>Bulud</span><b style="font-size:16px">${esc(c.projectId)}</b><span>${esc(c.email)}</span></div>
       <div class="kpi"><span>Vəziyyət</span><b style="font-size:16px">${!CL.on?"bağlı":!CL.online?"⚠ internet yoxdur":CL.pend?`⏳ ${CL.pend} dəyişiklik gözləyir`:"✓ sinxrondur"}</b></div>
       <div class="kpi"><span>Son sinxron</span><b style="font-size:16px">${CL.last?fmtDate(CL.last)+" "+fmtTime(CL.last):"—"}</b></div></div>
-    ${CL.err?`<p class="pill bad">${esc(CL.err)}</p>`:""}
+    ${CL.err?`<p class="pill bad">${esc(CL.err)}</p>`:""}${relogBox()}
     <p class="sub">İnternet olanda kompüter hər 10 saniyədən bir dəyişiklikləri buluda göndərir və oradan alır. İnternet kəsiləndə kassirlər işləməyə davam edir: yığılan əməliyyatlar internet gələn kimi özü gedir.</p>
     <div class="frow"><button class="btn" data-act="clnow">🔄 İndi sinxronlaşdır</button><button class="btn ghost" data-act="cloff">Buluddan ayır</button></div>
     <div class="frow"><button class="btn ghost" data-act="cltake">${delArm==="cltake"?"Əminsiniz? Bu kompüterdəki məlumat buluddakı ilə əvəz olunacaq — Bəli":"⬇️ Buluddakı məlumatı götür (bu kompüterdəkini əvəz et)"}</button>
@@ -2769,6 +2772,7 @@ const expOpenAttr=k=>(navigator.webdriver&&!window.REP_FORCE_CLOSED)||expOpen.ha
 document.addEventListener("toggle",e=>{const d=e.target;if(!d?.dataset?.eo)return;d.open?expOpen.add(d.dataset.eo):expOpen.delete(d.dataset.eo);try{localStorage.setItem("kassa.expOpen",JSON.stringify([...expOpen]))}catch(err){}},true);
 // Bu növləri dəyişmək / silmək olmaz: proqram onları adla tanıyır (İşçi faizi, Maaş) və "Digər" həmişə qalmalıdır
 const CAT_LOCK=["Digər","Maaş","İşçi faizi"];
+document.addEventListener("keydown",e=>{if(e.target.id==="cf_rw"&&e.key==="Enter"){e.preventDefault();document.querySelector('[data-act="clrelog"]')?.click()}});
 document.addEventListener("keydown",e=>{if(e.target.id==="x_newcat"&&e.key==="Enter"){e.preventDefault();document.querySelector('[data-x="xcat"]')?.click()}});
 const EXP_PERM={buy:"expBuy",phist:"expBuy",debt:"expDebt",other:"expOther"};
 function renderExp(){
@@ -3981,6 +3985,10 @@ document.addEventListener("click",e=>{
       const ad=await cloudAdopt();cloudStart();
       toast(ad?"⬇️ Məlumat buluddan götürüldü ✓ (əvvəlki məlumat ehtiyat nüsxədədir)":"Bulud boşdur — bu kompüterin məlumatı qaldı")})()
       .catch(e=>{cloudStart();toast("Alınmadı: "+(e.message||e))}).finally(()=>{if(!$("ovRep").hidden)renderRep()});return}
+  else if(a==="clrelog"){if(!isAdmin()||!CL.cfg)return;const pw=$("cf_rw")?.value||"",c=CL.cfg;if(!pw){toast("Parolu yazın");$("cf_rw")?.focus();return}
+    t.disabled=true;t.textContent="Yoxlanır…";
+    cloudSignIn(c.apiKey,c.projectId,c.email,pw,c.urls).then(()=>{CL.authErr=false;CL.err="";cloudStart();renderRep();toast("☁️ Yenidən daxil oldunuz ✓ Sinxron başlayır…")},
+      e=>{if(!CL.cfg)CL.cfg=c;toast("Daxil olmaq olmadı: "+(e.message||e));renderRep()});return}
   else if(a==="clnow"){cloudTick().then(()=>{renderRep();toast(CL.online?"Sinxron ✓":"Alınmadı: "+CL.err)});return}
   else if(a==="clcopy"){const l=cloudPhoneLink();navigator.clipboard?.writeText(l).then(()=>toast("Link kopyalandı"),()=>toast("Kopyalamaq olmadı: linki seçib kopyalayın"));return}
   else if(a==="cloff"){if(!isAdmin())return;if(delArm!=="cloff"){delArm="cloff";t.textContent="Əminsiniz? Bəli, ayır";return}
