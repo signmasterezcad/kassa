@@ -487,7 +487,7 @@ Mövcud məlumatı dəyişmək lazımdırsa, `upgrade()`-də birdəfəlik köç�
 - WebView2 başladıcısının açılış sürəti Windows-da ölçülməyib.
 - Google Disk-ə nüsxə — istifadəçi istəmədi. Setup iş kompüterində quraşdırıldı və işləyir; iş kompüteri v0.44.1-də linklə buluda qoşuldu (☁️ ✓, sahibi təsdiqlədi).
 - Bulud real Firebase ilə işləyir (layihə `kassa-7bad5`, istifadəçi təsdiqlədi: kompüter + telefon sinxron). GitHub Pages açıqdır. Depo Private olsa, Pages pulsuz işləmir.
-- APK real telefonda hələ yoxlanmayıb (emulyator yoxdur).
+- APK 1.1 sahibinin telefonunda quraşdırıldı və buluda qoşuldu (26.11.2026, sahibi təsdiqlədi; əvvəl Firebase parolunu Authentication → Users-dən yenilədi).
 - Telefon Windows-da real Wi-Fi ilə hələ yoxlanmayıb (Firewall icazəsi, IP ünvanı).
 
 ## Brauzer versiyası (nümayiş üçün)
