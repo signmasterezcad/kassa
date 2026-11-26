@@ -9,6 +9,8 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -17,6 +19,8 @@ public class MainActivity extends Activity {
     static final String URL = "https://signmasterezcad.github.io/kassa/app/";
     static final String HOST = "signmasterezcad.github.io";
     WebView web;
+    ValueCallback<Uri[]> fileCb;          // fayl seçmə (ehtiyat nüsxəni bərpa etmək üçün)
+    static final int PICK = 41;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -38,9 +42,30 @@ public class MainActivity extends Activity {
                 return true;                                         // digər linklər brauzerdə
             }
         });
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> cb, FileChooserParams p) {
+                if (fileCb != null) fileCb.onReceiveValue(null);
+                fileCb = cb;
+                Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType("*/*");
+                try { startActivityForResult(Intent.createChooser(i, "Fayl seçin"), PICK); }
+                catch (Exception e) { fileCb = null; cb.onReceiveValue(null); return false; }
+                return true;
+            }
+        });
         setContentView(web);
         if (state != null) web.restoreState(state);
         else web.loadUrl(URL);
+    }
+
+    @Override
+    protected void onActivityResult(int req, int res, Intent data) {
+        if (req != PICK || fileCb == null) { super.onActivityResult(req, res, data); return; }
+        Uri u = (res == RESULT_OK && data != null) ? data.getData() : null;
+        fileCb.onReceiveValue(u != null ? new Uri[]{u} : null);
+        fileCb = null;
     }
 
     @Override

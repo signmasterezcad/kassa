@@ -14,7 +14,8 @@ rm -rf "$W/out" && mkdir -p "$W/out/classes"
 "$W/aapt2" compile --dir res -o "$W/out/res.zip"
 "$W/aapt2" link -I "$W/framework.jar" --manifest AndroidManifest.xml --min-sdk-version 24 --target-sdk-version 34 \
   --version-code "$VC" --version-name "$VN" -o "$W/out/base.apk" "$W/out/res.zip"
-javac -nowarn -encoding UTF-8 --release 8 -cp "$W/deps/android-4.1.1.4.jar" -d "$W/out/classes" $(find src -name '*.java')
+mkdir -p "$W/out/stubs" && javac -nowarn -encoding UTF-8 --release 8 -cp "$W/deps/android-4.1.1.4.jar" -d "$W/out/stubs" $(find stubs -name '*.java')
+javac -nowarn -encoding UTF-8 --release 8 -cp "$W/out/stubs:$W/deps/android-4.1.1.4.jar" -d "$W/out/classes" $(find src -name '*.java')
 java -cp "$CP" com.android.dx.command.Main --dex --min-sdk-version=24 --output="$W/out/classes.dex" "$W/out/classes"
 python3 - "$W/out/base.apk" "$W/out/classes.dex" <<'PY'
 import sys,zipfile

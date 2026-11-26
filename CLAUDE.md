@@ -408,6 +408,8 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
   İlk açılışda link yoxdur → `askCloudLogin(null)`: kompüterdəki linki **yapışdırmaq** xanası (`#cllink`, `cloudLinkCfg(txt)`), sonra parol.
   Yığma: `android/build.sh <kod> <ad> <keystore.p12> <parol>` — Google SDK-sız: aapt2 + framework apktool-lib jar-dan, dx (jakewharton
   dalvik-dx), stub `com.google.android:android:4.1.1.4`, imza apksig 2.3.0 (yalnız **v2**, Java 21-də v1 işləmir; minSdk 24, targetSdk 34).
+  **APK 1.1 (versionCode 2, 26.11.2026, sahibinin istəyi — köhnəni silib yenidən qurur):** `WebChromeClient.onShowFileChooser` (ehtiyat faylı seçmə işləyir; `ACTION_GET_CONTENT`);
+  SDK stub-unda bu API yoxdur → `android/stubs/` yalnız kompilyasiya üçün (dex-ə düşmür, `build.sh`). Yeni imza açarı (köhnə ilə uyğun deyil); açar yenə depoda deyil.
   Hazır fayl: `android/KASSA.apk` (Pages-dən: https://signmasterezcad.github.io/kassa/android/KASSA.apk). **İmza açarı depoda deyil**
   (sessiyanın müvəqqəti qovluğunda idi) — yeni APK başqa açarla imzalansa, telefonda köhnəni silib yenisini qurmaq lazımdır (məlumat buluddan gəlir).
 
