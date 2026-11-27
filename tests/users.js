@@ -502,6 +502,17 @@ let n = 0;
     me.perms.histAll = 1; hFrom = hTo = ''; renderHist(); const k2 = /Köhnə satış Q/.test($('hBody').textContent);
     me = bMe; S.sales = JSON.parse(bS); document.querySelectorAll('.ov').forEach(o => o.hidden = true); return [k1, k2]; });
   ok(r.every(Boolean), 'v1.21.0: kassir histAll-sız yalnız son 7 gün, icazə ilə bütün günlər ' + JSON.stringify(r));}
+  // v1.22.0: şöbələrarası göndərmədə məbləği əl ilə yazmaq
+  {const r = await p.evaluate(() => { const bM = JSON.stringify(S.materials), bP = JSON.stringify(S.purchases), bT = JSON.stringify(S.transfers || []), bB = JSON.stringify(S.branches), bC = CL.cfg;
+    CL.cfg = {}; S.branches = [{ id: 'main', name: 'Hövsan' }, { id: 'mida1', name: 'Mida' }];
+    S.materials.push({ id: 'xA3', name: 'A3 sınaq', unit: 'vərəq', stock: 1000, cost: 0.03, min: 0 });
+    const ok1 = sendTransfer('xA3', 500, 'mida1', '12');
+    const m = S.materials.find(x => x.id === 'xA3'), t = S.transfers[S.transfers.length - 1], pu = S.purchases[S.purchases.length - 1];
+    const k1 = ok1 && m.stock === 500 && Math.abs(m.cost - 0.036) < 1e-9 && Math.abs(t.cost - 0.024) < 1e-9 && pu.total === -12;
+    const ok2 = sendTransfer('xA3', 100, 'mida1', ''); const pu2 = S.purchases[S.purchases.length - 1];
+    const k2 = ok2 && Math.abs(pu2.total + 3.6) < 1e-9 && Math.abs(m.cost - 0.036) < 1e-9;
+    S.materials = JSON.parse(bM); S.purchases = JSON.parse(bP); S.transfers = JSON.parse(bT); S.branches = JSON.parse(bB); CL.cfg = bC; save(); return [k1, k2]; });
+  ok(r.every(Boolean), 'v1.22.0: göndərmədə əl ilə məbləğ (12 ₼ → qalan maya 0.036), boş — orta maya ilə ' + JSON.stringify(r));}
   ok(errs.length === 0, 'JS xətası yoxdur ' + errs.join('; '));
   await b.close();
 })();

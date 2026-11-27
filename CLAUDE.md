@@ -289,6 +289,9 @@ Foto, çap və xırda promo işləri üçün kassa/anbar proqramı (Windows). Sa
 - **v1.21.1 (sahibi Firebase parolunu dəyişdi → bütün kompüterlərdə "Giriş vaxtı bitib", parol yazmağa yer yox idi):** `CL.authErr` (cloudTick-də `e.auth`) olanda ☁️ Bulud bölməsində (kompüter + telefon, admin)
   `relogBox()` — **🔑 Yenidən daxil olun**: yalnız parol `#cf_rw` + `data-act=clrelog` (Enter da) → `cloudSignIn` mövcud apiKey/projectId/email ilə; `base/kursor/seen` qalır (Buluddan ayır + yenidən qoşulmaq lazım deyil),
   səhv parolda `CL.cfg` geri qoyulur. Sınaq: `tests/cloud.js` 10-cu hissə (`REFTOK`).
+- **v1.22.0 (sahibinin istəyi: alış qiyməti hər dəfə fərqlidir; 12 ₼-lıq A3 paçkası Midaya göndəriləndə orta maya ilə 14.97 göründü):** göndərmə sətrində **Məbləğ ₼ (istəyə görə)** `#xf_amt` →
+  `sendTransfer(mid,q,to,amt)`: boşdursa əvvəlki kimi `q × orta maya`; yazılıbsa `tc = amt`, transferdə `cost = amt/q`, `own:1`, göndərən şöbədə qalan malın mayası `(qalıq×maya − amt)/(qalan)` (≥0) —
+  şöbənin anbar dəyəri dəqiq `amt` qədər azalır. Alış qeydi (`pay:"xfer"`) və qəbul edən şöbə də bu məbləğlə. Barkodla mal alışında qiymət həmişə əl ilə yazılırdı (izah olundu).
 - **💰 Kassa açılışı / təhvil-təslim** (v0.90.0, sahibinin istəyi): sol menyuda `#btnKassa` (`#kzState` "açıqdır · ad" / "bağlıdır"; hamıya, sahibinin telefonunda yox) → `#ovKassa`.
   `S.cash[gün].log=[{id,t:"open"|"close",ts,by,from,to,expected,counted,taken,left,diff,note}]`, `kzLog()/kzLast()/kzOpen()`.
   Açılış: gözlənilən = son təhvilin `left`; sayılan yazılır, fərq varsa qeyd məcburi; günün ilk açılışı `c.open` olur. Təhvil/bağlanış: sayılan, "sahibə verilən" `taken`,
